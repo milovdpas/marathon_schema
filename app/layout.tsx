@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { SyncInitializer } from "@/components/common/sync-initializer";
 import { AppNav } from "@/components/layout/app-nav";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -42,6 +43,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <SyncInitializer />
           <div className="flex min-h-dvh">
             <AppNav />
             <div className="flex min-w-0 flex-1 flex-col">

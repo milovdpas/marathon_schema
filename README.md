@@ -76,7 +76,39 @@ npm run start   # serve the production build
 
 ### Deploy to Vercel
 
-Push to a Git repo and import it in Vercel — no environment variables or configuration needed. It builds and serves as a fully static client app.
+Push to a Git repo and import it in Vercel. It builds and serves as a fully static client app. The only (optional) configuration is the Google Drive sync client ID below — leave it unset and the app runs localStorage-only.
+
+---
+
+## Cloud sync setup (optional)
+
+By default everything lives in your browser's localStorage. You can optionally connect a **Google account** to back up and sync your progress via **Google Drive** — done entirely client-side (no backend, no secrets). Data is stored in Drive's hidden **app-data folder**, invisible in your Drive and accessible only to this app.
+
+Without a client ID, the app still works fully (local only) and the Settings → Cloud sync card simply shows "not configured".
+
+To enable it, create an OAuth client in the [Google Cloud Console](https://console.cloud.google.com/):
+
+1. **Create a project** (or pick one).
+2. **APIs & Services → Library →** enable **Google Drive API**.
+3. **APIs & Services → OAuth consent screen:** choose **External**, keep it in **Testing** mode, add your own Google account under **Test users**, and add the scope `https://www.googleapis.com/auth/drive.appdata`.
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID → Web application.** Under **Authorized JavaScript origins** add `http://localhost:3000` and your deployed URL (e.g. `https://your-app.vercel.app`). No redirect URIs are needed (token flow).
+5. Copy the **Client ID** into `.env.local` (see `.env.local.example`):
+
+   ```bash
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+   ```
+
+   For Vercel, add the same variable under **Project → Settings → Environment Variables** and redeploy.
+
+Then open **Settings → Cloud sync → Connect Google Drive**.
+
+- The client ID is public/safe to ship; there is no client secret in the browser.
+- In Testing mode Google shows an "unverified app" screen — expected for personal use; continue past it.
+- Sync is **newest-wins**: it pulls on connect, auto-pushes a few seconds after each edit, and offers a manual **Sync now**. Disconnecting revokes the token but keeps your local data.
+
+### Troubleshooting: `Error 403: access_denied` ("has not completed the Google verification process")
+
+Your consent screen is in **Testing** mode and the account you signed in with isn't an approved tester. Fix it in **OAuth consent screen → Audience → Test users → + Add users**, add the exact email you log in with, wait a minute, and retry. (Or **Publish app** to skip the test-user list — still works behind the unverified-app warning for personal use.)
 
 ---
 
@@ -96,8 +128,10 @@ lib/
   pace.ts            # pace parsing / formatting / derivation
   stats.ts           # derived statistics (pure functions)
   storage.ts         # export / import + migration hook
+  google-drive.ts    # client-side Google Drive sync (GIS + Drive REST)
 store/
   use-training-store.ts   # Zustand store + localStorage persistence
+  use-sync-store.ts       # Google Drive sync state + auto-push
 hooks/                # useHydrated, useStats
 ```
 

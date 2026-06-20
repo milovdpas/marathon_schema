@@ -7,7 +7,7 @@ import { WorkoutFormDialog } from "@/components/plan/workout-form-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatRange, todayISO } from "@/lib/date";
-import { PHASE_LABELS, type TrainingWeek, type WeekPhase, type Workout } from "@/lib/types";
+import { PHASE_LABELS, type WeekPhase, type Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useTrainingStore } from "@/store/use-training-store";
 

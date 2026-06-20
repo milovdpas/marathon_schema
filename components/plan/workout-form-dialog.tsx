@@ -1,7 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -96,10 +96,15 @@ export function WorkoutFormDialog({
   const isEdit = !!workout;
   const [form, setForm] = useState<FormState>(blankForm(defaultDate ?? ""));
 
-  useEffect(() => {
-    if (!open) return;
+  // Reset the form to the target workout whenever the dialog opens (adjusting
+  // state during render — the recommended alternative to a reset-in-effect).
+  const [wasOpen, setWasOpen] = useState(false);
+  if (open && !wasOpen) {
+    setWasOpen(true);
     setForm(workout ? fromWorkout(workout) : blankForm(defaultDate ?? ""));
-  }, [open, workout, defaultDate]);
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));

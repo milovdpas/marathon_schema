@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Check, Copy, Download, RefreshCw, Upload } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRef, useState } from "react";
+import { CloudSyncCard } from "@/components/settings/cloud-sync-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -135,6 +136,9 @@ export function SettingsView() {
           ))}
         </div>
       </Card>
+
+      {/* Cloud sync */}
+      <CloudSyncCard />
 
       {/* Data */}
       <Card className="gap-0 p-4">

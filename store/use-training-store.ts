@@ -17,6 +17,8 @@ interface TrainingState {
   plan: TrainingPlan | null;
   preferences: Preferences;
   hydrated: boolean;
+  /** ISO timestamp of the last local mutation — used for sync conflict resolution. */
+  lastModified: string;
 
   setHydrated: (v: boolean) => void;
   initializePlan: () => void;
@@ -33,7 +35,11 @@ interface TrainingState {
   setPreferences: (patch: Partial<Preferences>) => void;
   exportData: () => string;
   importData: (json: string) => void;
+  /** Apply a remote bundle from cloud sync without re-stamping local time. */
+  applyRemote: (json: string, modifiedTime: string) => void;
 }
+
+const nowISO = () => new Date().toISOString();
 
 /** Find the week (by date range) that a given ISO date belongs to. */
 function weekIndexForDate(plan: TrainingPlan, date: string): number {
@@ -46,16 +52,23 @@ export const useTrainingStore = create<TrainingState>()(
       plan: null,
       preferences: DEFAULT_PREFERENCES,
       hydrated: false,
+      lastModified: "",
 
       setHydrated: (v) => set({ hydrated: v }),
 
       initializePlan: () => {
         if (get().plan) return;
-        set({ plan: generateDefaultPlan(get().preferences.raceDate) });
+        set({
+          plan: generateDefaultPlan(get().preferences.raceDate),
+          lastModified: nowISO(),
+        });
       },
 
       regeneratePlan: () =>
-        set({ plan: generateDefaultPlan(get().preferences.raceDate) }),
+        set({
+          plan: generateDefaultPlan(get().preferences.raceDate),
+          lastModified: nowISO(),
+        }),
 
       toggleComplete: (id) => {
         const plan = get().plan;
@@ -70,6 +83,7 @@ export const useTrainingStore = create<TrainingState>()(
               [id]: { ...w, completed: !w.completed },
             },
           },
+          lastModified: nowISO(),
         });
       },
 
@@ -96,6 +110,7 @@ export const useTrainingStore = create<TrainingState>()(
             ...plan,
             workouts: { ...plan.workouts, [id]: merged },
           },
+          lastModified: nowISO(),
         });
       },
 
@@ -129,6 +144,7 @@ export const useTrainingStore = create<TrainingState>()(
             weeks,
             workouts: { ...plan.workouts, [id]: workout },
           },
+          lastModified: nowISO(),
         });
       },
 
@@ -146,11 +162,15 @@ export const useTrainingStore = create<TrainingState>()(
             })),
             workouts: rest,
           },
+          lastModified: nowISO(),
         });
       },
 
       setPreferences: (patch) =>
-        set({ preferences: { ...get().preferences, ...patch } }),
+        set({
+          preferences: { ...get().preferences, ...patch },
+          lastModified: nowISO(),
+        }),
 
       exportData: () => {
         const { plan, preferences } = get();
@@ -163,6 +183,18 @@ export const useTrainingStore = create<TrainingState>()(
         set({
           plan: migratePlan(plan),
           ...(preferences ? { preferences } : {}),
+          lastModified: nowISO(),
+        });
+      },
+
+      applyRemote: (json, modifiedTime) => {
+        const { plan, preferences } = parseImport(json);
+        // Stamp with the remote's time (not now) so we don't immediately
+        // consider local "newer" and push it straight back.
+        set({
+          plan: migratePlan(plan),
+          ...(preferences ? { preferences } : {}),
+          lastModified: modifiedTime,
         });
       },
     }),
@@ -172,6 +204,7 @@ export const useTrainingStore = create<TrainingState>()(
       partialize: (state) => ({
         plan: state.plan,
         preferences: state.preferences,
+        lastModified: state.lastModified,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
