@@ -2,6 +2,7 @@
 
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,12 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { paceFromDistanceDuration } from "@/lib/pace";
-import {
-  WORKOUT_TYPE_LABELS,
-  WORKOUT_TYPES,
-  type Workout,
-  type WorkoutType,
-} from "@/lib/types";
+import { WORKOUT_TYPES, type Workout, type WorkoutType } from "@/lib/types";
 import { useTrainingStore } from "@/store/use-training-store";
 
 interface FormState {
@@ -89,6 +85,7 @@ export function WorkoutFormDialog({
   workout?: Workout | null;
   defaultDate?: string;
 }) {
+  const { t } = useTranslation();
   const updateWorkout = useTrainingStore((s) => s.updateWorkout);
   const addWorkout = useTrainingStore((s) => s.addWorkout);
   const deleteWorkout = useTrainingStore((s) => s.deleteWorkout);
@@ -126,7 +123,7 @@ export function WorkoutFormDialog({
     const common = {
       date: form.date,
       type: form.type,
-      title: form.title.trim() || WORKOUT_TYPE_LABELS[form.type],
+      title: form.title.trim() || t(`workoutType.${form.type}`),
       plannedDistanceKm,
       plannedPace: form.plannedPace.trim() || undefined,
       actualDistanceKm,
@@ -153,24 +150,24 @@ export function WorkoutFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit workout" : "Add workout"}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t("workoutForm.editTitle") : t("workoutForm.addTitle")}
+          </DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? "Update planned targets or log what you actually ran."
-              : "Add a custom workout to your plan."}
+            {isEdit ? t("workoutForm.editDesc") : t("workoutForm.addDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-1">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Date">
+            <Field label={t("workoutForm.date")}>
               <Input
                 type="date"
                 value={form.date}
                 onChange={(e) => set("date", e.target.value)}
               />
             </Field>
-            <Field label="Type">
+            <Field label={t("workoutForm.type")}>
               <Select
                 value={form.type}
                 onValueChange={(v) => set("type", v as WorkoutType)}
@@ -179,9 +176,9 @@ export function WorkoutFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {WORKOUT_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {WORKOUT_TYPE_LABELS[t]}
+                  {WORKOUT_TYPES.map((ty) => (
+                    <SelectItem key={ty} value={ty}>
+                      {t(`workoutType.${ty}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -189,9 +186,9 @@ export function WorkoutFormDialog({
             </Field>
           </div>
 
-          <Field label="Title">
+          <Field label={t("workoutForm.titleLabel")}>
             <Input
-              placeholder="e.g. 6×800m intervals"
+              placeholder={t("workoutForm.titlePlaceholder")}
               value={form.title}
               onChange={(e) => set("title", e.target.value)}
             />
@@ -199,10 +196,10 @@ export function WorkoutFormDialog({
 
           <fieldset className="rounded-lg border p-3">
             <legend className="px-1 text-xs font-medium text-muted-foreground">
-              Planned
+              {t("workoutForm.planned")}
             </legend>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Distance (km)">
+              <Field label={t("workoutForm.distanceKm")}>
                 <Input
                   type="number"
                   inputMode="decimal"
@@ -211,7 +208,7 @@ export function WorkoutFormDialog({
                   onChange={(e) => set("plannedDistanceKm", e.target.value)}
                 />
               </Field>
-              <Field label="Pace (mm:ss)">
+              <Field label={t("workoutForm.paceLabel")}>
                 <Input
                   placeholder="4:58"
                   value={form.plannedPace}
@@ -223,10 +220,10 @@ export function WorkoutFormDialog({
 
           <fieldset className="rounded-lg border p-3">
             <legend className="px-1 text-xs font-medium text-muted-foreground">
-              Actual
+              {t("workoutForm.actual")}
             </legend>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Distance (km)">
+              <Field label={t("workoutForm.distanceKm")}>
                 <Input
                   type="number"
                   inputMode="decimal"
@@ -235,7 +232,7 @@ export function WorkoutFormDialog({
                   onChange={(e) => set("actualDistanceKm", e.target.value)}
                 />
               </Field>
-              <Field label="Duration (min)">
+              <Field label={t("workoutForm.durationMin")}>
                 <Input
                   type="number"
                   inputMode="decimal"
@@ -246,32 +243,32 @@ export function WorkoutFormDialog({
               </Field>
             </div>
             <div className="mt-3">
-              <Field label="Pace (mm:ss)">
+              <Field label={t("workoutForm.paceLabel")}>
                 <Input
-                  placeholder={derivedPace ?? "auto from distance + time"}
+                  placeholder={derivedPace ?? t("workoutForm.paceAuto")}
                   value={form.actualPace}
                   onChange={(e) => set("actualPace", e.target.value)}
                 />
               </Field>
               {derivedPace && !form.actualPace ? (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Will compute to {derivedPace}/km
+                  {t("workoutForm.willCompute", { pace: derivedPace })}
                 </p>
               ) : null}
             </div>
           </fieldset>
 
-          <Field label="Notes">
+          <Field label={t("workoutForm.notes")}>
             <textarea
               className="min-h-16 w-full resize-y rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              placeholder="How did it feel?"
+              placeholder={t("workoutForm.notesPlaceholder")}
               value={form.notes}
               onChange={(e) => set("notes", e.target.value)}
             />
           </Field>
 
           <label className="flex items-center justify-between rounded-lg border px-3 py-2.5">
-            <span className="text-sm font-medium">Completed</span>
+            <span className="text-sm font-medium">{t("workoutForm.completed")}</span>
             <Switch
               checked={form.completed}
               onCheckedChange={(v) => set("completed", v)}
@@ -287,16 +284,16 @@ export function WorkoutFormDialog({
               className="text-destructive hover:text-destructive"
               onClick={handleDelete}
             >
-              <Trash2 className="size-4" /> Delete
+              <Trash2 className="size-4" /> {t("common.delete")}
             </Button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave}>{t("common.save")}</Button>
           </div>
         </DialogFooter>
       </DialogContent>

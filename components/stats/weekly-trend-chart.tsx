@@ -10,9 +10,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 import type { WeeklyMileage } from "@/lib/stats";
 
 export function WeeklyTrendChart({ data }: { data: WeeklyMileage[] }) {
+  const { t } = useTranslation();
   return (
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -48,14 +50,14 @@ export function WeeklyTrendChart({ data }: { data: WeeklyMileage[] }) {
         <Legend wrapperStyle={{ fontSize: 12 }} />
         <Bar
           dataKey="plannedKm"
-          name="Planned"
+          name={t("stats.planned")}
           fill="var(--muted-foreground)"
           fillOpacity={0.3}
           radius={[4, 4, 0, 0]}
         />
         <Bar
           dataKey="actualKm"
-          name="Actual"
+          name={t("stats.actual")}
           fill="var(--chart-1)"
           radius={[4, 4, 0, 0]}
         />

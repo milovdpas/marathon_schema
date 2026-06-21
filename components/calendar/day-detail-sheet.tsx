@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { Plus, Umbrella } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { fromISO } from "@/lib/date";
+import { getDateLocale } from "@/lib/date-locale";
 import type { OffDay, Workout } from "@/lib/types";
 
 export function DayDetailSheet({
@@ -31,15 +33,18 @@ export function DayDetailSheet({
   onEdit: (w: Workout) => void;
   onAdd: (date: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Sheet open={!!date} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="mx-auto max-w-2xl rounded-t-2xl">
         <SheetHeader>
           <SheetTitle>
-            {date ? format(fromISO(date), "EEEE d MMMM") : ""}
+            {date
+              ? format(fromISO(date), "EEEE d MMMM", { locale: getDateLocale() })
+              : ""}
           </SheetTitle>
           <SheetDescription>
-            {workouts.length} workout{workouts.length === 1 ? "" : "s"} scheduled
+            {t("calendar.workoutsScheduled", { count: workouts.length })}
           </SheetDescription>
         </SheetHeader>
 
@@ -57,7 +62,7 @@ export function DayDetailSheet({
           ) : null}
           {workouts.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              Nothing scheduled this day.
+              {t("calendar.nothingScheduled")}
             </p>
           ) : (
             workouts.map((w) => (
@@ -76,7 +81,7 @@ export function DayDetailSheet({
               className="w-full"
               onClick={() => onAdd(date)}
             >
-              <Plus className="size-4" /> Add workout
+              <Plus className="size-4" /> {t("calendar.addWorkout")}
             </Button>
           ) : null}
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Pencil } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { formatDayLabel } from "@/lib/date";
 import { formatPace } from "@/lib/pace";
 import type { Workout } from "@/lib/types";
@@ -20,6 +21,7 @@ export function WorkoutRow({
   showDate?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const { completed } = workout;
   const hasActual =
     workout.actualDistanceKm != null || workout.actualPace != null;
@@ -53,7 +55,7 @@ export function WorkoutRow({
           <WorkoutTypeBadge type={workout.type} />
           {workout.isCustom ? (
             <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              custom
+              {t("workoutRow.custom")}
             </span>
           ) : null}
         </div>

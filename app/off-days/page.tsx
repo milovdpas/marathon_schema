@@ -5,7 +5,7 @@ import { OffDaysView } from "@/components/off-days/off-days-view";
 export default function OffDaysPage() {
   return (
     <>
-      <PageHeader title="Off days" subtitle="Periods that may limit training." />
+      <PageHeader titleKey="offDays.title" subtitleKey="offDays.subtitle" />
       <HydrationGate>
         <OffDaysView />
       </HydrationGate>

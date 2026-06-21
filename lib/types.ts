@@ -38,6 +38,7 @@ export interface TrainingWeek {
 
 export interface Preferences {
   theme: "light" | "dark" | "system";
+  locale?: "en" | "nl";
 }
 
 /** Editable per-plan metadata (race + goal), independent of the schedule. */

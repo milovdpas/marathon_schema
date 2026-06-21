@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SyncInitializer } from "@/components/common/sync-initializer";
 import { AppNav } from "@/components/layout/app-nav";
+import { I18nProvider } from "@/components/layout/i18n-provider";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
@@ -43,6 +44,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <I18nProvider>
           <SyncInitializer />
           <div className="flex min-h-dvh">
             <AppNav />
@@ -62,6 +64,7 @@ export default function RootLayout({
               </main>
             </div>
           </div>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

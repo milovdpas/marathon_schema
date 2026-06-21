@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/common/page-header";
 export default function CalendarPage() {
   return (
     <>
-      <PageHeader title="Calendar" subtitle="Your training month at a glance." />
+      <PageHeader titleKey="calendar.title" subtitleKey="calendar.subtitle" />
       <HydrationGate>
         <CalendarView />
       </HydrationGate>

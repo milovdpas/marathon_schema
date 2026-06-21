@@ -9,15 +9,16 @@ import {
   LogOut,
   RefreshCw,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getDateLocale } from "@/lib/date-locale";
 import { useMounted } from "@/hooks/use-mounted";
 import { isSyncConfigured } from "@/lib/google-drive";
 import { useSyncStore } from "@/store/use-sync-store";
 
-const REAUTH_HINT = "Sign-in expired — reconnect to resume syncing.";
-
 export function CloudSyncCard() {
+  const { t } = useTranslation();
   const status = useSyncStore((s) => s.status);
   const connected = useSyncStore((s) => s.connected);
   const needsReauth = useSyncStore((s) => s.needsReauth);
@@ -41,14 +42,9 @@ export function CloudSyncCard() {
       <Card className="gap-0 p-4">
         <div className="mb-1 flex items-center gap-2">
           <CloudOff className="size-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Cloud sync</h3>
+          <h3 className="text-sm font-semibold">{t("sync.title")}</h3>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Google Drive sync isn&apos;t configured for this deployment. Your data
-          is saved locally in this browser. See{" "}
-          <span className="font-mono">NEXT_PUBLIC_GOOGLE_CLIENT_ID</span> in the
-          README to enable it.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("sync.notConfigured")}</p>
       </Card>
     );
   }
@@ -57,19 +53,21 @@ export function CloudSyncCard() {
     <Card className="gap-0 p-4">
       <div className="mb-1 flex items-center gap-2">
         <Cloud className="size-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold">Cloud sync</h3>
+        <h3 className="text-sm font-semibold">{t("sync.title")}</h3>
         {mounted && connected ? (
           needsReauth ? (
             <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-tempo">
-              <span className="size-1.5 rounded-full bg-tempo" /> Reconnect needed
+              <span className="size-1.5 rounded-full bg-tempo" />{" "}
+              {t("sync.reconnectNeeded")}
             </span>
           ) : status === "reconnecting" ? (
             <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Loader2 className="size-3 animate-spin" /> Reconnecting…
+              <Loader2 className="size-3 animate-spin" /> {t("sync.reconnecting")}
             </span>
           ) : (
             <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-easy">
-              <span className="size-1.5 rounded-full bg-easy" /> Connected
+              <span className="size-1.5 rounded-full bg-easy" />{" "}
+              {t("sync.connected")}
             </span>
           )
         ) : null}
@@ -103,22 +101,25 @@ export function CloudSyncCard() {
 
           <p className="text-xs text-muted-foreground">
             {status === "syncing"
-              ? "Syncing…"
+              ? t("sync.syncing")
               : status === "reconnecting"
-                ? "Reconnecting…"
+                ? t("sync.reconnecting")
                 : needsReauth
-                  ? REAUTH_HINT
+                  ? t("sync.reauthHint")
                   : lastSyncedAt
-                    ? `Last synced ${formatDistanceToNow(new Date(lastSyncedAt), {
-                        addSuffix: true,
-                      })}`
-                    : "Backing up to your hidden Drive app folder."}
+                    ? t("sync.lastSynced", {
+                        time: formatDistanceToNow(new Date(lastSyncedAt), {
+                          addSuffix: true,
+                          locale: getDateLocale(),
+                        }),
+                      })
+                    : t("sync.backingUp")}
           </p>
 
           <div className="flex gap-2">
             {needsReauth ? (
               <Button size="sm" disabled={busy} onClick={() => void connect()}>
-                <RefreshCw className="size-4" /> Reconnect
+                <RefreshCw className="size-4" /> {t("sync.reconnect")}
               </Button>
             ) : (
               <Button
@@ -132,27 +133,24 @@ export function CloudSyncCard() {
                 ) : (
                   <RefreshCw className="size-4" />
                 )}
-                Sync now
+                {t("sync.syncNow")}
               </Button>
             )}
             <Button variant="ghost" size="sm" onClick={disconnect}>
-              <LogOut className="size-4" /> Disconnect
+              <LogOut className="size-4" /> {t("sync.disconnect")}
             </Button>
           </div>
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Connect your Google account to back up your progress to Drive and
-            sync it across devices. Without it, data stays local to this browser.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("sync.connectBody")}</p>
           <Button size="sm" disabled={busy} onClick={() => void connect()}>
             {status === "connecting" ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <Cloud className="size-4" />
             )}
-            Connect Google Drive
+            {t("sync.connect")}
           </Button>
         </div>
       )}

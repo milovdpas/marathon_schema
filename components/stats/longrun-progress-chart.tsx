@@ -10,9 +10,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 import type { LongRunPoint } from "@/lib/stats";
 
 export function LongRunProgressChart({ data }: { data: LongRunPoint[] }) {
+  const { t } = useTranslation();
   return (
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
@@ -48,7 +50,7 @@ export function LongRunProgressChart({ data }: { data: LongRunPoint[] }) {
         <Line
           type="monotone"
           dataKey="planned"
-          name="Planned"
+          name={t("stats.planned")}
           stroke="var(--muted-foreground)"
           strokeWidth={2}
           strokeDasharray="4 4"
@@ -57,7 +59,7 @@ export function LongRunProgressChart({ data }: { data: LongRunPoint[] }) {
         <Line
           type="monotone"
           dataKey="actual"
-          name="Actual"
+          name={t("stats.actual")}
           stroke="var(--chart-1)"
           strokeWidth={2.5}
           dot={{ r: 3 }}

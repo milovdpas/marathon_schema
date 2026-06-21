@@ -5,7 +5,7 @@ import { SettingsView } from "@/components/settings/settings-view";
 export default function SettingsPage() {
   return (
     <>
-      <PageHeader title="Settings" subtitle="Preferences, theme, and your data." />
+      <PageHeader titleKey="settings.title" subtitleKey="settings.subtitle" />
       <HydrationGate>
         <SettingsView />
       </HydrationGate>

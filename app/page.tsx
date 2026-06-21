@@ -5,7 +5,7 @@ import { DashboardView } from "@/components/dashboard/dashboard-view";
 export default function DashboardPage() {
   return (
     <>
-      <PageHeader title="Dashboard" subtitle="Your road to the start line." />
+      <PageHeader titleKey="dashboard.title" subtitleKey="dashboard.subtitle" />
       <HydrationGate>
         <DashboardView />
       </HydrationGate>

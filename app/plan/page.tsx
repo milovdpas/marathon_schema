@@ -5,10 +5,7 @@ import { PlanView } from "@/components/plan/plan-view";
 export default function PlanPage() {
   return (
     <>
-      <PageHeader
-        title="Marathon Plan"
-        subtitle="Your training block, grouped by week."
-      />
+      <PageHeader titleKey="plan.title" subtitleKey="plan.subtitle" />
       <HydrationGate>
         <PlanView />
       </HydrationGate>

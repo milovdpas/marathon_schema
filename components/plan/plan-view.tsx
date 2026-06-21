@@ -2,12 +2,13 @@
 
 import { ChevronDown, Plus } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { WorkoutFormDialog } from "@/components/plan/workout-form-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatRange, todayISO } from "@/lib/date";
-import { PHASE_LABELS, type WeekPhase, type Workout } from "@/lib/types";
+import { type WeekPhase, type Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -22,6 +23,7 @@ const PHASE_BADGE: Record<WeekPhase, string> = {
 };
 
 export function PlanView() {
+  const { t } = useTranslation();
   const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
 
@@ -49,7 +51,7 @@ export function PlanView() {
     <div className="space-y-3">
       <div className="flex justify-end">
         <Button size="sm" onClick={() => setAdding(true)}>
-          <Plus className="size-4" /> Add workout
+          <Plus className="size-4" /> {t("plan.addWorkout")}
         </Button>
       </div>
 
@@ -78,7 +80,7 @@ export function PlanView() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold">
-                    Week {week.weekNumber}
+                    {t("plan.week", { n: week.weekNumber })}
                   </span>
                   <Badge
                     className={cn(
@@ -86,7 +88,7 @@ export function PlanView() {
                       PHASE_BADGE[week.phase],
                     )}
                   >
-                    {PHASE_LABELS[week.phase]}
+                    {t(`phase.${week.phase}`)}
                   </Badge>
                   {week.label ? (
                     <span className="text-xs text-muted-foreground">
@@ -95,13 +97,17 @@ export function PlanView() {
                   ) : null}
                   {isCurrent ? (
                     <span className="text-[10px] font-semibold uppercase text-primary">
-                      this week
+                      {t("plan.thisWeek")}
                     </span>
                   ) : null}
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {formatRange(week.startDate, week.endDate)} ·{" "}
-                  {Math.round(planned)} km · {done}/{workouts.length} done
+                  {t("plan.weekMeta", {
+                    range: formatRange(week.startDate, week.endDate),
+                    km: Math.round(planned),
+                    done,
+                    total: workouts.length,
+                  })}
                 </p>
               </div>
               <ChevronDown
@@ -116,7 +122,7 @@ export function PlanView() {
               <div className="space-y-2 border-t bg-muted/30 p-3">
                 {workouts.length === 0 ? (
                   <p className="px-1 py-2 text-sm text-muted-foreground">
-                    Rest week — no scheduled runs.
+                    {t("plan.restWeek")}
                   </p>
                 ) : (
                   workouts.map((w) => (

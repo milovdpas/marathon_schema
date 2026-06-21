@@ -1,4 +1,7 @@
-import { WORKOUT_TYPE_LABELS, type WorkoutType } from "@/lib/types";
+"use client";
+
+import { useTranslation } from "react-i18next";
+import { type WorkoutType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 // Static class strings (so Tailwind's scanner can see them).
@@ -46,6 +49,7 @@ export function WorkoutTypeBadge({
   className?: string;
 }) {
   const style = TYPE_STYLE[type];
+  const { t } = useTranslation();
   return (
     <span
       className={cn(
@@ -55,7 +59,7 @@ export function WorkoutTypeBadge({
       )}
     >
       <span className={cn("size-1.5 rounded-full", style.dot)} />
-      {WORKOUT_TYPE_LABELS[type]}
+      {t(`workoutType.${type}`)}
     </span>
   );
 }

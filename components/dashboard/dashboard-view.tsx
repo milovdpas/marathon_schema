@@ -3,16 +3,19 @@
 import { differenceInCalendarDays, format } from "date-fns";
 import { CalendarDays, Flame, Footprints, Target } from "lucide-react";
 import Link from "next/link";
+import { Trans, useTranslation } from "react-i18next";
 import { ProgressRing } from "@/components/common/progress-ring";
 import { StatCard } from "@/components/common/stat-card";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { Card } from "@/components/ui/card";
 import { fromISO, startOfToday } from "@/lib/date";
+import { getDateLocale } from "@/lib/date-locale";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function DashboardView() {
+  const { t } = useTranslation();
   const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
   const stats = useStats(plan);
@@ -48,27 +51,32 @@ export function DashboardView() {
                 {daysToRace}
               </div>
               <div className="mt-1 text-xs font-medium text-muted-foreground">
-                days to go
+                {t("dashboard.daysToGo")}
               </div>
             </div>
           </ProgressRing>
           <div className="flex-1 text-center sm:text-left">
             <p className="text-sm font-medium text-primary">
-              {plan.goalLabel} · {plan.goalPace}/km
+              {t("dashboard.goalLine", {
+                goal: plan.goalLabel,
+                pace: plan.goalPace,
+              })}
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight">
               {plan.raceName}
             </h2>
             <p className="mt-0.5 flex items-center justify-center gap-1.5 text-sm text-muted-foreground sm:justify-start">
               <CalendarDays className="size-4" />
-              {format(fromISO(raceDate), "EEEE d MMMM yyyy")}
+              {format(fromISO(raceDate), "EEEE d MMMM yyyy", {
+                locale: getDateLocale(),
+              })}
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              You&apos;re{" "}
-              <span className="font-semibold text-foreground">
-                {timelinePct}%
-              </span>{" "}
-              through your training block.
+              <Trans
+                i18nKey="dashboard.throughBlock"
+                values={{ pct: timelinePct }}
+                components={{ b: <span className="font-semibold text-foreground" /> }}
+              />
             </p>
           </div>
         </div>
@@ -77,31 +85,37 @@ export function DashboardView() {
       {/* Stat grid */}
       <div className="grid grid-cols-2 gap-3">
         <StatCard
-          label="Plan complete"
+          label={t("dashboard.planComplete")}
           value={stats.overall.completionPct}
           unit="%"
-          sub={`${stats.overall.completedCount}/${stats.overall.totalCount} workouts`}
+          sub={t("dashboard.workoutsRatio", {
+            done: stats.overall.completedCount,
+            total: stats.overall.totalCount,
+          })}
           icon={<Target className="size-4" />}
         />
         <StatCard
-          label="Total distance"
+          label={t("dashboard.totalDistance")}
           value={stats.overall.totalKm}
-          unit="km"
-          sub={`longest ${stats.overall.longestRunKm} km`}
+          unit={t("common.km")}
+          sub={t("dashboard.longest", { km: stats.overall.longestRunKm })}
           icon={<Footprints className="size-4" />}
         />
         <StatCard
-          label="This week"
+          label={t("dashboard.thisWeek")}
           value={stats.thisWeek.actualKm}
-          unit="km"
-          sub={`of ${stats.thisWeek.plannedKm} km planned`}
+          unit={t("common.km")}
+          sub={t("dashboard.ofPlanned", { km: stats.thisWeek.plannedKm })}
           icon={<Flame className="size-4" />}
         />
         <StatCard
-          label="This month"
+          label={t("dashboard.thisMonth")}
           value={stats.thisMonth.actualKm}
-          unit="km"
-          sub={`${stats.thisMonth.completed}/${stats.thisMonth.total} done`}
+          unit={t("common.km")}
+          sub={t("dashboard.doneRatio", {
+            done: stats.thisMonth.completed,
+            total: stats.thisMonth.total,
+          })}
           icon={<CalendarDays className="size-4" />}
         />
       </div>
@@ -109,26 +123,22 @@ export function DashboardView() {
       {/* Upcoming */}
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Upcoming workouts</h3>
+          <h3 className="text-sm font-semibold">{t("dashboard.upcoming")}</h3>
           <Link
             href="/plan"
             className="text-xs font-medium text-primary hover:underline"
           >
-            View plan
+            {t("dashboard.viewPlan")}
           </Link>
         </div>
         <div className="space-y-2">
           {stats.upcoming.length === 0 ? (
             <Card className="p-4 text-sm text-muted-foreground">
-              No upcoming workouts — you&apos;re all caught up! 🎉
+              {t("dashboard.caughtUp")}
             </Card>
           ) : (
             stats.upcoming.map((w) => (
-              <WorkoutRow
-                key={w.id}
-                workout={w}
-                onToggle={toggleComplete}
-              />
+              <WorkoutRow key={w.id} workout={w} onToggle={toggleComplete} />
             ))
           )}
         </div>
@@ -137,7 +147,7 @@ export function DashboardView() {
       {/* Recent */}
       {stats.recent.length > 0 ? (
         <section>
-          <h3 className="mb-2 text-sm font-semibold">Recently completed</h3>
+          <h3 className="mb-2 text-sm font-semibold">{t("dashboard.recent")}</h3>
           <div className="space-y-2">
             {stats.recent.map((w) => (
               <WorkoutRow key={w.id} workout={w} onToggle={toggleComplete} />

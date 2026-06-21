@@ -10,16 +10,17 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
 
 const NAV = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/plan", label: "Plan", icon: ListChecks },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/off-days", label: "Off days", icon: Umbrella },
-  { href: "/stats", label: "Stats", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { href: "/plan", labelKey: "nav.plan", icon: ListChecks },
+  { href: "/calendar", labelKey: "nav.calendar", icon: CalendarDays },
+  { href: "/off-days", labelKey: "nav.offDays", icon: Umbrella },
+  { href: "/stats", labelKey: "nav.stats", icon: BarChart3 },
+  { href: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -28,6 +29,7 @@ function isActive(pathname: string, href: string): boolean {
 
 export function AppNav() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -38,12 +40,14 @@ export function AppNav() {
             🏃
           </span>
           <div className="leading-tight">
-            <p className="text-sm font-semibold">Marathon</p>
-            <p className="text-xs text-muted-foreground">Training tracker</p>
+            <p className="text-sm font-semibold">{t("common.appName")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("common.appTagline")}
+            </p>
           </div>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {NAV.map(({ href, labelKey, icon: Icon }) => {
             const active = isActive(pathname, href);
             return (
               <Link
@@ -57,20 +61,20 @@ export function AppNav() {
                 )}
               >
                 <Icon className="size-5" />
-                {label}
+                {t(labelKey)}
               </Link>
             );
           })}
         </nav>
         <div className="mt-auto flex items-center justify-between px-2">
-          <span className="text-xs text-muted-foreground">Theme</span>
+          <span className="text-xs text-muted-foreground">{t("nav.theme")}</span>
           <ThemeToggle />
         </div>
       </aside>
 
       {/* Mobile bottom bar */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-card/90 backdrop-blur md:hidden">
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {NAV.map(({ href, labelKey, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (
             <Link
@@ -82,7 +86,7 @@ export function AppNav() {
               )}
             >
               <Icon className="size-5" />
-              {label}
+              {t(labelKey)}
             </Link>
           );
         })}

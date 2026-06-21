@@ -2,6 +2,7 @@
 
 import { Pencil, Plus, Trash2, Umbrella } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -29,6 +30,7 @@ interface FormState {
 const blank: FormState = { title: "", start: "", end: "", note: "" };
 
 export function OffDaysView() {
+  const { t } = useTranslation();
   const plan = useActivePlan();
   const addOffDay = useTrainingStore((s) => s.addOffDay);
   const updateOffDay = useTrainingStore((s) => s.updateOffDay);
@@ -74,21 +76,18 @@ export function OffDaysView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          Vacations, trips and other periods that limit training. These show on
-          your calendar and travel with your exported plan as context.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("offDays.intro")}</p>
         <Button size="sm" className="shrink-0" onClick={openAdd}>
-          <Plus className="size-4" /> Add
+          <Plus className="size-4" /> {t("common.add")}
         </Button>
       </div>
 
       {offDays.length === 0 ? (
         <Card className="items-center gap-2 p-8 text-center">
           <Umbrella className="size-6 text-muted-foreground" />
-          <p className="text-sm font-medium">No off days yet</p>
+          <p className="text-sm font-medium">{t("offDays.emptyTitle")}</p>
           <p className="text-xs text-muted-foreground">
-            Add a vacation or trip so it&apos;s factored into your training.
+            {t("offDays.emptyBody")}
           </p>
         </Card>
       ) : (
@@ -129,21 +128,21 @@ export function OffDaysView() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit off day" : "Add off day"}</DialogTitle>
-            <DialogDescription>
-              Describe the period and whether any training is possible.
-            </DialogDescription>
+            <DialogTitle>
+              {editingId ? t("offDays.editTitle") : t("offDays.addTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("offDays.dialogDesc")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3">
-            <Field label="Title">
+            <Field label={t("offDays.titleLabel")}>
               <Input
-                placeholder="e.g. Vacation to Ghent"
+                placeholder={t("offDays.titlePlaceholder")}
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="From">
+              <Field label={t("offDays.from")}>
                 <Input
                   type="date"
                   value={form.start}
@@ -152,7 +151,7 @@ export function OffDaysView() {
                   }
                 />
               </Field>
-              <Field label="To">
+              <Field label={t("offDays.to")}>
                 <Input
                   type="date"
                   value={form.end}
@@ -160,9 +159,9 @@ export function OffDaysView() {
                 />
               </Field>
             </div>
-            <Field label="Note (training possibility)">
+            <Field label={t("offDays.note")}>
               <Input
-                placeholder="e.g. Likely no training / very limited running"
+                placeholder={t("offDays.notePlaceholder")}
                 value={form.note}
                 onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
               />
@@ -170,10 +169,10 @@ export function OffDaysView() {
           </div>
           <DialogFooter className="gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button disabled={!canSave} onClick={handleSave}>
-              Save
+              {t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

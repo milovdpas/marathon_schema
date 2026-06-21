@@ -4,6 +4,7 @@ import {
   isWithinInterval,
   parseISO,
 } from "date-fns";
+import { getDateLocale } from "./date-locale";
 import type { OffDay } from "./types";
 
 /** Canonical ISO (yyyy-mm-dd) string for a Date, in local time. */
@@ -33,17 +34,18 @@ export function startOfToday(): Date {
 
 /** Human label like "Mon 22 Jun". */
 export function formatDayLabel(iso: string): string {
-  return format(parseISO(iso), "EEE d MMM");
+  return format(parseISO(iso), "EEE d MMM", { locale: getDateLocale() });
 }
 
 /** Human range like "22–28 Jun" / "29 Jun – 5 Jul". */
 export function formatRange(startISO: string, endISO: string): string {
   const s = parseISO(startISO);
   const e = parseISO(endISO);
+  const locale = getDateLocale();
   const sameMonth = s.getMonth() === e.getMonth();
   return sameMonth
-    ? `${format(s, "d")}–${format(e, "d MMM")}`
-    : `${format(s, "d MMM")} – ${format(e, "d MMM")}`;
+    ? `${format(s, "d")}–${format(e, "d MMM", { locale })}`
+    : `${format(s, "d MMM", { locale })} – ${format(e, "d MMM", { locale })}`;
 }
 
 export interface SpecialPeriod {

@@ -1,6 +1,7 @@
 "use client";
 
 import { Gauge, Mountain, Route, Timer } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { StatCard } from "@/components/common/stat-card";
 import { LongRunProgressChart } from "@/components/stats/longrun-progress-chart";
 import { WeeklyTrendChart } from "@/components/stats/weekly-trend-chart";
@@ -9,6 +10,7 @@ import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";
 
 export function StatsView() {
+  const { t } = useTranslation();
   const plan = useActivePlan();
   const stats = useStats(plan);
 
@@ -19,41 +21,43 @@ export function StatsView() {
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3">
         <StatCard
-          label="Total distance"
+          label={t("stats.totalDistance")}
           value={overall.totalKm}
-          unit="km"
-          sub={`of ${overall.plannedTotalKm} km planned`}
+          unit={t("common.km")}
+          sub={t("stats.ofPlanned", { km: overall.plannedTotalKm })}
           icon={<Route className="size-4" />}
         />
         <StatCard
-          label="Longest run"
+          label={t("stats.longestRun")}
           value={overall.longestRunKm}
-          unit="km"
+          unit={t("common.km")}
           icon={<Mountain className="size-4" />}
         />
         <StatCard
-          label="Avg pace"
+          label={t("stats.avgPace")}
           value={overall.averagePace}
-          unit="/km"
+          unit={t("common.perKm")}
           icon={<Gauge className="size-4" />}
         />
         <StatCard
-          label="Runs completed"
+          label={t("stats.runsCompleted")}
           value={overall.completedCount}
-          sub={`${overall.completionPct}% of plan`}
+          sub={t("stats.pctOfPlan", { pct: overall.completionPct })}
           icon={<Timer className="size-4" />}
         />
       </div>
 
       <Card className="p-4">
-        <h3 className="mb-3 text-sm font-semibold">Weekly mileage</h3>
+        <h3 className="mb-3 text-sm font-semibold">{t("stats.weeklyMileage")}</h3>
         <WeeklyTrendChart data={stats.weekly} />
       </Card>
 
       <Card className="p-4">
-        <h3 className="mb-1 text-sm font-semibold">Long-run progression</h3>
+        <h3 className="mb-1 text-sm font-semibold">
+          {t("stats.longRunProgression")}
+        </h3>
         <p className="mb-3 text-xs text-muted-foreground">
-          Building to a 30 km peak, then tapering for race day.
+          {t("stats.longRunHint")}
         </p>
         <LongRunProgressChart data={stats.longRuns} />
       </Card>

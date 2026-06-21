@@ -5,7 +5,7 @@ import { StatsView } from "@/components/stats/stats-view";
 export default function StatsPage() {
   return (
     <>
-      <PageHeader title="Statistics" subtitle="Your training, by the numbers." />
+      <PageHeader titleKey="stats.title" subtitleKey="stats.subtitle" />
       <HydrationGate>
         <StatsView />
       </HydrationGate>
