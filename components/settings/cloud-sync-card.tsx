@@ -15,9 +15,12 @@ import { useMounted } from "@/hooks/use-mounted";
 import { isSyncConfigured } from "@/lib/google-drive";
 import { useSyncStore } from "@/store/use-sync-store";
 
+const REAUTH_HINT = "Sign-in expired — reconnect to resume syncing.";
+
 export function CloudSyncCard() {
   const status = useSyncStore((s) => s.status);
   const connected = useSyncStore((s) => s.connected);
+  const needsReauth = useSyncStore((s) => s.needsReauth);
   const user = useSyncStore((s) => s.user);
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
   const error = useSyncStore((s) => s.error);
@@ -27,7 +30,10 @@ export function CloudSyncCard() {
 
   const mounted = useMounted();
 
-  const busy = status === "connecting" || status === "syncing";
+  const busy =
+    status === "connecting" ||
+    status === "syncing" ||
+    status === "reconnecting";
 
   // Not configured: render a static, hydration-safe note.
   if (!isSyncConfigured()) {
@@ -53,9 +59,19 @@ export function CloudSyncCard() {
         <Cloud className="size-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold">Cloud sync</h3>
         {mounted && connected ? (
-          <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-easy">
-            <span className="size-1.5 rounded-full bg-easy" /> Connected
-          </span>
+          needsReauth ? (
+            <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-tempo">
+              <span className="size-1.5 rounded-full bg-tempo" /> Reconnect needed
+            </span>
+          ) : status === "reconnecting" ? (
+            <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" /> Reconnecting…
+            </span>
+          ) : (
+            <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-easy">
+              <span className="size-1.5 rounded-full bg-easy" /> Connected
+            </span>
+          )
         ) : null}
       </div>
 
@@ -88,27 +104,37 @@ export function CloudSyncCard() {
           <p className="text-xs text-muted-foreground">
             {status === "syncing"
               ? "Syncing…"
-              : lastSyncedAt
-                ? `Last synced ${formatDistanceToNow(new Date(lastSyncedAt), {
-                    addSuffix: true,
-                  })}`
-                : "Backing up to your hidden Drive app folder."}
+              : status === "reconnecting"
+                ? "Reconnecting…"
+                : needsReauth
+                  ? REAUTH_HINT
+                  : lastSyncedAt
+                    ? `Last synced ${formatDistanceToNow(new Date(lastSyncedAt), {
+                        addSuffix: true,
+                      })}`
+                    : "Backing up to your hidden Drive app folder."}
           </p>
 
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={busy}
-              onClick={() => void syncNow()}
-            >
-              {status === "syncing" ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <RefreshCw className="size-4" />
-              )}
-              Sync now
-            </Button>
+            {needsReauth ? (
+              <Button size="sm" disabled={busy} onClick={() => void connect()}>
+                <RefreshCw className="size-4" /> Reconnect
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => void syncNow()}
+              >
+                {status === "syncing" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                Sync now
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={disconnect}>
               <LogOut className="size-4" /> Disconnect
             </Button>
@@ -131,7 +157,7 @@ export function CloudSyncCard() {
         </div>
       )}
 
-      {mounted && error ? (
+      {mounted && error && !needsReauth ? (
         <p className="mt-3 flex items-start gap-1.5 text-xs text-destructive">
           <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
           {error}

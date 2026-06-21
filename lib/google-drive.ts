@@ -112,6 +112,27 @@ async function getValidToken(): Promise<string> {
   return requestToken("");
 }
 
+/** Whether we currently hold a non-expired access token. */
+export function hasValidToken(): boolean {
+  return !!accessToken && Date.now() < tokenExpiry - 60_000;
+}
+
+/** Epoch ms when the current token expires (0 if none). */
+export function getTokenExpiry(): number {
+  return accessToken ? tokenExpiry : 0;
+}
+
+/** Attempt a silent token grant. Returns true on success, false if Google
+ * requires user interaction (e.g. session gone / third-party cookies blocked). */
+export async function silentRefresh(): Promise<boolean> {
+  try {
+    await requestToken("");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function revokeToken(): void {
   if (accessToken && window.google?.accounts?.oauth2) {
     window.google.accounts.oauth2.revoke(accessToken);

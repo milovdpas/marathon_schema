@@ -6,9 +6,12 @@ import {
   DriveAuthError,
   fetchUserInfo,
   findFile,
+  getTokenExpiry,
+  hasValidToken,
   isSyncConfigured,
   requestToken,
   revokeToken,
+  silentRefresh,
   updateFile,
   type SyncUser,
 } from "@/lib/google-drive";
@@ -17,6 +20,7 @@ import { useTrainingStore } from "@/store/use-training-store";
 export type SyncStatus =
   | "idle"
   | "connecting"
+  | "reconnecting"
   | "syncing"
   | "connected"
   | "disconnected"
@@ -24,7 +28,10 @@ export type SyncStatus =
 
 interface SyncState {
   status: SyncStatus;
+  /** Persisted intent: the user has linked a Google account. */
   connected: boolean;
+  /** We hold the intent but couldn't silently refresh — a one-tap reconnect is needed. */
+  needsReauth: boolean;
   user: SyncUser | null;
   fileId: string | null;
   lastSyncedAt: string | null;
@@ -38,11 +45,13 @@ interface SyncState {
 
 const nowISO = () => new Date().toISOString();
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const REAUTH_MSG = "Couldn't refresh your Google session automatically — tap Reconnect.";
 
 // --- module-scoped sync machinery (kept out of persisted state) ---
 let suppressAutoPush = false;
 let autoPushTimer: ReturnType<typeof setTimeout> | null = null;
-let subscribed = false;
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+let listenersBound = false;
 
 /** Stamp the training store's lastModified without triggering an auto-push. */
 function stampLocal(time: string) {
@@ -51,18 +60,39 @@ function stampLocal(time: string) {
   suppressAutoPush = false;
 }
 
-/** Run a Drive operation, retrying once after a silent token refresh on 401. */
+/**
+ * Run a Drive operation. On a 401, attempt one silent token refresh and retry;
+ * if the silent refresh fails, surface it as a re-auth need.
+ */
 async function runDrive(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
   } catch (e) {
     if (e instanceof DriveAuthError) {
-      await requestToken("");
-      await fn();
-    } else {
-      throw e;
+      if (await silentRefresh()) {
+        await fn();
+        return;
+      }
+      throw new DriveAuthError();
     }
+    throw e;
   }
+}
+
+/** Keep the access token alive while the app is open by refreshing ~2 min early. */
+function scheduleProactiveRefresh() {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const expiry = getTokenExpiry();
+  if (!expiry) return;
+  const delay = Math.max(0, expiry - Date.now() - 120_000);
+  refreshTimer = setTimeout(async () => {
+    if (!useSyncStore.getState().connected) return;
+    if (await silentRefresh()) {
+      scheduleProactiveRefresh();
+    } else {
+      useSyncStore.setState({ needsReauth: true, status: "error", error: REAUTH_MSG });
+    }
+  }, delay);
 }
 
 /** Bidirectional newest-wins reconcile (used on connect and "Sync now"). */
@@ -113,26 +143,62 @@ async function pushLocal(): Promise<void> {
         fileId: meta.id,
         lastSyncedAt: nowISO(),
         status: "connected",
+        needsReauth: false,
       });
     });
   } catch (e) {
-    useSyncStore.setState({ status: "error", error: msg(e) });
+    if (e instanceof DriveAuthError) {
+      useSyncStore.setState({ status: "error", needsReauth: true, error: REAUTH_MSG });
+    } else {
+      useSyncStore.setState({ status: "error", error: msg(e) });
+    }
   }
 }
 
-/** Subscribe (once) to local mutations to drive the debounced auto-push. */
-function ensureSubscription() {
-  if (subscribed) return;
-  subscribed = true;
+/**
+ * Try to silently restore a working session (used on load and whenever the tab
+ * becomes visible again). Falls back to a re-auth prompt if Google needs UI.
+ */
+async function resume(): Promise<void> {
+  const { connected } = useSyncStore.getState();
+  if (!connected) return;
+  if (hasValidToken() && useSyncStore.getState().status === "connected") return;
+
+  useSyncStore.setState({ status: "reconnecting", error: null });
+  if (!(await silentRefresh())) {
+    useSyncStore.setState({ status: "error", needsReauth: true, error: REAUTH_MSG });
+    return;
+  }
+  try {
+    const user = await fetchUserInfo();
+    useSyncStore.setState({ user, needsReauth: false, status: "connected", error: null });
+    scheduleProactiveRefresh();
+    await reconcile();
+  } catch {
+    useSyncStore.setState({ status: "error", needsReauth: true, error: REAUTH_MSG });
+  }
+}
+
+/** Wire up auto-push (on local edits) and silent re-auth on tab refocus — once. */
+function bindListeners() {
+  if (listenersBound) return;
+  listenersBound = true;
+
   useTrainingStore.subscribe((state, prev) => {
     if (suppressAutoPush) return;
     if (state.lastModified === prev.lastModified) return;
     if (!useSyncStore.getState().connected) return;
     if (autoPushTimer) clearTimeout(autoPushTimer);
-    autoPushTimer = setTimeout(() => {
-      void pushLocal();
-    }, 3000);
+    autoPushTimer = setTimeout(() => void pushLocal(), 3000);
   });
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      const s = useSyncStore.getState();
+      if (s.connected && !hasValidToken()) void resume();
+    });
+  }
 }
 
 export const useSyncStore = create<SyncState>()(
@@ -140,6 +206,7 @@ export const useSyncStore = create<SyncState>()(
     (set, get) => ({
       status: "idle",
       connected: false,
+      needsReauth: false,
       user: null,
       fileId: null,
       lastSyncedAt: null,
@@ -147,43 +214,35 @@ export const useSyncStore = create<SyncState>()(
 
       init: async () => {
         if (!isSyncConfigured()) return;
-        ensureSubscription();
+        bindListeners();
         if (!get().connected) return;
-        // Previously connected: attempt a silent reconnect.
-        set({ status: "connecting", error: null });
-        try {
-          const user = await fetchUserInfo();
-          set({ connected: true, user, status: "connected" });
-          await reconcile();
-        } catch {
-          set({
-            connected: false,
-            status: "disconnected",
-            error: "Session expired — reconnect to resume syncing.",
-          });
-        }
+        await resume();
       },
 
       connect: async () => {
         if (!isSyncConfigured()) return;
-        ensureSubscription();
+        bindListeners();
         set({ status: "connecting", error: null });
         try {
-          await requestToken("consent");
+          // Try silent first (returning users); fall back to the account chooser.
+          if (!(await silentRefresh())) await requestToken("consent");
           const user = await fetchUserInfo();
-          set({ connected: true, user });
+          set({ connected: true, needsReauth: false, user });
+          scheduleProactiveRefresh();
           await reconcile();
           set({ status: "connected" });
         } catch (e) {
-          set({ status: "error", error: msg(e), connected: false });
+          set({ status: "error", error: msg(e) });
         }
       },
 
       disconnect: () => {
         revokeToken();
         if (autoPushTimer) clearTimeout(autoPushTimer);
+        if (refreshTimer) clearTimeout(refreshTimer);
         set({
           connected: false,
+          needsReauth: false,
           user: null,
           fileId: null,
           lastSyncedAt: null,
@@ -197,9 +256,13 @@ export const useSyncStore = create<SyncState>()(
         set({ status: "syncing", error: null });
         try {
           await reconcile();
-          set({ status: "connected" });
+          set({ status: "connected", needsReauth: false });
         } catch (e) {
-          set({ status: "error", error: msg(e) });
+          if (e instanceof DriveAuthError) {
+            set({ status: "error", needsReauth: true, error: REAUTH_MSG });
+          } else {
+            set({ status: "error", error: msg(e) });
+          }
         }
       },
     }),
