@@ -157,8 +157,14 @@ export const useTrainingStore = create<TrainingState>()(
             goalPace: cur.goalPace,
             goalLabel: cur.goalLabel,
             seedRuns: isPrimary ? MILO_SEED_RUNS : undefined,
-            // Preserve the user's off days across a regenerate.
-            offDays: cur.offDays ?? [],
+            // Regenerate restores defaults: the primary plan gets the default
+            // off days back; other plans keep whatever they had.
+            offDays: isPrimary ? DEFAULT_OFF_DAYS : (cur.offDays ?? []),
+            // Anchor to the plan's original start so already-elapsed weeks
+            // (e.g. the triathlon-recovery period) are reproduced rather than
+            // dropped, and keep a stable creation timestamp across regenerates.
+            planStart: cur.createdAt,
+            createdAt: cur.createdAt,
           });
           return { plans: { ...s.plans, [id]: fresh }, lastModified: nowISO() };
         }),

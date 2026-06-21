@@ -222,6 +222,14 @@ export interface GeneratePlanOptions {
   seedRuns?: CompletedRunSeed[];
   /** Off-periods to attach to the plan. */
   offDays?: OffDay[];
+  /**
+   * Anchor the plan's first week to this date instead of today. When set,
+   * already-elapsed weeks/days are still generated (the skip-past rule is
+   * disabled), so a regenerate reproduces the plan from its original start.
+   */
+  planStart?: string;
+  /** Preserve a fixed creation timestamp across regenerates. */
+  createdAt?: string;
 }
 
 export const DEFAULT_PLAN_META = {
@@ -281,6 +289,8 @@ export const MILO_SEED_RUNS: CompletedRunSeed[] = [
   { date: "2026-06-09", type: "long", title: "Long run", distanceKm: 12.16, pace: "4:49", durationMin: 58.55 },
   // 10.04 km @ 5:16/km (warm), 52:52
   { date: "2026-06-18", type: "easy", title: "Easy run", distanceKm: 10.04, pace: "5:16", durationMin: 52.87 },
+  // 5.66 km @ 4:53/km, 27:39 — post-triathlon recovery jog
+  { date: "2026-06-21", type: "recovery", title: "Recovery run", distanceKm: 5.66, pace: "4:53", durationMin: 27.65 },
 ];
 
 function newId(): string {
@@ -296,7 +306,10 @@ export function generateDefaultPlan(
   const raceDate = opts.raceDate ?? DEFAULT_PLAN_META.raceDate;
   const today = new Date();
   const todayStr = toISO(today);
-  const firstMonday = startOfWeek(today, { weekStartsOn: 1 });
+  // Anchor to the plan's original start when regenerating; otherwise to today.
+  const anchor = opts.planStart ? new Date(opts.planStart) : today;
+  const keepPast = opts.planStart != null;
+  const firstMonday = startOfWeek(anchor, { weekStartsOn: 1 });
   const raceWeekMonday = startOfWeek(fromISO(raceDate), { weekStartsOn: 1 });
 
   const totalWeeks =
@@ -328,8 +341,9 @@ export function generateDefaultPlan(
 
     for (const { offset, planned: base } of dayMap) {
       const date = toISO(addDays(monday, offset));
-      // Don't emit planned sessions that are already in the past.
-      if (date < todayStr) continue;
+      // Don't emit planned sessions that are already in the past — unless we're
+      // anchored to the plan start and reproducing elapsed weeks.
+      if (!keepPast && date < todayStr) continue;
       const adjusted = applySpecialPeriod(date, base);
       if (!adjusted) {
         if (base.type === "long") longAffected = true;
@@ -400,7 +414,7 @@ export function generateDefaultPlan(
     goalPace: opts.goalPace ?? DEFAULT_PLAN_META.goalPace,
     goalLabel: opts.goalLabel ?? DEFAULT_PLAN_META.goalLabel,
     version: PLAN_VERSION,
-    createdAt: new Date().toISOString(),
+    createdAt: opts.createdAt ?? new Date().toISOString(),
     weeks,
     workouts,
     offDays: opts.offDays ?? [],
