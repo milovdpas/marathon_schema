@@ -1,20 +1,28 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { paceFromDistanceDuration } from "@/lib/pace";
-import { generateDefaultPlan, RACE_DATE } from "@/lib/plan-generator";
-import { migratePlan, parseImport, serializeExport, STORAGE_KEY } from "@/lib/storage";
-import type { Preferences, TrainingPlan, Workout } from "@/lib/types";
+import {
+  DEFAULT_PLAN_ID,
+  DEFAULT_PLAN_META,
+  generateDefaultPlan,
+  MILO_SEED_RUNS,
+  type GeneratePlanOptions,
+} from "@/lib/plan-generator";
+import { parseImport, serializeExport, STORAGE_KEY } from "@/lib/storage";
+import type { PlanMeta, Preferences, TrainingPlan, Workout } from "@/lib/types";
 
-const DEFAULT_PREFERENCES: Preferences = {
-  theme: "system",
-  raceName: "Marathon",
-  raceDate: RACE_DATE,
-  goalPace: "4:58",
-  goalLabel: "Sub-3:30",
-};
+const DEFAULT_PREFERENCES: Preferences = { theme: "system" };
+const nowISO = () => new Date().toISOString();
+
+function newId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `plan-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+}
 
 interface TrainingState {
-  plan: TrainingPlan | null;
+  plans: Record<string, TrainingPlan>;
+  activePlanId: string | null;
   preferences: Preferences;
   hydrated: boolean;
   /** ISO timestamp of the last local mutation — used for sync conflict resolution. */
@@ -22,8 +30,15 @@ interface TrainingState {
 
   setHydrated: (v: boolean) => void;
   initializePlan: () => void;
-  regeneratePlan: () => void;
 
+  // Plan management
+  addPlan: (opts?: GeneratePlanOptions) => string;
+  selectPlan: (id: string) => void;
+  deletePlan: (id: string) => void;
+  updatePlanMeta: (patch: Partial<PlanMeta>) => void;
+  regenerateActivePlan: () => void;
+
+  // Workout edits (operate on the active plan)
   toggleComplete: (id: string) => void;
   updateWorkout: (id: string, patch: Partial<Workout>) => void;
   addWorkout: (
@@ -35,21 +50,33 @@ interface TrainingState {
   setPreferences: (patch: Partial<Preferences>) => void;
   exportData: () => string;
   importData: (json: string) => void;
-  /** Apply a remote bundle from cloud sync without re-stamping local time. */
   applyRemote: (json: string, modifiedTime: string) => void;
 }
-
-const nowISO = () => new Date().toISOString();
 
 /** Find the week (by date range) that a given ISO date belongs to. */
 function weekIndexForDate(plan: TrainingPlan, date: string): number {
   return plan.weeks.findIndex((w) => date >= w.startDate && date <= w.endDate);
 }
 
+/** Produce a state patch that replaces the active plan via `fn`. */
+function mutateActive(
+  state: TrainingState,
+  fn: (plan: TrainingPlan) => TrainingPlan,
+): Partial<TrainingState> {
+  const id = state.activePlanId;
+  const current = id ? state.plans[id] : null;
+  if (!id || !current) return {};
+  return {
+    plans: { ...state.plans, [id]: fn(current) },
+    lastModified: nowISO(),
+  };
+}
+
 export const useTrainingStore = create<TrainingState>()(
   persist(
     (set, get) => ({
-      plan: null,
+      plans: {},
+      activePlanId: null,
       preferences: DEFAULT_PREFERENCES,
       hydrated: false,
       lastModified: "",
@@ -57,155 +84,211 @@ export const useTrainingStore = create<TrainingState>()(
       setHydrated: (v) => set({ hydrated: v }),
 
       initializePlan: () => {
-        if (get().plan) return;
+        if (Object.keys(get().plans).length > 0) return;
+        const plan = generateDefaultPlan({
+          id: DEFAULT_PLAN_ID,
+          seedRuns: MILO_SEED_RUNS,
+        });
         set({
-          plan: generateDefaultPlan(get().preferences.raceDate),
+          plans: { [plan.id]: plan },
+          activePlanId: plan.id,
           lastModified: nowISO(),
         });
       },
 
-      regeneratePlan: () =>
-        set({
-          plan: generateDefaultPlan(get().preferences.raceDate),
+      addPlan: (opts) => {
+        const plan = generateDefaultPlan(opts);
+        set((s) => ({
+          plans: { ...s.plans, [plan.id]: plan },
+          activePlanId: plan.id,
           lastModified: nowISO(),
+        }));
+        return plan.id;
+      },
+
+      selectPlan: (id) => {
+        if (!get().plans[id]) return;
+        set({ activePlanId: id, lastModified: nowISO() });
+      },
+
+      deletePlan: (id) =>
+        set((s) => {
+          const plans = { ...s.plans };
+          delete plans[id];
+          let activePlanId = s.activePlanId;
+          if (activePlanId === id) activePlanId = Object.keys(plans)[0] ?? null;
+          if (Object.keys(plans).length === 0) {
+            const def = generateDefaultPlan();
+            plans[def.id] = def;
+            activePlanId = def.id;
+          }
+          return { plans, activePlanId, lastModified: nowISO() };
         }),
 
-      toggleComplete: (id) => {
-        const plan = get().plan;
-        if (!plan) return;
-        const w = plan.workouts[id];
-        if (!w) return;
-        set({
-          plan: {
-            ...plan,
-            workouts: {
-              ...plan.workouts,
-              [id]: { ...w, completed: !w.completed },
-            },
-          },
-          lastModified: nowISO(),
-        });
-      },
+      updatePlanMeta: (patch) =>
+        set((s) => mutateActive(s, (p) => ({ ...p, ...patch }))),
 
-      updateWorkout: (id, patch) => {
-        const plan = get().plan;
-        if (!plan) return;
-        const existing = plan.workouts[id];
-        if (!existing) return;
-        const merged: Workout = { ...existing, ...patch };
-        // Auto-derive actual pace from distance + duration unless one was set.
-        if (
-          patch.actualPace === undefined &&
-          (patch.actualDistanceKm !== undefined ||
-            patch.durationMin !== undefined)
-        ) {
-          const derived = paceFromDistanceDuration(
-            merged.actualDistanceKm,
-            merged.durationMin,
-          );
-          if (derived) merged.actualPace = derived;
-        }
-        set({
-          plan: {
-            ...plan,
-            workouts: { ...plan.workouts, [id]: merged },
-          },
-          lastModified: nowISO(),
-        });
-      },
+      regenerateActivePlan: () =>
+        set((s) => {
+          const id = s.activePlanId;
+          const cur = id ? s.plans[id] : null;
+          if (!id || !cur) return {};
+          // Re-seed history only for the primary plan.
+          const isPrimary =
+            cur.id === DEFAULT_PLAN_ID || cur.name === DEFAULT_PLAN_META.name;
+          const fresh = generateDefaultPlan({
+            id: cur.id,
+            name: cur.name,
+            raceName: cur.raceName,
+            raceDate: cur.raceDate,
+            goalPace: cur.goalPace,
+            goalLabel: cur.goalLabel,
+            seedRuns: isPrimary ? MILO_SEED_RUNS : undefined,
+          });
+          return { plans: { ...s.plans, [id]: fresh }, lastModified: nowISO() };
+        }),
 
-      addWorkout: (input) => {
-        const plan = get().plan;
-        if (!plan) return;
-        const idx = weekIndexForDate(plan, input.date);
-        const week = idx >= 0 ? plan.weeks[idx] : undefined;
-        const id =
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : `${input.date}-${input.type}-${Object.keys(plan.workouts).length}`;
-        const workout: Workout = {
-          ...input,
-          id,
-          weekNumber: week?.weekNumber ?? 0,
-          completed: input.completed ?? false,
-          isCustom: true,
-        };
-        const weeks =
-          idx >= 0
-            ? plan.weeks.map((w, i) =>
-                i === idx
-                  ? { ...w, workoutIds: [...w.workoutIds, id] }
-                  : w,
-              )
-            : plan.weeks;
-        set({
-          plan: {
-            ...plan,
-            weeks,
-            workouts: { ...plan.workouts, [id]: workout },
-          },
-          lastModified: nowISO(),
-        });
-      },
+      toggleComplete: (id) =>
+        set((s) =>
+          mutateActive(s, (p) => {
+            const w = p.workouts[id];
+            if (!w) return p;
+            return {
+              ...p,
+              workouts: { ...p.workouts, [id]: { ...w, completed: !w.completed } },
+            };
+          }),
+        ),
 
-      deleteWorkout: (id) => {
-        const plan = get().plan;
-        if (!plan) return;
-        const rest = { ...plan.workouts };
-        delete rest[id];
-        set({
-          plan: {
-            ...plan,
-            weeks: plan.weeks.map((w) => ({
-              ...w,
-              workoutIds: w.workoutIds.filter((wid) => wid !== id),
-            })),
-            workouts: rest,
-          },
-          lastModified: nowISO(),
-        });
-      },
+      updateWorkout: (id, patch) =>
+        set((s) =>
+          mutateActive(s, (p) => {
+            const existing = p.workouts[id];
+            if (!existing) return p;
+            const merged: Workout = { ...existing, ...patch };
+            if (
+              patch.actualPace === undefined &&
+              (patch.actualDistanceKm !== undefined ||
+                patch.durationMin !== undefined)
+            ) {
+              const derived = paceFromDistanceDuration(
+                merged.actualDistanceKm,
+                merged.durationMin,
+              );
+              if (derived) merged.actualPace = derived;
+            }
+            return { ...p, workouts: { ...p.workouts, [id]: merged } };
+          }),
+        ),
+
+      addWorkout: (input) =>
+        set((s) =>
+          mutateActive(s, (p) => {
+            const idx = weekIndexForDate(p, input.date);
+            const week = idx >= 0 ? p.weeks[idx] : undefined;
+            const id = newId();
+            const workout: Workout = {
+              ...input,
+              id,
+              weekNumber: week?.weekNumber ?? 0,
+              completed: input.completed ?? false,
+              isCustom: true,
+            };
+            const weeks =
+              idx >= 0
+                ? p.weeks.map((w, i) =>
+                    i === idx ? { ...w, workoutIds: [...w.workoutIds, id] } : w,
+                  )
+                : p.weeks;
+            return { ...p, weeks, workouts: { ...p.workouts, [id]: workout } };
+          }),
+        ),
+
+      deleteWorkout: (id) =>
+        set((s) =>
+          mutateActive(s, (p) => {
+            const workouts = { ...p.workouts };
+            delete workouts[id];
+            return {
+              ...p,
+              weeks: p.weeks.map((w) => ({
+                ...w,
+                workoutIds: w.workoutIds.filter((wid) => wid !== id),
+              })),
+              workouts,
+            };
+          }),
+        ),
 
       setPreferences: (patch) =>
-        set({
-          preferences: { ...get().preferences, ...patch },
-          lastModified: nowISO(),
-        }),
+        set((s) => ({ preferences: { ...s.preferences, ...patch } })),
 
       exportData: () => {
-        const { plan, preferences } = get();
-        if (!plan) return "";
-        return serializeExport(plan, preferences);
+        const { plans, activePlanId, preferences } = get();
+        if (Object.keys(plans).length === 0) return "";
+        return serializeExport(plans, activePlanId, preferences);
       },
 
       importData: (json) => {
-        const { plan, preferences } = parseImport(json);
-        set({
-          plan: migratePlan(plan),
-          ...(preferences ? { preferences } : {}),
+        const { plans, activePlanId, preferences } = parseImport(json);
+        set((s) => ({
+          plans,
+          activePlanId,
+          preferences: preferences
+            ? { ...s.preferences, ...preferences }
+            : s.preferences,
           lastModified: nowISO(),
-        });
+        }));
       },
 
       applyRemote: (json, modifiedTime) => {
-        const { plan, preferences } = parseImport(json);
-        // Stamp with the remote's time (not now) so we don't immediately
-        // consider local "newer" and push it straight back.
-        set({
-          plan: migratePlan(plan),
-          ...(preferences ? { preferences } : {}),
+        const { plans, activePlanId, preferences } = parseImport(json);
+        set((s) => ({
+          plans,
+          activePlanId,
+          preferences: preferences
+            ? { ...s.preferences, ...preferences }
+            : s.preferences,
           lastModified: modifiedTime,
-        });
+        }));
       },
     }),
     {
       name: STORAGE_KEY,
+      version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        plan: state.plan,
+        plans: state.plans,
+        activePlanId: state.activePlanId,
         preferences: state.preferences,
         lastModified: state.lastModified,
       }),
+      // v0 stored a single `plan` + race metadata in `preferences`.
+      migrate: (persisted, version) => {
+        const old = persisted as Record<string, unknown> | undefined;
+        if (version === 0 && old && old.plan) {
+          const p = old.plan as TrainingPlan;
+          const prefs = (old.preferences ?? {}) as Record<string, string>;
+          const id = p.id ?? newId();
+          const plan: TrainingPlan = {
+            ...DEFAULT_PLAN_META,
+            ...p,
+            id,
+            name: DEFAULT_PLAN_META.name,
+            raceName: prefs.raceName ?? DEFAULT_PLAN_META.raceName,
+            raceDate: p.raceDate ?? prefs.raceDate ?? DEFAULT_PLAN_META.raceDate,
+            goalPace: prefs.goalPace ?? DEFAULT_PLAN_META.goalPace,
+            goalLabel: prefs.goalLabel ?? DEFAULT_PLAN_META.goalLabel,
+          };
+          return {
+            plans: { [id]: plan },
+            activePlanId: id,
+            preferences: { theme: (prefs.theme as Preferences["theme"]) ?? "system" },
+            lastModified: (old.lastModified as string) ?? nowISO(),
+          };
+        }
+        return persisted;
+      },
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
         state?.initializePlan();

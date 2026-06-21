@@ -5,11 +5,11 @@ import { StatCard } from "@/components/common/stat-card";
 import { LongRunProgressChart } from "@/components/stats/longrun-progress-chart";
 import { WeeklyTrendChart } from "@/components/stats/weekly-trend-chart";
 import { Card } from "@/components/ui/card";
+import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";
-import { useTrainingStore } from "@/store/use-training-store";
 
 export function StatsView() {
-  const plan = useTrainingStore((s) => s.plan);
+  const plan = useActivePlan();
   const stats = useStats(plan);
 
   if (!plan || !stats) return null;

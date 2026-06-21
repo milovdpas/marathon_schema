@@ -95,6 +95,15 @@ async function ensureTokenClient(): Promise<TokenClient> {
 }
 
 /**
+ * Preload the GIS script + token client so a later connect() can open its popup
+ * synchronously inside the click gesture (otherwise the browser blocks it).
+ */
+export async function prepareSync(): Promise<void> {
+  if (!isSyncConfigured()) return;
+  await ensureTokenClient();
+}
+
+/**
  * Request an access token. `prompt: "consent"` shows the account chooser (used
  * on explicit connect); `prompt: ""` attempts a silent grant (reconnect/refresh).
  */

@@ -210,9 +210,61 @@ function makeWorkout(
   };
 }
 
+export interface GeneratePlanOptions {
+  id?: string;
+  name?: string;
+  raceName?: string;
+  raceDate?: string;
+  goalPace?: string;
+  goalLabel?: string;
+  /** Completed runs to seed as history (primary plan only). */
+  seedRuns?: CompletedRunSeed[];
+}
+
+export const DEFAULT_PLAN_META = {
+  name: "Milo's Marathon",
+  raceName: "Marathon",
+  raceDate: RACE_DATE,
+  goalPace: "4:58",
+  goalLabel: "Sub-3:30",
+};
+
+/** Stable id for the primary (seeded) plan, so regeneration keeps the history. */
+export const DEFAULT_PLAN_ID = "milo-marathon";
+
+export interface CompletedRunSeed {
+  date: string; // ISO yyyy-mm-dd
+  type: WorkoutType;
+  title: string;
+  distanceKm: number;
+  pace: string; // "mm:ss" per km
+  durationMin: number;
+}
+
+/**
+ * Real completed runs to seed into the primary plan as training history.
+ * Edit this list to change the logged history.
+ */
+export const MILO_SEED_RUNS: CompletedRunSeed[] = [
+  // 12.16 km @ 4:49/km, 58:33
+  { date: "2026-06-09", type: "long", title: "Long run", distanceKm: 12.16, pace: "4:49", durationMin: 58.55 },
+  // 10.04 km @ 5:16/km (warm), 52:52
+  { date: "2026-06-18", type: "easy", title: "Easy run", distanceKm: 10.04, pace: "5:16", durationMin: 52.87 },
+];
+
+function newId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `plan-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+}
+
 /** Build the full default training plan from today's week through race week. */
-export function generateDefaultPlan(raceDate: string = RACE_DATE): TrainingPlan {
+export function generateDefaultPlan(
+  opts: GeneratePlanOptions = {},
+): TrainingPlan {
+  const raceDate = opts.raceDate ?? DEFAULT_PLAN_META.raceDate;
   const today = new Date();
+  const todayStr = toISO(today);
   const firstMonday = startOfWeek(today, { weekStartsOn: 1 });
   const raceWeekMonday = startOfWeek(fromISO(raceDate), { weekStartsOn: 1 });
 
@@ -245,6 +297,8 @@ export function generateDefaultPlan(raceDate: string = RACE_DATE): TrainingPlan 
 
     for (const { offset, planned: base } of dayMap) {
       const date = toISO(addDays(monday, offset));
+      // Don't emit planned sessions that are already in the past.
+      if (date < todayStr) continue;
       const adjusted = applySpecialPeriod(date, base);
       if (!adjusted) {
         if (base.type === "long") longAffected = true;
@@ -272,10 +326,50 @@ export function generateDefaultPlan(raceDate: string = RACE_DATE): TrainingPlan 
     });
   }
 
+  // Seed completed runs (training history). Added regardless of the skip-past
+  // rule above, since these actually happened.
+  for (const run of opts.seedRuns ?? []) {
+    const wid = `${run.date}-${run.type}-seed`;
+    const idx = weeks.findIndex(
+      (wk) => run.date >= wk.startDate && run.date <= wk.endDate,
+    );
+    workouts[wid] = {
+      id: wid,
+      date: run.date,
+      type: run.type,
+      title: run.title,
+      weekNumber: idx >= 0 ? weeks[idx].weekNumber : 0,
+      plannedDistanceKm: run.distanceKm,
+      plannedPace: run.pace,
+      actualDistanceKm: run.distanceKm,
+      actualPace: run.pace,
+      durationMin: run.durationMin,
+      completed: true,
+      isCustom: true,
+    };
+    if (idx >= 0) weeks[idx].workoutIds.push(wid);
+  }
+
+  // Keep each week's workouts in chronological order.
+  for (const wk of weeks) {
+    wk.workoutIds.sort((a, b) =>
+      workouts[a].date < workouts[b].date
+        ? -1
+        : workouts[a].date > workouts[b].date
+          ? 1
+          : 0,
+    );
+  }
+
   return {
+    id: opts.id ?? newId(),
+    name: opts.name ?? DEFAULT_PLAN_META.name,
+    raceName: opts.raceName ?? DEFAULT_PLAN_META.raceName,
+    raceDate,
+    goalPace: opts.goalPace ?? DEFAULT_PLAN_META.goalPace,
+    goalLabel: opts.goalLabel ?? DEFAULT_PLAN_META.goalLabel,
     version: PLAN_VERSION,
     createdAt: new Date().toISOString(),
-    raceDate,
     weeks,
     workouts,
   };

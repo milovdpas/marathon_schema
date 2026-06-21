@@ -9,13 +9,13 @@ import { useTrainingStore } from "@/store/use-training-store";
  */
 export function useHydrated(): boolean {
   const hydrated = useTrainingStore((s) => s.hydrated);
-  const plan = useTrainingStore((s) => s.plan);
+  const hasPlans = useTrainingStore((s) => Object.keys(s.plans).length > 0);
   const initializePlan = useTrainingStore((s) => s.initializePlan);
 
   // Safety net: ensure a plan exists once hydrated (e.g. first ever visit).
   useEffect(() => {
-    if (hydrated && !plan) initializePlan();
-  }, [hydrated, plan, initializePlan]);
+    if (hydrated && !hasPlans) initializePlan();
+  }, [hydrated, hasPlans, initializePlan]);
 
   return hydrated;
 }

@@ -38,8 +38,10 @@ export function useStats(plan: TrainingPlan | null) {
   }, [plan]);
 }
 
-/** Convenience hook reading the plan straight from the store. */
+/** Convenience hook reading the active plan straight from the store. */
 export function usePlanStats() {
-  const plan = useTrainingStore((s) => s.plan);
+  const plan = useTrainingStore((s) =>
+    s.activePlanId ? (s.plans[s.activePlanId] ?? null) : null,
+  );
   return useStats(plan);
 }

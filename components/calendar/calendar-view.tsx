@@ -22,12 +22,13 @@ import { Card } from "@/components/ui/card";
 import { toISO } from "@/lib/date";
 import type { Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useActivePlan } from "@/hooks/use-active-plan";
 import { useTrainingStore } from "@/store/use-training-store";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function CalendarView() {
-  const plan = useTrainingStore((s) => s.plan);
+  const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
 
   const [month, setMonth] = useState(() => startOfMonth(new Date()));

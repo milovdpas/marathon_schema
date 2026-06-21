@@ -38,16 +38,21 @@ export interface TrainingWeek {
 
 export interface Preferences {
   theme: "light" | "dark" | "system";
-  raceName: string;
+}
+
+/** Editable per-plan metadata (race + goal), independent of the schedule. */
+export interface PlanMeta {
+  name: string; // "Milo's Marathon"
+  raceName: string; // "Marathon"
   raceDate: string; // "2026-10-11"
   goalPace: string; // "4:58"
   goalLabel: string; // "Sub-3:30"
 }
 
-export interface TrainingPlan {
+export interface TrainingPlan extends PlanMeta {
+  id: string;
   version: number; // schema version, for export / migration
   createdAt: string;
-  raceDate: string;
   weeks: TrainingWeek[];
   workouts: Record<string, Workout>; // keyed by id
 }

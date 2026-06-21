@@ -8,18 +8,18 @@ import { StatCard } from "@/components/common/stat-card";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { Card } from "@/components/ui/card";
 import { fromISO, startOfToday } from "@/lib/date";
+import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function DashboardView() {
-  const plan = useTrainingStore((s) => s.plan);
-  const preferences = useTrainingStore((s) => s.preferences);
+  const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
   const stats = useStats(plan);
 
   if (!plan || !stats) return null;
 
-  const raceDate = preferences.raceDate;
+  const raceDate = plan.raceDate;
   const daysToRace = Math.max(
     0,
     differenceInCalendarDays(fromISO(raceDate), startOfToday()),
@@ -54,10 +54,10 @@ export function DashboardView() {
           </ProgressRing>
           <div className="flex-1 text-center sm:text-left">
             <p className="text-sm font-medium text-primary">
-              {preferences.goalLabel} · {preferences.goalPace}/km
+              {plan.goalLabel} · {plan.goalPace}/km
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight">
-              {preferences.raceName}
+              {plan.raceName}
             </h2>
             <p className="mt-0.5 flex items-center justify-center gap-1.5 text-sm text-muted-foreground sm:justify-start">
               <CalendarDays className="size-4" />

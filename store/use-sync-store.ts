@@ -9,6 +9,7 @@ import {
   getTokenExpiry,
   hasValidToken,
   isSyncConfigured,
+  prepareSync,
   requestToken,
   revokeToken,
   silentRefresh,
@@ -103,7 +104,7 @@ async function reconcile(): Promise<void> {
     const meta = await findFile();
 
     if (!meta) {
-      if (training.plan) {
+      if (training.activePlanId) {
         const created = await createFile(training.exportData());
         stampLocal(created.modifiedTime);
         useSyncStore.setState({ fileId: created.id });
@@ -130,7 +131,7 @@ async function reconcile(): Promise<void> {
 async function pushLocal(): Promise<void> {
   const sync = useSyncStore.getState();
   const training = useTrainingStore.getState();
-  if (!sync.connected || !training.plan) return;
+  if (!sync.connected || !training.activePlanId) return;
   useSyncStore.setState({ status: "syncing", error: null });
   try {
     await runDrive(async () => {
@@ -215,6 +216,8 @@ export const useSyncStore = create<SyncState>()(
       init: async () => {
         if (!isSyncConfigured()) return;
         bindListeners();
+        // Preload GIS so the Connect button's popup opens within the click gesture.
+        void prepareSync();
         if (!get().connected) return;
         await resume();
       },
@@ -224,8 +227,9 @@ export const useSyncStore = create<SyncState>()(
         bindListeners();
         set({ status: "connecting", error: null });
         try {
-          // Try silent first (returning users); fall back to the account chooser.
-          if (!(await silentRefresh())) await requestToken("consent");
+          // Open the account chooser directly (no await before it, so the click
+          // gesture isn't consumed and the popup isn't blocked).
+          await requestToken("consent");
           const user = await fetchUserInfo();
           set({ connected: true, needsReauth: false, user });
           scheduleProactiveRefresh();

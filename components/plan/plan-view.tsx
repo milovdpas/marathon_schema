@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { formatRange, todayISO } from "@/lib/date";
 import { PHASE_LABELS, type WeekPhase, type Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useActivePlan } from "@/hooks/use-active-plan";
 import { useTrainingStore } from "@/store/use-training-store";
 
 const PHASE_BADGE: Record<WeekPhase, string> = {
@@ -21,7 +22,7 @@ const PHASE_BADGE: Record<WeekPhase, string> = {
 };
 
 export function PlanView() {
-  const plan = useTrainingStore((s) => s.plan);
+  const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
 
   const today = todayISO();
@@ -53,9 +54,9 @@ export function PlanView() {
       </div>
 
       {plan.weeks.map((week) => {
-        const workouts = week.workoutIds
-          .map((id) => plan.workouts[id])
-          .filter(Boolean) as Workout[];
+        const workouts = (
+          week.workoutIds.map((id) => plan.workouts[id]).filter(Boolean) as Workout[]
+        ).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
         const planned = workouts.reduce((s, w) => s + w.plannedDistanceKm, 0);
         const done = workouts.filter((w) => w.completed).length;
         const isOpen = open.has(week.weekNumber);
