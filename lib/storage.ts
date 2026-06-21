@@ -64,6 +64,7 @@ function normalizePlan(
       raw.goalLabel ?? fallbackMeta?.goalLabel ?? DEFAULT_PLAN_META.goalLabel,
     version: raw.version ?? PLAN_VERSION,
     createdAt: raw.createdAt ?? new Date().toISOString(),
+    offDays: Array.isArray(raw.offDays) ? raw.offDays : [],
   };
 }
 

@@ -41,6 +41,8 @@ const AI_PROMPT = `Here is my marathon training plan as JSON.
 
 Change I want: [describe your change here — e.g. "I'm at a festival from 2026-08-14 to 2026-08-16 and can't train; move, shorten or remove those workouts and adjust the surrounding days so the build still makes sense"].
 
+The plan has an "offDays" list (vacations/trips with a note on whether I can train). Respect it: avoid scheduling hard or long sessions during those periods, and don't remove an off day unless I ask.
+
 You MAY freely reschedule, add, remove or modify any PLANNED (not-yet-completed) future workout to make this work.
 
 You MUST follow these rules:

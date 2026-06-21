@@ -7,6 +7,7 @@ import {
 } from "./date";
 import { paceToSeconds, secondsToPace } from "./pace";
 import type {
+  OffDay,
   TrainingPlan,
   TrainingWeek,
   WeekPhase,
@@ -219,6 +220,8 @@ export interface GeneratePlanOptions {
   goalLabel?: string;
   /** Completed runs to seed as history (primary plan only). */
   seedRuns?: CompletedRunSeed[];
+  /** Off-periods to attach to the plan. */
+  offDays?: OffDay[];
 }
 
 export const DEFAULT_PLAN_META = {
@@ -240,6 +243,34 @@ export interface CompletedRunSeed {
   pace: string; // "mm:ss" per km
   durationMin: number;
 }
+
+/**
+ * Default off-periods for the primary plan (vacations/trips that hinder
+ * training). Shown in the app and exported as context. Editable by the user.
+ */
+export const DEFAULT_OFF_DAYS: OffDay[] = [
+  {
+    id: "off-ghent",
+    start: "2026-07-03",
+    end: "2026-07-05",
+    title: "Vacation to Ghent",
+    note: "Likely no training",
+  },
+  {
+    id: "off-surf-spain",
+    start: "2026-07-24",
+    end: "2026-08-02",
+    title: "Surf trip to Spain",
+    note: "Very limited running",
+  },
+  {
+    id: "off-gran-canaria",
+    start: "2026-09-16",
+    end: "2026-09-23",
+    title: "Vacation to Gran Canaria",
+    note: "Reduced training possible",
+  },
+];
 
 /**
  * Real completed runs to seed into the primary plan as training history.
@@ -372,5 +403,6 @@ export function generateDefaultPlan(
     createdAt: new Date().toISOString(),
     weeks,
     workouts,
+    offDays: opts.offDays ?? [],
   };
 }

@@ -12,14 +12,14 @@ import {
   startOfWeek,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Umbrella } from "lucide-react";
 import { useMemo, useState } from "react";
 import { WorkoutTypeDot } from "@/components/common/workout-type-badge";
 import { DayDetailSheet } from "@/components/calendar/day-detail-sheet";
 import { WorkoutFormDialog } from "@/components/plan/workout-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { toISO } from "@/lib/date";
+import { offDayForDate, toISO } from "@/lib/date";
 import type { Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActivePlan } from "@/hooks/use-active-plan";
@@ -56,7 +56,11 @@ export function CalendarView() {
 
   if (!plan) return null;
 
+  const offDays = plan.offDays ?? [];
   const selectedWorkouts = selectedDate ? byDate.get(selectedDate) ?? [] : [];
+  const selectedOffDay = selectedDate
+    ? offDayForDate(offDays, selectedDate)
+    : undefined;
 
   return (
     <div className="space-y-4">
@@ -104,6 +108,7 @@ export function CalendarView() {
             const workouts = byDate.get(iso) ?? [];
             const inMonth = isSameMonth(day, month);
             const today = isToday(day);
+            const off = offDayForDate(offDays, iso);
             const allDone =
               workouts.length > 0 && workouts.every((w) => w.completed);
 
@@ -112,11 +117,13 @@ export function CalendarView() {
                 type="button"
                 key={iso}
                 onClick={() => setSelectedDate(iso)}
+                title={off?.title}
                 className={cn(
                   "flex aspect-square flex-col items-center justify-start gap-1 rounded-lg p-1 text-sm transition-colors hover:bg-accent",
                   !inMonth && "text-muted-foreground/40",
+                  off && "bg-tempo/10",
                   today && "ring-1 ring-primary",
-                  allDone && "bg-primary/5",
+                  allDone && !off && "bg-primary/5",
                 )}
               >
                 <span
@@ -128,6 +135,7 @@ export function CalendarView() {
                   {format(day, "d")}
                 </span>
                 <span className="flex flex-wrap items-center justify-center gap-0.5">
+                  {off ? <Umbrella className="size-3 text-tempo" /> : null}
                   {workouts.slice(0, 3).map((w) => (
                     <WorkoutTypeDot
                       key={w.id}
@@ -150,6 +158,7 @@ export function CalendarView() {
       <DayDetailSheet
         date={selectedDate}
         workouts={selectedWorkouts}
+        offDay={selectedOffDay}
         onOpenChange={(o) => !o && setSelectedDate(null)}
         onToggle={toggleComplete}
         onEdit={(w) => {

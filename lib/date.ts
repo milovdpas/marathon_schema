@@ -4,6 +4,7 @@ import {
   isWithinInterval,
   parseISO,
 } from "date-fns";
+import type { OffDay } from "./types";
 
 /** Canonical ISO (yyyy-mm-dd) string for a Date, in local time. */
 export function toISO(date: Date): string {
@@ -83,6 +84,15 @@ export const SPECIAL_PERIODS: SpecialPeriod[] = [
     severity: "reduced",
   },
 ];
+
+/** The off-day period covering a given ISO date, if any. */
+export function offDayForDate(
+  offDays: OffDay[] | undefined,
+  iso: string,
+): OffDay | undefined {
+  if (!offDays) return undefined;
+  return offDays.find((o) => iso >= o.start && iso <= o.end);
+}
 
 /** The special period covering a given ISO date, if any. */
 export function specialPeriodFor(iso: string): SpecialPeriod | undefined {

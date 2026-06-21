@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { paceFromDistanceDuration } from "@/lib/pace";
 import {
+  DEFAULT_OFF_DAYS,
   DEFAULT_PLAN_ID,
   DEFAULT_PLAN_META,
   generateDefaultPlan,
@@ -9,7 +10,13 @@ import {
   type GeneratePlanOptions,
 } from "@/lib/plan-generator";
 import { parseImport, serializeExport, STORAGE_KEY } from "@/lib/storage";
-import type { PlanMeta, Preferences, TrainingPlan, Workout } from "@/lib/types";
+import type {
+  OffDay,
+  PlanMeta,
+  Preferences,
+  TrainingPlan,
+  Workout,
+} from "@/lib/types";
 
 const DEFAULT_PREFERENCES: Preferences = { theme: "system" };
 const nowISO = () => new Date().toISOString();
@@ -37,6 +44,11 @@ interface TrainingState {
   deletePlan: (id: string) => void;
   updatePlanMeta: (patch: Partial<PlanMeta>) => void;
   regenerateActivePlan: () => void;
+
+  // Off days (operate on the active plan)
+  addOffDay: (input: Omit<OffDay, "id">) => void;
+  updateOffDay: (id: string, patch: Partial<Omit<OffDay, "id">>) => void;
+  deleteOffDay: (id: string) => void;
 
   // Workout edits (operate on the active plan)
   toggleComplete: (id: string) => void;
@@ -88,6 +100,7 @@ export const useTrainingStore = create<TrainingState>()(
         const plan = generateDefaultPlan({
           id: DEFAULT_PLAN_ID,
           seedRuns: MILO_SEED_RUNS,
+          offDays: DEFAULT_OFF_DAYS,
         });
         set({
           plans: { [plan.id]: plan },
@@ -144,9 +157,37 @@ export const useTrainingStore = create<TrainingState>()(
             goalPace: cur.goalPace,
             goalLabel: cur.goalLabel,
             seedRuns: isPrimary ? MILO_SEED_RUNS : undefined,
+            // Preserve the user's off days across a regenerate.
+            offDays: cur.offDays ?? [],
           });
           return { plans: { ...s.plans, [id]: fresh }, lastModified: nowISO() };
         }),
+
+      addOffDay: (input) =>
+        set((s) =>
+          mutateActive(s, (p) => ({
+            ...p,
+            offDays: [...(p.offDays ?? []), { ...input, id: newId() }],
+          })),
+        ),
+
+      updateOffDay: (id, patch) =>
+        set((s) =>
+          mutateActive(s, (p) => ({
+            ...p,
+            offDays: (p.offDays ?? []).map((o) =>
+              o.id === id ? { ...o, ...patch } : o,
+            ),
+          })),
+        ),
+
+      deleteOffDay: (id) =>
+        set((s) =>
+          mutateActive(s, (p) => ({
+            ...p,
+            offDays: (p.offDays ?? []).filter((o) => o.id !== id),
+          })),
+        ),
 
       toggleComplete: (id) =>
         set((s) =>
@@ -255,7 +296,7 @@ export const useTrainingStore = create<TrainingState>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,
@@ -263,12 +304,13 @@ export const useTrainingStore = create<TrainingState>()(
         preferences: state.preferences,
         lastModified: state.lastModified,
       }),
-      // v0 stored a single `plan` + race metadata in `preferences`.
       migrate: (persisted, version) => {
-        const old = persisted as Record<string, unknown> | undefined;
-        if (version === 0 && old && old.plan) {
-          const p = old.plan as TrainingPlan;
-          const prefs = (old.preferences ?? {}) as Record<string, string>;
+        let state = persisted as Record<string, unknown> | undefined;
+
+        // v0: a single `plan` + race metadata living in `preferences`.
+        if (version === 0 && state && state.plan) {
+          const p = state.plan as TrainingPlan;
+          const prefs = (state.preferences ?? {}) as Record<string, string>;
           const id = p.id ?? newId();
           const plan: TrainingPlan = {
             ...DEFAULT_PLAN_META,
@@ -280,14 +322,30 @@ export const useTrainingStore = create<TrainingState>()(
             goalPace: prefs.goalPace ?? DEFAULT_PLAN_META.goalPace,
             goalLabel: prefs.goalLabel ?? DEFAULT_PLAN_META.goalLabel,
           };
-          return {
+          state = {
             plans: { [id]: plan },
             activePlanId: id,
             preferences: { theme: (prefs.theme as Preferences["theme"]) ?? "system" },
-            lastModified: (old.lastModified as string) ?? nowISO(),
+            lastModified: (state.lastModified as string) ?? nowISO(),
           };
         }
-        return persisted;
+
+        // v1 → v2: add `offDays` to plans that lack it, without touching
+        // workouts. The primary plan gets the default off-periods seeded.
+        if (state && state.plans) {
+          const plans = { ...(state.plans as Record<string, TrainingPlan>) };
+          for (const [key, plan] of Object.entries(plans)) {
+            if (!Array.isArray(plan.offDays)) {
+              const isPrimary =
+                plan.id === DEFAULT_PLAN_ID ||
+                plan.name === DEFAULT_PLAN_META.name;
+              plans[key] = { ...plan, offDays: isPrimary ? DEFAULT_OFF_DAYS : [] };
+            }
+          }
+          state = { ...state, plans };
+        }
+
+        return state;
       },
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);

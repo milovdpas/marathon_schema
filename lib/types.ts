@@ -49,12 +49,22 @@ export interface PlanMeta {
   goalLabel: string; // "Sub-3:30"
 }
 
+/** A period that may hinder training (vacation, trip, etc.) — context only. */
+export interface OffDay {
+  id: string;
+  start: string; // ISO yyyy-mm-dd
+  end: string; // ISO yyyy-mm-dd (inclusive)
+  title: string; // "Vacation to Ghent"
+  note?: string; // "Likely no training"
+}
+
 export interface TrainingPlan extends PlanMeta {
   id: string;
   version: number; // schema version, for export / migration
   createdAt: string;
   weeks: TrainingWeek[];
   workouts: Record<string, Workout>; // keyed by id
+  offDays: OffDay[];
 }
 
 export const WORKOUT_TYPES: WorkoutType[] = [

@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { Plus } from "lucide-react";
+import { Plus, Umbrella } from "lucide-react";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +12,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { fromISO } from "@/lib/date";
-import type { Workout } from "@/lib/types";
+import type { OffDay, Workout } from "@/lib/types";
 
 export function DayDetailSheet({
   date,
   workouts,
+  offDay,
   onOpenChange,
   onToggle,
   onEdit,
@@ -24,6 +25,7 @@ export function DayDetailSheet({
 }: {
   date: string | null;
   workouts: Workout[];
+  offDay?: OffDay;
   onOpenChange: (open: boolean) => void;
   onToggle: (id: string) => void;
   onEdit: (w: Workout) => void;
@@ -42,6 +44,17 @@ export function DayDetailSheet({
         </SheetHeader>
 
         <div className="space-y-2 overflow-y-auto px-4 pb-4">
+          {offDay ? (
+            <div className="flex items-start gap-2 rounded-lg border border-tempo/30 bg-tempo/10 px-3 py-2">
+              <Umbrella className="mt-0.5 size-4 shrink-0 text-tempo" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{offDay.title}</p>
+                {offDay.note ? (
+                  <p className="text-xs text-muted-foreground">{offDay.note}</p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
           {workouts.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Nothing scheduled this day.
