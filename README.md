@@ -6,6 +6,8 @@ No backend, no login. Everything lives in your browser's **localStorage**. Deplo
 
 > Design language: **Strava × Notion** — calm surfaces, data-dense cards, an orange race-day accent, and full dark mode.
 
+> **Developers / AI agents:** start with [`docs/architecture.md`](docs/architecture.md) — the authoritative guide to the data model, state, flows, and conventions. This README is a user-facing overview and may lag behind newer features (multi-plan, the AI plan wizard, flexible periods, onboarding, Google Drive sync, English/Dutch i18n).
+
 ---
 
 ## Screenshots
