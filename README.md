@@ -20,9 +20,13 @@ No backend, no login. Everything lives in your browser's **localStorage**. Deplo
 | --- | --- | --- |
 | ![Plan](docs/screenshots/plan-light.png) | ![Calendar](docs/screenshots/calendar-light.png) | ![Stats](docs/screenshots/stats-light.png) |
 
-| Calendar (dark) | Stats (dark) | Settings |
+| Off days | Settings | Add-plan wizard |
 | --- | --- | --- |
-| ![Calendar dark](docs/screenshots/calendar-dark.png) | ![Stats dark](docs/screenshots/stats-dark.png) | ![Settings](docs/screenshots/settings-light.png) |
+| ![Off days](docs/screenshots/off-days.png) | ![Settings](docs/screenshots/settings-light.png) | ![Add-plan wizard](docs/screenshots/wizard-step3.png) |
+
+| Calendar (dark) | Stats (dark) | Dashboard (Dutch) |
+| --- | --- | --- |
+| ![Calendar dark](docs/screenshots/calendar-dark.png) | ![Stats dark](docs/screenshots/stats-dark.png) | ![Dashboard Dutch](docs/screenshots/dashboard-nl.png) |
 
 ---
 
