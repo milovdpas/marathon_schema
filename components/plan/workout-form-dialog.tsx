@@ -22,8 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { paceFromDistanceDuration } from "@/lib/pace";
+import {
+  formatClock,
+  paceFromDistanceDuration,
+  paceToSeconds,
+  parseDurationToMinutes,
+} from "@/lib/pace";
 import { WORKOUT_TYPES, type Workout, type WorkoutType } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { useTrainingStore } from "@/store/use-training-store";
 
 interface FormState {
@@ -37,6 +43,9 @@ interface FormState {
   actualPace: string;
   notes: string;
   completed: boolean;
+  flexible: boolean;
+  windowStart: string;
+  windowEnd: string;
 }
 
 function blankForm(defaultDate: string): FormState {
@@ -51,6 +60,9 @@ function blankForm(defaultDate: string): FormState {
     actualPace: "",
     notes: "",
     completed: false,
+    flexible: false,
+    windowStart: "",
+    windowEnd: "",
   };
 }
 
@@ -62,10 +74,13 @@ function fromWorkout(w: Workout): FormState {
     plannedDistanceKm: String(w.plannedDistanceKm ?? ""),
     plannedPace: w.plannedPace ?? "",
     actualDistanceKm: w.actualDistanceKm != null ? String(w.actualDistanceKm) : "",
-    durationMin: w.durationMin != null ? String(w.durationMin) : "",
+    durationMin: formatClock(w.durationMin),
     actualPace: w.actualPace ?? "",
     notes: w.notes ?? "",
     completed: w.completed,
+    flexible: w.flexible ?? false,
+    windowStart: w.windowStart ?? "",
+    windowEnd: w.windowEnd ?? "",
   };
 }
 
@@ -92,6 +107,8 @@ export function WorkoutFormDialog({
 
   const isEdit = !!workout;
   const [form, setForm] = useState<FormState>(blankForm(defaultDate ?? ""));
+  // "plan" = schedule a future workout; "log" = record one you've done.
+  const [mode, setMode] = useState<"plan" | "log">("plan");
 
   // Reset the form to the target workout whenever the dialog opens (adjusting
   // state during render — the recommended alternative to a reset-in-effect).
@@ -99,6 +116,7 @@ export function WorkoutFormDialog({
   if (open && !wasOpen) {
     setWasOpen(true);
     setForm(workout ? fromWorkout(workout) : blankForm(defaultDate ?? ""));
+    setMode(workout?.completed ? "log" : "plan");
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
@@ -106,37 +124,74 @@ export function WorkoutFormDialog({
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const derivedPace = paceFromDistanceDuration(
-    num(form.actualDistanceKm),
-    num(form.durationMin),
-  );
+  // Log mode: distance + (duration OR pace) computes & locks the third field.
+  const logDistance = num(form.actualDistanceKm);
+  const logDurationMin = parseDurationToMinutes(form.durationMin);
+  const logPaceSecs = paceToSeconds(form.actualPace);
+  const hasDuration = form.durationMin.trim() !== "" && logDurationMin != null;
+  const hasPace = form.actualPace.trim() !== "" && logPaceSecs != null;
+  const paceComputed = !!logDistance && hasDuration;
+  const durationComputed = !!logDistance && !hasDuration && hasPace;
+  const paceFieldValue = paceComputed
+    ? (paceFromDistanceDuration(logDistance, logDurationMin ?? undefined) ?? "")
+    : form.actualPace;
+  const durationFieldValue = durationComputed
+    ? formatClock(((logPaceSecs ?? 0) * (logDistance ?? 0)) / 60)
+    : form.durationMin;
 
   const handleSave = () => {
-    const plannedDistanceKm = num(form.plannedDistanceKm) ?? 0;
-    const actualDistanceKm = num(form.actualDistanceKm);
-    const durationMin = num(form.durationMin);
-    const actualPace =
-      form.actualPace.trim() ||
-      paceFromDistanceDuration(actualDistanceKm, durationMin) ||
-      undefined;
+    const title = form.title.trim() || t(`workoutType.${form.type}`);
+    let payload: Partial<Workout> & { type: Workout["type"]; date: string };
 
-    const common = {
-      date: form.date,
-      type: form.type,
-      title: form.title.trim() || t(`workoutType.${form.type}`),
-      plannedDistanceKm,
-      plannedPace: form.plannedPace.trim() || undefined,
-      actualDistanceKm,
-      durationMin,
-      actualPace,
-      notes: form.notes.trim() || undefined,
-      completed: form.completed,
-    };
+    if (mode === "log") {
+      // Logging something you did: record the actuals, mark it complete.
+      const actualDistanceKm = num(form.actualDistanceKm);
+      let durationMin = parseDurationToMinutes(form.durationMin);
+      let actualPace = form.actualPace.trim() || undefined;
+      // Fill in whichever of duration/pace is missing from the other two.
+      if (actualDistanceKm) {
+        if (durationMin != null) {
+          actualPace =
+            paceFromDistanceDuration(actualDistanceKm, durationMin) ?? actualPace;
+        } else if (actualPace) {
+          const ps = paceToSeconds(actualPace);
+          if (ps != null) durationMin = (ps * actualDistanceKm) / 60;
+        }
+      }
+      payload = {
+        date: form.date,
+        type: form.type,
+        title,
+        actualDistanceKm,
+        durationMin,
+        actualPace,
+        notes: form.notes.trim() || undefined,
+        completed: form.completed,
+        // A logged activity has a concrete date.
+        flexible: undefined,
+        windowStart: undefined,
+        windowEnd: undefined,
+      };
+    } else {
+      // Planning a workout: only planned targets + scheduling.
+      const flexible = form.flexible;
+      payload = {
+        date: flexible ? form.windowStart || form.date : form.date,
+        type: form.type,
+        title,
+        plannedDistanceKm: num(form.plannedDistanceKm) ?? 0,
+        plannedPace: form.plannedPace.trim() || undefined,
+        completed: false,
+        flexible: flexible || undefined,
+        windowStart: flexible ? form.windowStart || undefined : undefined,
+        windowEnd: flexible ? form.windowEnd || undefined : undefined,
+      };
+    }
 
     if (isEdit && workout) {
-      updateWorkout(workout.id, common);
+      updateWorkout(workout.id, payload);
     } else {
-      addWorkout(common);
+      addWorkout(payload as Parameters<typeof addWorkout>[0]);
     }
     onOpenChange(false);
   };
@@ -159,32 +214,45 @@ export function WorkoutFormDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-1">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t("workoutForm.date")}>
-              <Input
-                type="date"
-                value={form.date}
-                onChange={(e) => set("date", e.target.value)}
-              />
-            </Field>
-            <Field label={t("workoutForm.type")}>
-              <Select
-                value={form.type}
-                onValueChange={(v) => set("type", v as WorkoutType)}
+          {/* Mode: plan a future workout vs. log one you've done */}
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            {(["plan", "log"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMode(m);
+                  if (m === "log" && !form.completed) set("completed", true);
+                }}
+                className={cn(
+                  "rounded-md py-1.5 text-sm font-medium transition-colors",
+                  mode === m
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {WORKOUT_TYPES.map((ty) => (
-                    <SelectItem key={ty} value={ty}>
-                      {t(`workoutType.${ty}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+                {m === "plan" ? t("workoutForm.modePlan") : t("workoutForm.modeLog")}
+              </button>
+            ))}
           </div>
+
+          <Field label={t("workoutForm.type")}>
+            <Select
+              value={form.type}
+              onValueChange={(v) => set("type", v as WorkoutType)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WORKOUT_TYPES.map((ty) => (
+                  <SelectItem key={ty} value={ty}>
+                    {t(`workoutType.${ty}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
 
           <Field label={t("workoutForm.titleLabel")}>
             <Input
@@ -194,35 +262,73 @@ export function WorkoutFormDialog({
             />
           </Field>
 
-          <fieldset className="rounded-lg border p-3">
-            <legend className="px-1 text-xs font-medium text-muted-foreground">
-              {t("workoutForm.planned")}
-            </legend>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t("workoutForm.distanceKm")}>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.1"
-                  value={form.plannedDistanceKm}
-                  onChange={(e) => set("plannedDistanceKm", e.target.value)}
+          {mode === "plan" ? (
+            <>
+              {/* Scheduling: a single day, or a flexible window */}
+              <label className="flex items-center justify-between rounded-lg border px-3 py-2.5">
+                <span className="text-sm font-medium">
+                  {t("workoutForm.flexible")}
+                </span>
+                <Switch
+                  checked={form.flexible}
+                  onCheckedChange={(v) => set("flexible", v)}
                 />
-              </Field>
-              <Field label={t("workoutForm.paceLabel")}>
-                <Input
-                  placeholder="4:58"
-                  value={form.plannedPace}
-                  onChange={(e) => set("plannedPace", e.target.value)}
-                />
-              </Field>
-            </div>
-          </fieldset>
+              </label>
+              {form.flexible ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t("workoutForm.windowStart")}>
+                    <Input
+                      type="date"
+                      value={form.windowStart}
+                      onChange={(e) => set("windowStart", e.target.value)}
+                    />
+                  </Field>
+                  <Field label={t("workoutForm.windowEnd")}>
+                    <Input
+                      type="date"
+                      value={form.windowEnd}
+                      onChange={(e) => set("windowEnd", e.target.value)}
+                    />
+                  </Field>
+                </div>
+              ) : (
+                <Field label={t("workoutForm.date")}>
+                  <Input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => set("date", e.target.value)}
+                  />
+                </Field>
+              )}
 
-          <fieldset className="rounded-lg border p-3">
-            <legend className="px-1 text-xs font-medium text-muted-foreground">
-              {t("workoutForm.actual")}
-            </legend>
-            <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t("workoutForm.distanceKm")}>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    value={form.plannedDistanceKm}
+                    onChange={(e) => set("plannedDistanceKm", e.target.value)}
+                  />
+                </Field>
+                <Field label={t("workoutForm.paceLabel")}>
+                  <Input
+                    placeholder="4:58"
+                    value={form.plannedPace}
+                    onChange={(e) => set("plannedPace", e.target.value)}
+                  />
+                </Field>
+              </div>
+            </>
+          ) : (
+            <>
+              <Field label={t("workoutForm.date")}>
+                <Input
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => set("date", e.target.value)}
+                />
+              </Field>
               <Field label={t("workoutForm.distanceKm")}>
                 <Input
                   type="number"
@@ -232,48 +338,51 @@ export function WorkoutFormDialog({
                   onChange={(e) => set("actualDistanceKm", e.target.value)}
                 />
               </Field>
-              <Field label={t("workoutForm.durationMin")}>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="1"
-                  value={form.durationMin}
-                  onChange={(e) => set("durationMin", e.target.value)}
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t("workoutForm.durationMin")}>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="mm:ss"
+                    readOnly={durationComputed}
+                    aria-readonly={durationComputed}
+                    className={durationComputed ? "bg-muted text-muted-foreground" : undefined}
+                    value={durationFieldValue}
+                    onChange={(e) => set("durationMin", e.target.value)}
+                  />
+                </Field>
+                <Field label={t("workoutForm.paceLabel")}>
+                  <Input
+                    placeholder="4:58"
+                    readOnly={paceComputed}
+                    aria-readonly={paceComputed}
+                    className={paceComputed ? "bg-muted text-muted-foreground" : undefined}
+                    value={paceFieldValue}
+                    onChange={(e) => set("actualPace", e.target.value)}
+                  />
+                </Field>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("workoutForm.computeHint")}
+              </p>
+              <Field label={t("workoutForm.notes")}>
+                <textarea
+                  className="min-h-16 w-full resize-y rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  placeholder={t("workoutForm.notesPlaceholder")}
+                  value={form.notes}
+                  onChange={(e) => set("notes", e.target.value)}
                 />
               </Field>
-            </div>
-            <div className="mt-3">
-              <Field label={t("workoutForm.paceLabel")}>
-                <Input
-                  placeholder={derivedPace ?? t("workoutForm.paceAuto")}
-                  value={form.actualPace}
-                  onChange={(e) => set("actualPace", e.target.value)}
+              <label className="flex items-center justify-between rounded-lg border px-3 py-2.5">
+                <span className="text-sm font-medium">
+                  {t("workoutForm.completed")}
+                </span>
+                <Switch
+                  checked={form.completed}
+                  onCheckedChange={(v) => set("completed", v)}
                 />
-              </Field>
-              {derivedPace && !form.actualPace ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t("workoutForm.willCompute", { pace: derivedPace })}
-                </p>
-              ) : null}
-            </div>
-          </fieldset>
-
-          <Field label={t("workoutForm.notes")}>
-            <textarea
-              className="min-h-16 w-full resize-y rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              placeholder={t("workoutForm.notesPlaceholder")}
-              value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
-            />
-          </Field>
-
-          <label className="flex items-center justify-between rounded-lg border px-3 py-2.5">
-            <span className="text-sm font-medium">{t("workoutForm.completed")}</span>
-            <Switch
-              checked={form.completed}
-              onCheckedChange={(v) => set("completed", v)}
-            />
-          </label>
+              </label>
+            </>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between">

@@ -1,10 +1,12 @@
 "use client";
 
 import { format } from "date-fns";
-import { Check, Copy, Download, RefreshCw, Sparkles, Trash2, Upload } from "lucide-react";
+import { Check, Copy, Download, Plus, RefreshCw, Sparkles, Trash2, Upload } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TrainingPrefsFields } from "@/components/common/training-prefs-fields";
 import { CloudSyncCard } from "@/components/settings/cloud-sync-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { LOCALE_LABELS, LOCALES, type Locale } from "@/lib/i18n";
+import { DEFAULT_TRAINING_PREFS } from "@/lib/plan-generator";
 import { downloadJSON } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -47,6 +50,7 @@ export function SettingsView() {
   const selectPlan = useTrainingStore((s) => s.selectPlan);
   const deletePlan = useTrainingStore((s) => s.deletePlan);
   const updatePlanMeta = useTrainingStore((s) => s.updatePlanMeta);
+  const updateTrainingPrefs = useTrainingStore((s) => s.updateTrainingPrefs);
   const regenerateActivePlan = useTrainingStore((s) => s.regenerateActivePlan);
   const exportData = useTrainingStore((s) => s.exportData);
   const importData = useTrainingStore((s) => s.importData);
@@ -54,6 +58,7 @@ export function SettingsView() {
   const setPreferences = useTrainingStore((s) => s.setPreferences);
 
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [importText, setImportText] = useState("");
   const [copied, setCopied] = useState(false);
@@ -104,7 +109,12 @@ export function SettingsView() {
     <div className="space-y-5">
       {/* Plans */}
       <Card className="gap-0 p-4">
-        <h3 className="mb-3 text-sm font-semibold">{t("settings.plans")}</h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">{t("settings.plans")}</h3>
+          <Button size="sm" onClick={() => router.push("/plan/new")}>
+            <Plus className="size-4" /> {t("settings.addPlan")}
+          </Button>
+        </div>
         <Label className="text-xs text-muted-foreground">
           {t("settings.activePlan")}
         </Label>
@@ -188,6 +198,26 @@ export function SettingsView() {
                 onChange={(e) => updatePlanMeta({ raceName: e.target.value })}
               />
             </Field>
+            <Field label={t("settings.raceDistance")}>
+              <Input
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={activePlan.raceDistanceKm}
+                onChange={(e) =>
+                  updatePlanMeta({
+                    raceDistanceKm: Number(e.target.value) || 0,
+                  })
+                }
+              />
+            </Field>
+            <Field label={t("settings.startDate")}>
+              <Input
+                type="date"
+                value={activePlan.startDate ?? ""}
+                onChange={(e) => updatePlanMeta({ startDate: e.target.value })}
+              />
+            </Field>
             <Field label={t("settings.raceDate")}>
               <Input
                 type="date"
@@ -211,6 +241,19 @@ export function SettingsView() {
           <p className="mt-2 text-xs text-muted-foreground">
             {t("settings.raceDateNote")}
           </p>
+        </Card>
+      ) : null}
+
+      {/* Training preferences (active plan) */}
+      {activePlan ? (
+        <Card className="gap-0 p-4">
+          <h3 className="mb-3 text-sm font-semibold">
+            {t("settings.trainingPrefs")}
+          </h3>
+          <TrainingPrefsFields
+            prefs={activePlan.trainingPrefs ?? DEFAULT_TRAINING_PREFS}
+            onChange={(patch) => updateTrainingPrefs(patch)}
+          />
         </Card>
       ) : null}
 

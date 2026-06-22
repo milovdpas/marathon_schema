@@ -25,6 +25,22 @@ export function formatPace(pace?: string | null): string {
   return `${secondsToPace(secs)}/km`;
 }
 
+/** Parse a total time ("h:mm:ss", "mm:ss", or plain minutes) into minutes. */
+export function parseDurationToMinutes(input?: string | null): number | undefined {
+  if (!input) return undefined;
+  const s = input.trim();
+  if (s === "") return undefined;
+  if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s); // plain minutes
+  const parts = s.split(":").map((x) => Number(x));
+  if (parts.some((n) => Number.isNaN(n))) return undefined;
+  let seconds: number;
+  if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
+  else if (parts.length === 3)
+    seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+  else return undefined;
+  return seconds / 60;
+}
+
 /** Derive pace (s/km) from distance (km) and duration (minutes). */
 export function paceFromDistanceDuration(
   distanceKm?: number,
@@ -43,6 +59,17 @@ export function durationFromDistancePace(
   const secs = paceToSeconds(pace);
   if (!distanceKm || secs == null) return undefined;
   return Math.round((distanceKm * secs) / 60);
+}
+
+/** Format total minutes as a clock string: "mm:ss" or "h:mm:ss". */
+export function formatClock(minutes?: number | null): string {
+  if (minutes == null || !isFinite(minutes) || minutes <= 0) return "";
+  const totalSec = Math.round(minutes * 60);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
 /** Format minutes as "1h 23m" or "45m". */

@@ -78,6 +78,8 @@ export const nl: Dict = {
     addTitle: "Training toevoegen",
     editDesc: "Pas geplande doelen aan of leg vast wat je echt liep.",
     addDesc: "Voeg een eigen training toe aan je plan.",
+    modePlan: "Inplannen",
+    modeLog: "Loggen",
     date: "Datum",
     type: "Type",
     titleLabel: "Titel",
@@ -86,9 +88,10 @@ export const nl: Dict = {
     distanceKm: "Afstand (km)",
     paceLabel: "Tempo (mm:ss)",
     actual: "Werkelijk",
-    durationMin: "Duur (min)",
+    durationMin: "Duur (mm:ss)",
     paceAuto: "automatisch uit afstand + tijd",
     willCompute: "Wordt berekend op {{pace}}/km",
+    computeHint: "Vul afstand + duur óf tempo in — de derde wordt automatisch berekend.",
     notes: "Notities",
     notesPlaceholder: "Hoe voelde het?",
     completed: "Voltooid",
@@ -152,8 +155,11 @@ export const nl: Dict = {
     deletePlanDesc:
       "Dit verwijdert “{{name}}” en de bijbehorende voortgang permanent. Dit kan niet ongedaan worden gemaakt.",
     raceDetails: "Wedstrijdgegevens",
+    trainingPrefs: "Trainingsvoorkeuren",
     planName: "Plannaam",
     raceName: "Wedstrijdnaam",
+    raceDistance: "Wedstrijdafstand (km)",
+    startDate: "Startdatum",
     raceDate: "Wedstrijddatum",
     goalLabel: "Doel-label",
     goalPace: "Doeltempo (mm:ss /km)",
@@ -223,5 +229,137 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     connectBody:
       "Verbind je Google-account om je voortgang naar Drive te back-uppen en te synchroniseren tussen apparaten. Zonder dit blijven gegevens lokaal in deze browser.",
     connect: "Verbind Google Drive",
+  },
+  onboarding: {
+    planTitle: "Welkom! 👋",
+    planBody:
+      "Op naar de startstreep. Wil je nu je trainingsplan opbouwen?",
+    createPlan: "Maak mijn plan",
+    lookAround: "Even rondkijken",
+    driveTitle: "Synchroniseren tussen apparaten?",
+    driveBody:
+      "Verbind Google Drive om je voortgang te back-uppen en je plan op elk apparaat te zien.",
+    connect: "Verbind Google Drive",
+    notNow: "Niet nu",
+  },
+  wizard: {
+    title: "Een plan maken",
+    step: "Stap {{n}} van {{total}}",
+    back: "Terug",
+    next: "Volgende",
+    stepRace: "Wedstrijd",
+    stepOffDays: "Vrije dagen",
+    stepTraining: "Training",
+    stepAi: "Genereren met AI",
+    // Stap 1
+    planName: "Plannaam",
+    planNamePlaceholder: "bijv. Marathon van Berlijn",
+    raceName: "Wedstrijdnaam",
+    raceNamePlaceholder: "bijv. Marathon",
+    raceDistance: "Wedstrijdafstand",
+    distanceCustom: "Aangepast (km)",
+    raceDate: "Wedstrijddatum",
+    startDate: "Wanneer start je dit plan?",
+    startDateHint: "Het plan wordt vanaf deze datum opgebouwd — niet vanaf vandaag.",
+    goalQ: "Wat is je doel?",
+    goalFinish: "Gewoon uitlopen",
+    goalTime: "Streeftijd",
+    goalPace: "Streeftempo",
+    goalTimePlaceholder: "bijv. 3:45:00",
+    goalPacePlaceholder: "bijv. 5:20 /km",
+    // Stap 2
+    offDaysIntro:
+      "Voeg vakanties, reizen of drukke periodes toe die je training beperken. De AI plant eromheen.",
+    calendarSoon: "Verbind Google Agenda (binnenkort)",
+    // Stap 3
+    latestRuns: "Je laatste lopen",
+    latestRunsHint:
+      "Optioneel — geeft de AI een idee van je huidige conditie. Voeg een paar recente lopen toe.",
+    addRun: "Loop toevoegen",
+    runDistance: "Afstand (km)",
+    runTimePlaceholder: "Totale tijd (bijv. 50:43)",
+    runDate: "Datum",
+    daysPerWeek: "Trainingsdagen per week",
+    trainingDaysQ: "Op welke dagen wil je trainen?",
+    flexibleDays: "Ik ben flexibel — geen vaste dagen",
+    planningModeQ: "Hoe moeten trainingen worden ingepland?",
+    planningExact: "Exacte datums",
+    planningExactDesc: "Elke training staat vast op een specifieke dag.",
+    planningFlexible: "Flexibele periodes",
+    planningFlexibleDesc:
+      "Elke training krijgt een periode (bijv. ma–wo) en jij kiest de exacte dag.",
+    targetQ: "Afstand die je comfortabel wilt kunnen lopen vóór de wedstrijd",
+    targetUnknown: "Ik weet het niet — laat de AI beslissen",
+    targetKm: "Doelafstand (km)",
+    // Stap 4
+    aiIntro:
+      "Je planaanvraag is klaar. Geef het aan een AI-chatbot om het volledige schema te bouwen:",
+    aiStep1: "1. Exporteer de planaanvraag (of kopieer het) hieronder.",
+    aiStep2: "2. Kopieer de prompt en plak het in je AI-chatbot, met het geëxporteerde bestand erbij.",
+    aiStep3: "3. De AI geeft een plan terug als JSON — mogelijk stelt het eerst een paar vragen.",
+    aiStep4: "4. Plak of voeg die JSON hieronder toe en druk op Plan voltooien.",
+    exportRequest: "Aanvraag exporteren (JSON)",
+    copyRequest: "Aanvraag kopiëren",
+    copyPrompt: "Prompt kopiëren",
+    copied: "Gekopieerd",
+    importLabel: "Plak de plan-JSON van de AI",
+    attachFile: "Bestand toevoegen",
+    completePlan: "Plan voltooien",
+    completeError:
+      "Kon dit niet als plan lezen. Zorg dat het de JSON is die de AI teruggaf.",
+    aiPrompt: `Je bouwt een hardloop-trainingsplan voor mij. Ik voeg een plan-aanvraag-JSON toe met mijn wedstrijd en voorkeuren. Lees het en geef daarna een plan terug in EXACT onderstaand JSON-schema zodat ik het in mijn app kan importeren.
+
+Wat de velden in de bijgevoegde plan-aanvraag betekenen:
+- race.name: hoe het plan moet heten. race.raceName: de naam van de wedstrijd.
+- race.distanceKm: de wedstrijdafstand in kilometers.
+- race.date: wedstrijddag (YYYY-MM-DD).
+- startDate: de datum waarop ik dit plan begin (YYYY-MM-DD). Bouw week 1 vanaf deze datum — ga NIET uit van de datum van vandaag.
+- goal: mijn wedstrijddoel — { type: "finish" | "time" | "pace", value }. "finish" = gewoon uitlopen; "time" = streeftijd (value); "pace" = streeftempo per km (value). Gebruik dit om "goalPace"/"goalLabel" en de intensiteit te bepalen.
+- offDays[]: periodes waarin ik niet volledig kan trainen — { start, end, title, note }. De "note" zegt hoe beperkt (bijv. geen training / zeer beperkt / verminderd).
+- latestRuns[]: mijn recente lopen — { distanceKm, durationMin (TOTALE tijd van de loop, in minuten), pace (min/km, afgeleid uit afstand + totale tijd), date }. Gebruik deze om mijn conditie te schatten. Als dit leeg is, vraag me dan naar mijn conditie.
+- training.daysPerWeek: hoeveel dagen per week ik wil hardlopen.
+- training.trainingDays: de weekdagen waarop ik wil lopen (bijv. ["Monday","Wednesday"]). null betekent dat ik flexibel ben — kies dan zelf logische dagen.
+- training.flexibleDays: true als ik geen vaste trainingsdagen heb.
+- training.planningMode: "exact" = elke training vast op een specifieke dag; "flexible" = geef elke training een periode en ik kies zelf de exacte dag.
+- training.targetDistanceKm: de langste ENKELE lange duurloop die ik comfortabel wil halen vóór de wedstrijd (NIET mijn wekelijkse omvang). null betekent dat jij beslist op basis van de wedstrijdafstand.
+
+Uitvoer-schema (geef precies deze vorm terug, niets anders):
+{
+  "plans": {
+    "<planId>": {
+      "id": "<planId>",
+      "name": "<plannaam>",
+      "raceName": "<wedstrijdnaam>",
+      "raceDistanceKm": <getal>,
+      "raceDate": "YYYY-MM-DD",
+      "goalPace": "mm:ss",            // per km
+      "goalLabel": "<kort doel>",
+      "version": 1,
+      "createdAt": "<ISO datetime>",
+      "offDays": [ { "id": "...", "start": "YYYY-MM-DD", "end": "YYYY-MM-DD", "title": "...", "note": "..." } ],
+      "weeks": [ { "weekNumber": 1, "startDate": "YYYY-MM-DD(maandag)", "endDate": "YYYY-MM-DD(zondag)", "phase": "base|build|peak|taper|race|reduced", "label": "optioneel", "workoutIds": ["..."] } ],
+      "workouts": {
+        "<workoutId>": {
+          "id": "<workoutId>", "date": "YYYY-MM-DD", "type": "easy|tempo|interval|long|recovery",
+          "title": "...", "weekNumber": 1, "plannedDistanceKm": <getal>, "plannedPace": "mm:ss",
+          "completed": false
+          // Voor flexibele planning voeg ook toe: "flexible": true, "windowStart": "YYYY-MM-DD", "windowEnd": "YYYY-MM-DD"
+        }
+      }
+    }
+  },
+  "activePlanId": "<planId>"
+}
+
+Regels:
+- Weken lopen maandag→zondag. Week 1 begint op "startDate"; de lange duurloop van de laatste week is de wedstrijd op raceDate.
+- Plan trainingen op mijn voorkeursdagen; als ik flexibel ben, kies dan logische dagen.
+- Als planningMode "flexible" is: zet "flexible": true met "windowStart"/"windowEnd" op elke training, en houd de "date" binnen die periode.
+- Respecteer "offDays": vermijd zware/lange trainingen in die periodes (none/limited/reduced volgens de notitie).
+- Bouw lange duurlopen geleidelijk op naar mijn doelafstand, en bouw daarna af richting de wedstrijdweek.
+- Gebruik mijn laatste lopen om conditie en tempo's te schatten. Zet elke training op "completed": false.
+- Als mijn doeltijd/-tempo niet is gegeven, leid dan een logische "goalPace"/"goalLabel" af uit mijn laatste lopen en de wedstrijdafstand (of vraag het me eerst).
+- Het id van elke training moet in de "workoutIds" van zijn week staan, en de "date" moet binnen die week vallen.
+- Stel eerst eventuele verduidelijkende vragen en geef daarna ALLEEN de JSON terug.`,
   },
 };

@@ -16,6 +16,7 @@ import {
 import { ChevronLeft, ChevronRight, Umbrella } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { NoPlanState } from "@/components/common/no-plan-state";
 import { WorkoutTypeDot } from "@/components/common/workout-type-badge";
 import { DayDetailSheet } from "@/components/calendar/day-detail-sheet";
 import { WorkoutFormDialog } from "@/components/plan/workout-form-dialog";
@@ -65,7 +66,7 @@ export function CalendarView() {
     return eachDayOfInterval({ start, end });
   }, [month]);
 
-  if (!plan) return null;
+  if (!plan) return <NoPlanState />;
 
   const offDays = plan.offDays ?? [];
   const selectedWorkouts = selectedDate ? byDate.get(selectedDate) ?? [] : [];

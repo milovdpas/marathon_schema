@@ -2,6 +2,7 @@
 
 import { Gauge, Mountain, Route, Timer } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { NoPlanState } from "@/components/common/no-plan-state";
 import { StatCard } from "@/components/common/stat-card";
 import { LongRunProgressChart } from "@/components/stats/longrun-progress-chart";
 import { WeeklyTrendChart } from "@/components/stats/weekly-trend-chart";
@@ -14,7 +15,7 @@ export function StatsView() {
   const plan = useActivePlan();
   const stats = useStats(plan);
 
-  if (!plan || !stats) return null;
+  if (!plan || !stats) return <NoPlanState />;
   const { overall } = stats;
 
   return (

@@ -4,6 +4,7 @@ import { differenceInCalendarDays, format } from "date-fns";
 import { CalendarDays, Flame, Footprints, Target } from "lucide-react";
 import Link from "next/link";
 import { Trans, useTranslation } from "react-i18next";
+import { NoPlanState } from "@/components/common/no-plan-state";
 import { ProgressRing } from "@/components/common/progress-ring";
 import { StatCard } from "@/components/common/stat-card";
 import { WorkoutRow } from "@/components/common/workout-row";
@@ -20,7 +21,7 @@ export function DashboardView() {
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
   const stats = useStats(plan);
 
-  if (!plan || !stats) return null;
+  if (!plan || !stats) return <NoPlanState />;
 
   const raceDate = plan.raceDate;
   const daysToRace = Math.max(

@@ -9,6 +9,7 @@ import { paceToSeconds, secondsToPace } from "./pace";
 import type {
   OffDay,
   TrainingPlan,
+  TrainingPrefs,
   TrainingWeek,
   WeekPhase,
   Workout,
@@ -215,13 +216,16 @@ export interface GeneratePlanOptions {
   id?: string;
   name?: string;
   raceName?: string;
+  raceDistanceKm?: number;
   raceDate?: string;
+  startDate?: string;
   goalPace?: string;
   goalLabel?: string;
   /** Completed runs to seed as history (primary plan only). */
   seedRuns?: CompletedRunSeed[];
   /** Off-periods to attach to the plan. */
   offDays?: OffDay[];
+  trainingPrefs?: TrainingPrefs;
   /**
    * Anchor the plan's first week to this date instead of today. When set,
    * already-elapsed weeks/days are still generated (the skip-past rule is
@@ -235,6 +239,7 @@ export interface GeneratePlanOptions {
 export const DEFAULT_PLAN_META = {
   name: "Milo's Marathon",
   raceName: "Marathon",
+  raceDistanceKm: MARATHON_KM,
   raceDate: RACE_DATE,
   goalPace: "4:58",
   goalLabel: "Sub-3:30",
@@ -242,6 +247,14 @@ export const DEFAULT_PLAN_META = {
 
 /** Stable id for the primary (seeded) plan, so regeneration keeps the history. */
 export const DEFAULT_PLAN_ID = "milo-marathon";
+
+export const DEFAULT_TRAINING_PREFS: TrainingPrefs = {
+  daysPerWeek: 4,
+  flexibleDays: false,
+  trainingDays: [true, false, true, true, false, false, true], // Mon/Wed/Thu/Sun
+  planningMode: "exact",
+  targetDistanceKm: 30,
+};
 
 export interface CompletedRunSeed {
   date: string; // ISO yyyy-mm-dd
@@ -410,7 +423,9 @@ export function generateDefaultPlan(
     id: opts.id ?? newId(),
     name: opts.name ?? DEFAULT_PLAN_META.name,
     raceName: opts.raceName ?? DEFAULT_PLAN_META.raceName,
+    raceDistanceKm: opts.raceDistanceKm ?? DEFAULT_PLAN_META.raceDistanceKm,
     raceDate,
+    startDate: opts.startDate ?? toISO(firstMonday),
     goalPace: opts.goalPace ?? DEFAULT_PLAN_META.goalPace,
     goalLabel: opts.goalLabel ?? DEFAULT_PLAN_META.goalLabel,
     version: PLAN_VERSION,
@@ -418,5 +433,6 @@ export function generateDefaultPlan(
     weeks,
     workouts,
     offDays: opts.offDays ?? [],
+    trainingPrefs: opts.trainingPrefs ?? DEFAULT_TRAINING_PREFS,
   };
 }

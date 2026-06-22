@@ -76,6 +76,8 @@ export const en = {
     addTitle: "Add workout",
     editDesc: "Update planned targets or log what you actually ran.",
     addDesc: "Add a custom workout to your plan.",
+    modePlan: "Plan",
+    modeLog: "Log",
     date: "Date",
     type: "Type",
     titleLabel: "Title",
@@ -84,9 +86,10 @@ export const en = {
     distanceKm: "Distance (km)",
     paceLabel: "Pace (mm:ss)",
     actual: "Actual",
-    durationMin: "Duration (min)",
+    durationMin: "Duration (mm:ss)",
     paceAuto: "auto from distance + time",
     willCompute: "Will compute to {{pace}}/km",
+    computeHint: "Fill in distance + either duration or pace — the third is calculated automatically.",
     notes: "Notes",
     notesPlaceholder: "How did it feel?",
     completed: "Completed",
@@ -150,8 +153,11 @@ export const en = {
     deletePlanDesc:
       "This permanently removes “{{name}}” and its logged progress. This cannot be undone.",
     raceDetails: "Race details",
+    trainingPrefs: "Training preferences",
     planName: "Plan name",
     raceName: "Race name",
+    raceDistance: "Race distance (km)",
+    startDate: "Start date",
     raceDate: "Race date",
     goalLabel: "Goal label",
     goalPace: "Goal pace (mm:ss /km)",
@@ -220,6 +226,138 @@ JSON (paste below, or attach the exported .json file):
     connectBody:
       "Connect your Google account to back up your progress to Drive and sync it across devices. Without it, data stays local to this browser.",
     connect: "Connect Google Drive",
+  },
+  onboarding: {
+    planTitle: "Welcome! 👋",
+    planBody:
+      "Let's get you to the start line. Want to build your training plan now?",
+    createPlan: "Create my plan",
+    lookAround: "Just look around",
+    driveTitle: "Sync across devices?",
+    driveBody:
+      "Connect Google Drive to back up your progress and pick up your plan on any device.",
+    connect: "Connect Google Drive",
+    notNow: "Not now",
+  },
+  wizard: {
+    title: "Create a plan",
+    step: "Step {{n}} of {{total}}",
+    back: "Back",
+    next: "Next",
+    stepRace: "Race",
+    stepOffDays: "Off days",
+    stepTraining: "Training",
+    stepAi: "Generate with AI",
+    // Step 1
+    planName: "Plan name",
+    planNamePlaceholder: "e.g. Berlin Marathon",
+    raceName: "Race name",
+    raceNamePlaceholder: "e.g. Marathon",
+    raceDistance: "Race distance",
+    distanceCustom: "Custom (km)",
+    raceDate: "Race date",
+    startDate: "When do you start this plan?",
+    startDateHint: "The plan is built from this date — not today.",
+    goalQ: "What's your goal?",
+    goalFinish: "Just finish",
+    goalTime: "Target time",
+    goalPace: "Target pace",
+    goalTimePlaceholder: "e.g. 3:45:00",
+    goalPacePlaceholder: "e.g. 5:20 /km",
+    // Step 2
+    offDaysIntro:
+      "Add vacations, trips or busy periods that will limit your training. The AI will plan around them.",
+    calendarSoon: "Connect Google Calendar (coming soon)",
+    // Step 3
+    latestRuns: "Your latest runs",
+    latestRunsHint:
+      "Optional — gives the AI a sense of your current fitness. Add a few recent runs.",
+    addRun: "Add run",
+    runDistance: "Distance (km)",
+    runTimePlaceholder: "Total time (e.g. 50:43)",
+    runDate: "Date",
+    daysPerWeek: "Training days per week",
+    trainingDaysQ: "Which days do you want to train?",
+    flexibleDays: "I'm flexible — no fixed days",
+    planningModeQ: "How should workouts be scheduled?",
+    planningExact: "Exact dates",
+    planningExactDesc: "Each workout is pinned to a specific day.",
+    planningFlexible: "Flexible periods",
+    planningFlexibleDesc:
+      "Each workout gets a window (e.g. Mon–Wed) and you pick the exact day.",
+    targetQ: "Distance you want to run comfortably before the race",
+    targetUnknown: "I don't know — let the AI decide",
+    targetKm: "Target distance (km)",
+    // Step 4
+    aiIntro:
+      "Your plan request is ready. Hand it to an AI chatbot to build the full schedule:",
+    aiStep1: "1. Export the plan request (or copy it) below.",
+    aiStep2: "2. Copy the prompt and paste it into your AI chatbot, attaching the exported file.",
+    aiStep3: "3. The AI returns a plan as JSON — it may ask a few questions first.",
+    aiStep4: "4. Paste or attach that JSON below and press Complete plan.",
+    exportRequest: "Export request (JSON)",
+    copyRequest: "Copy request",
+    copyPrompt: "Copy prompt",
+    copied: "Copied",
+    importLabel: "Paste the AI's plan JSON",
+    attachFile: "Attach file",
+    completePlan: "Complete plan",
+    completeError:
+      "Couldn't read that as a plan. Make sure it's the JSON the AI returned.",
+    aiPrompt: `You are building a running training plan for me. I'll attach a plan-request JSON describing my race and preferences. Read it, then output a plan in EXACTLY the JSON schema below so I can import it into my app.
+
+What the attached plan-request fields mean:
+- race.name: what to call the plan. race.raceName: the race's name.
+- race.distanceKm: the race distance in kilometres.
+- race.date: race day (YYYY-MM-DD).
+- startDate: the date I'll begin this plan (YYYY-MM-DD). Build week 1 from this date — do NOT assume today's date.
+- goal: my race goal — { type: "finish" | "time" | "pace", value }. "finish" = just complete it; "time" = target finish time (value); "pace" = target pace per km (value). Use it to set "goalPace"/"goalLabel" and the plan's intensity.
+- offDays[]: periods I can't fully train — { start, end, title, note }. The "note" says how limited it is (e.g. no training / very limited / reduced).
+- latestRuns[]: my recent runs — { distanceKm, durationMin (TOTAL time for the run, in minutes), pace (min/km, derived from distance + total time), date }. Use these to estimate my current fitness. If this is empty, ask me about my fitness.
+- training.daysPerWeek: how many days per week I want to run.
+- training.trainingDays: the weekdays I prefer to run (e.g. ["Monday","Wednesday"]). null means I'm flexible — choose sensible days yourself.
+- training.flexibleDays: true if I have no fixed training days.
+- training.planningMode: "exact" = pin each workout to a specific day; "flexible" = give each workout a window and I'll pick the exact day.
+- training.targetDistanceKm: the longest SINGLE long run I want to comfortably reach before race day (NOT my weekly volume). null means you decide based on the race distance.
+
+Output schema (return exactly this shape, nothing else):
+{
+  "plans": {
+    "<planId>": {
+      "id": "<planId>",
+      "name": "<plan name>",
+      "raceName": "<race name>",
+      "raceDistanceKm": <number>,
+      "raceDate": "YYYY-MM-DD",
+      "goalPace": "mm:ss",            // per km
+      "goalLabel": "<short goal>",
+      "version": 1,
+      "createdAt": "<ISO datetime>",
+      "offDays": [ { "id": "...", "start": "YYYY-MM-DD", "end": "YYYY-MM-DD", "title": "...", "note": "..." } ],
+      "weeks": [ { "weekNumber": 1, "startDate": "YYYY-MM-DD(Monday)", "endDate": "YYYY-MM-DD(Sunday)", "phase": "base|build|peak|taper|race|reduced", "label": "optional", "workoutIds": ["..."] } ],
+      "workouts": {
+        "<workoutId>": {
+          "id": "<workoutId>", "date": "YYYY-MM-DD", "type": "easy|tempo|interval|long|recovery",
+          "title": "...", "weekNumber": 1, "plannedDistanceKm": <number>, "plannedPace": "mm:ss",
+          "completed": false
+          // For flexible scheduling also add: "flexible": true, "windowStart": "YYYY-MM-DD", "windowEnd": "YYYY-MM-DD"
+        }
+      }
+    }
+  },
+  "activePlanId": "<planId>"
+}
+
+Rules:
+- Weeks run Monday→Sunday. Week 1 starts from "startDate"; the final week's long run is the race on raceDate.
+- Schedule workouts on my preferred training days; if I said I'm flexible, choose sensible days.
+- If planningMode is "flexible": set "flexible": true with "windowStart"/"windowEnd" on each workout, and keep its "date" inside that window.
+- Respect "offDays": avoid hard/long sessions in those periods (none/limited/reduced per the note).
+- Build long runs progressively to my target distance, then taper into race week.
+- Use my latest runs to estimate fitness and paces. Set every workout "completed": false.
+- If my goal time/pace isn't provided, infer a sensible "goalPace"/"goalLabel" from my latest runs and the race distance (or ask me first).
+- Each workout's id must appear in its week's "workoutIds", and its "date" must fall within that week.
+- Ask me any clarifying questions first, then return ONLY the JSON.`,
   },
 };
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { Check, Pencil } from "lucide-react";
+import { CalendarRange, Check, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatDayLabel } from "@/lib/date";
+import { formatDayLabel, formatRange } from "@/lib/date";
 import { formatPace } from "@/lib/pace";
 import type { Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -53,6 +53,13 @@ export function WorkoutRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <WorkoutTypeBadge type={workout.type} />
+          {workout.flexible && workout.windowStart && workout.windowEnd ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-tempo/15 px-2 py-0.5 text-[10px] font-medium text-tempo">
+              <CalendarRange className="size-3" />
+              {t("workoutRow.flexible")} ·{" "}
+              {formatRange(workout.windowStart, workout.windowEnd)}
+            </span>
+          ) : null}
           {workout.isCustom ? (
             <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               {t("workoutRow.custom")}

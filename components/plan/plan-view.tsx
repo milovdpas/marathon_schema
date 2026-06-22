@@ -1,13 +1,16 @@
 "use client";
 
+import { eachDayOfInterval, format } from "date-fns";
 import { ChevronDown, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { NoPlanState } from "@/components/common/no-plan-state";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { WorkoutFormDialog } from "@/components/plan/workout-form-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatRange, todayISO } from "@/lib/date";
+import { formatRange, fromISO, toISO, todayISO } from "@/lib/date";
+import { getDateLocale } from "@/lib/date-locale";
 import { type WeekPhase, type Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActivePlan } from "@/hooks/use-active-plan";
@@ -26,6 +29,7 @@ export function PlanView() {
   const { t } = useTranslation();
   const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
+  const updateWorkout = useTrainingStore((s) => s.updateWorkout);
 
   const today = todayISO();
   const currentWeek = plan?.weeks.find(
@@ -37,7 +41,7 @@ export function PlanView() {
   const [editing, setEditing] = useState<Workout | null>(null);
   const [adding, setAdding] = useState(false);
 
-  if (!plan) return null;
+  if (!plan) return <NoPlanState />;
 
   const toggleWeek = (n: number) =>
     setOpen((prev) => {
@@ -126,12 +130,41 @@ export function PlanView() {
                   </p>
                 ) : (
                   workouts.map((w) => (
-                    <WorkoutRow
-                      key={w.id}
-                      workout={w}
-                      onToggle={toggleComplete}
-                      onEdit={setEditing}
-                    />
+                    <div key={w.id} className="space-y-1.5">
+                      <WorkoutRow
+                        workout={w}
+                        onToggle={toggleComplete}
+                        onEdit={setEditing}
+                      />
+                      {w.flexible && w.windowStart && w.windowEnd ? (
+                        <div className="flex flex-wrap items-center gap-1.5 pl-10">
+                          <span className="text-[11px] text-muted-foreground">
+                            {t("plan.pickDay")}:
+                          </span>
+                          {eachDayOfInterval({
+                            start: fromISO(w.windowStart),
+                            end: fromISO(w.windowEnd),
+                          }).map((d) => {
+                            const iso = toISO(d);
+                            return (
+                              <button
+                                key={iso}
+                                type="button"
+                                onClick={() => updateWorkout(w.id, { date: iso })}
+                                className={cn(
+                                  "rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors",
+                                  iso === w.date
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "text-muted-foreground hover:bg-accent",
+                                )}
+                              >
+                                {format(d, "EEE d", { locale: getDateLocale() })}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
                   ))
                 )}
               </div>

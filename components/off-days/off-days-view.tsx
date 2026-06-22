@@ -3,6 +3,7 @@
 import { Pencil, Plus, Trash2, Umbrella } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { NoPlanState } from "@/components/common/no-plan-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -40,7 +41,7 @@ export function OffDaysView() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(blank);
 
-  if (!plan) return null;
+  if (!plan) return <NoPlanState />;
 
   const offDays = [...(plan.offDays ?? [])].sort((a, b) =>
     a.start < b.start ? -1 : a.start > b.start ? 1 : 0,

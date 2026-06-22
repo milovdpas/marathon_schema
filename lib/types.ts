@@ -25,6 +25,10 @@ export interface Workout {
   notes?: string;
   completed: boolean;
   isCustom?: boolean;
+  /** When true, the workout may be done any day within [windowStart, windowEnd]. */
+  flexible?: boolean;
+  windowStart?: string; // ISO yyyy-mm-dd
+  windowEnd?: string; // ISO yyyy-mm-dd
 }
 
 export interface TrainingWeek {
@@ -39,15 +43,28 @@ export interface TrainingWeek {
 export interface Preferences {
   theme: "light" | "dark" | "system";
   locale?: "en" | "nl";
+  /** Whether the first-run onboarding has been shown. */
+  onboardingSeen?: boolean;
 }
 
 /** Editable per-plan metadata (race + goal), independent of the schedule. */
 export interface PlanMeta {
   name: string; // "Milo's Marathon"
   raceName: string; // "Marathon"
+  raceDistanceKm: number; // 42.2
   raceDate: string; // "2026-10-11"
+  startDate?: string; // "2026-06-22" — when the plan begins
   goalPace: string; // "4:58"
   goalLabel: string; // "Sub-3:30"
+}
+
+/** How the user wants to train — collected in the wizard, editable in settings. */
+export interface TrainingPrefs {
+  daysPerWeek: number;
+  flexibleDays: boolean;
+  trainingDays: boolean[]; // length 7, Monday→Sunday
+  planningMode: "exact" | "flexible";
+  targetDistanceKm: number | null; // null = let the AI decide
 }
 
 /** A period that may hinder training (vacation, trip, etc.) — context only. */
@@ -66,6 +83,7 @@ export interface TrainingPlan extends PlanMeta {
   weeks: TrainingWeek[];
   workouts: Record<string, Workout>; // keyed by id
   offDays: OffDay[];
+  trainingPrefs?: TrainingPrefs;
 }
 
 export const WORKOUT_TYPES: WorkoutType[] = [

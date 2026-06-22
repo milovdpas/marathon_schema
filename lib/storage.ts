@@ -58,7 +58,12 @@ function normalizePlan(
     id: raw.id ?? fallbackMeta?.id ?? newId(),
     name: raw.name ?? fallbackMeta?.name ?? DEFAULT_PLAN_META.name,
     raceName: raw.raceName ?? fallbackMeta?.raceName ?? DEFAULT_PLAN_META.raceName,
+    raceDistanceKm:
+      typeof raw.raceDistanceKm === "number"
+        ? raw.raceDistanceKm
+        : DEFAULT_PLAN_META.raceDistanceKm,
     raceDate: raw.raceDate ?? fallbackMeta?.raceDate ?? DEFAULT_PLAN_META.raceDate,
+    startDate: raw.startDate ?? raw.weeks?.[0]?.startDate,
     goalPace: raw.goalPace ?? fallbackMeta?.goalPace ?? DEFAULT_PLAN_META.goalPace,
     goalLabel:
       raw.goalLabel ?? fallbackMeta?.goalLabel ?? DEFAULT_PLAN_META.goalLabel,
