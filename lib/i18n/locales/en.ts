@@ -139,6 +139,9 @@ export const en = {
     runsCompleted: "Runs completed",
     pctOfPlan: "{{pct}}% of plan",
     weeklyMileage: "Weekly mileage",
+    historyTitle: "Mileage history",
+    historySub:
+      "Every logged run by calendar week — including runs from before this plan and from your other plans.",
     longRunProgression: "Long-run progression",
     longRunHint: "Building toward your peak, then tapering for race day.",
     planned: "Planned",

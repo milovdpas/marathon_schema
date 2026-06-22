@@ -1,4 +1,5 @@
-import { isWithinInterval, parseISO } from "date-fns";
+import { isWithinInterval, parseISO, startOfWeek } from "date-fns";
+import { toISO } from "./date";
 import { averagePace } from "./pace";
 import type { TrainingPlan, Workout } from "./types";
 
@@ -154,6 +155,35 @@ export function longRunProgression(plan: TrainingPlan): LongRunPoint[] {
       actual: hasActual ? round1(actual) : null,
     };
   });
+}
+
+export interface WeekHistoryPoint {
+  weekStart: string; // Monday ISO
+  plannedKm: number;
+  actualKm: number;
+}
+
+/**
+ * Planned vs actual distance bucketed by calendar week (Mon-start), across
+ * whatever workouts are passed in — use this with ALL plans' workouts to see
+ * training volume over time, including runs outside the current plan.
+ */
+export function weeklyHistory(workouts: Workout[]): WeekHistoryPoint[] {
+  const planned = new Map<string, number>();
+  const actual = new Map<string, number>();
+  for (const w of workouts) {
+    const weekStart = toISO(startOfWeek(parseISO(w.date), { weekStartsOn: 1 }));
+    planned.set(weekStart, (planned.get(weekStart) ?? 0) + (w.plannedDistanceKm || 0));
+    const ran = distanceRun(w);
+    if (ran > 0) actual.set(weekStart, (actual.get(weekStart) ?? 0) + ran);
+  }
+  return [...new Set([...planned.keys(), ...actual.keys()])]
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+    .map((weekStart) => ({
+      weekStart,
+      plannedKm: round1(planned.get(weekStart) ?? 0),
+      actualKm: round1(actual.get(weekStart) ?? 0),
+    }));
 }
 
 /** Next `count` upcoming (not-completed) workouts on/after fromISO. */

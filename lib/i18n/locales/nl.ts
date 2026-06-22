@@ -141,6 +141,9 @@ export const nl: Dict = {
     runsCompleted: "Voltooide lopen",
     pctOfPlan: "{{pct}}% van plan",
     weeklyMileage: "Wekelijkse kilometers",
+    historyTitle: "Kilometergeschiedenis",
+    historySub:
+      "Elke vastgelegde loop per kalenderweek — inclusief lopen van vóór dit plan en uit je andere plannen.",
     longRunProgression: "Opbouw lange duurloop",
     longRunHint: "Opbouw naar je piek, daarna afbouwen richting wedstrijddag.",
     planned: "Gepland",
