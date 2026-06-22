@@ -20,6 +20,10 @@ export const RACE_DATE = "2026-10-11"; // Sunday
 export const PLAN_VERSION = 1;
 export const MARATHON_KM = 42.2;
 
+// Personal one-off: bouldering this Wednesday — keep Wednesday short and move
+// the quality session to Thursday for that week.
+export const BOULDERING_DATE = "2026-06-24"; // a Wednesday
+
 // Goal: sub-3:30 → race pace ~4:58/km. Derived training paces:
 const PACE = {
   recovery: "5:30",
@@ -79,6 +83,13 @@ interface Planned {
   title: string;
   distanceKm: number;
   pace: string;
+}
+
+interface DayEntry {
+  offset: number; // days after the week's Monday
+  planned: Planned;
+  /** If set, the workout is flexible across [startOffset, endOffset] days. */
+  window?: { startOffset: number; endOffset: number };
 }
 
 /** The four scheduled workouts for a week, before special-period adjustment. */
@@ -271,6 +282,13 @@ export interface CompletedRunSeed {
  */
 export const DEFAULT_OFF_DAYS: OffDay[] = [
   {
+    id: "off-bouldering",
+    start: BOULDERING_DATE,
+    end: BOULDERING_DATE,
+    title: "Bouldering",
+    note: "Short run only — quality session moved to Thursday",
+  },
+  {
     id: "off-ghent",
     start: "2026-07-03",
     end: "2026-07-05",
@@ -342,17 +360,40 @@ export function generateDefaultPlan(
     const longRun = LONG_RUN_BY_WTR[weeksToRace] ?? BASE_LONG_RUN;
     const planned = plannedWorkouts(weeksToRace, w, longRun);
 
-    const dayMap: { offset: number; planned: Planned }[] = [
-      { offset: 0, planned: planned.mon }, // Monday
-      { offset: 2, planned: planned.wed }, // Wednesday
-      { offset: 3, planned: planned.thu }, // Thursday
-      { offset: 6, planned: planned.sun }, // Sunday
-    ];
+    // The long run is flexible across Sat–Sun so it can be done either day
+    // (except race week, where Sunday is the fixed race day).
+    const sundayWindow =
+      weeksToRace === 0 ? undefined : { startOffset: 5, endOffset: 6 };
+    const wedDate = toISO(addDays(monday, 2));
+
+    const dayMap: DayEntry[] =
+      wedDate === BOULDERING_DATE
+        ? [
+            // Bouldering Wednesday → short run Wed, quality moved to Thu (10 km).
+            { offset: 0, planned: planned.mon },
+            {
+              offset: 2,
+              planned: {
+                type: "recovery",
+                title: "Short run (bouldering day)",
+                distanceKm: 5,
+                pace: PACE.recovery,
+              },
+            },
+            { offset: 3, planned: { ...planned.wed, distanceKm: 10 } },
+            { offset: 6, planned: planned.sun, window: sundayWindow },
+          ]
+        : [
+            { offset: 0, planned: planned.mon }, // Monday — easy
+            { offset: 2, planned: planned.wed }, // Wednesday — quality
+            { offset: 3, planned: planned.thu }, // Thursday — recovery
+            { offset: 6, planned: planned.sun, window: sundayWindow }, // Sat/Sun — long
+          ];
 
     const workoutIds: string[] = [];
     let longAffected = false;
 
-    for (const { offset, planned: base } of dayMap) {
+    for (const { offset, planned: base, window } of dayMap) {
       const date = toISO(addDays(monday, offset));
       // Don't emit planned sessions that are already in the past — unless we're
       // anchored to the plan start and reproducing elapsed weeks.
@@ -366,6 +407,11 @@ export function generateDefaultPlan(
         longAffected = true;
       }
       const workout = makeWorkout(date, weekNumber, adjusted);
+      if (window) {
+        workout.flexible = true;
+        workout.windowStart = toISO(addDays(monday, window.startOffset));
+        workout.windowEnd = toISO(addDays(monday, window.endOffset));
+      }
       workouts[workout.id] = workout;
       workoutIds.push(workout.id);
     }

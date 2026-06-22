@@ -107,6 +107,8 @@ export const nl: Dict = {
     nextMonth: "Volgende maand",
     legend:
       "Tik op een dag om de trainingen te bekijken of bewerken. Vage stippen zijn gepland; volle stippen zijn voltooid.",
+    flexLegend:
+      "Vakanties en flexibele trainingen verschijnen als balken over hun dagen. De onderstreping op een flexibele balk markeert de dag waarop hij nu gepland staat — tik op de balk om dit te wijzigen.",
     workoutsScheduled_one: "{{count}} training gepland",
     workoutsScheduled_other: "{{count}} trainingen gepland",
     nothingScheduled: "Niets gepland deze dag.",

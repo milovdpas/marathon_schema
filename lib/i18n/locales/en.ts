@@ -105,6 +105,8 @@ export const en = {
     nextMonth: "Next month",
     legend:
       "Tap a day to see or edit its workouts. Faded dots are planned; solid dots are completed.",
+    flexLegend:
+      "Vacations and flexible workouts show as bars spanning their days. The underline on a flexible bar marks the day it's currently planned — tap the bar to change it.",
     workoutsScheduled_one: "{{count}} workout scheduled",
     workoutsScheduled_other: "{{count}} workouts scheduled",
     nothingScheduled: "Nothing scheduled this day.",
