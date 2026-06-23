@@ -36,10 +36,37 @@ function newId(): string {
 }
 
 /**
+ * From position `start` (a "{"), return the balanced object substring, or null
+ * if the braces never close. String-aware so braces inside strings don't count.
+ */
+function balancedObjectFrom(s: string, start: number): string | null {
+  let depth = 0;
+  let inStr = false;
+  let escaped = false;
+  for (let i = start; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === "{") depth += 1;
+    else if (ch === "}") {
+      depth -= 1;
+      if (depth === 0) return s.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+/**
  * Best-effort repair of JSON that was pasted from an AI chat. Handles the common
- * copy slips: a wrapping ```json code fence, surrounding prose, a missing
- * leading `{` (the text starts straight at the first key), or a missing
- * trailing `}`. Returns a string to hand to JSON.parse.
+ * copy slips: a wrapping ```json code fence, surrounding prose (even prose that
+ * itself contains braces, or an AI "thinking" line above the JSON), a missing
+ * leading `{` (the text starts straight at the first key), or a missing trailing
+ * `}`. Returns a string to hand to JSON.parse.
  */
 export function sanitizeImportJson(raw: string): string {
   let s = raw.trim();
@@ -48,19 +75,28 @@ export function sanitizeImportJson(raw: string): string {
   const fence = s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
   if (fence) s = fence[1].trim();
 
-  if (/^"[\w-]+"\s*:/.test(s)) {
-    // Classic slip: the opening "{" was left out, so it starts at the first key
-    // (e.g. `"plans": { … }`). Put the brace back.
-    s = `{${s}`;
-  } else {
-    // Otherwise strip any prose/markers around the JSON object payload.
-    const first = s.indexOf("{");
-    const last = s.lastIndexOf("}");
-    if (first >= 0 && last >= first) s = s.slice(first, last + 1);
-    else if (first >= 0) s = s.slice(first);
+  // Classic slip: the opening "{" was left out, so it starts at the first key
+  // (e.g. `"plans": { … }`). Put the brace back.
+  if (/^"[\w-]+"\s*:/.test(s)) s = `{${s}`;
+
+  // Find the real JSON object by trying each "{" in turn: take the balanced
+  // substring from there and keep the first one that actually parses. This skips
+  // any prose around it — including prose that happens to contain a brace.
+  for (let i = s.indexOf("{"); i !== -1; i = s.indexOf("{", i + 1)) {
+    const candidate = balancedObjectFrom(s, i);
+    if (!candidate) break; // no balanced close from here on
+    try {
+      JSON.parse(candidate);
+      return candidate;
+    } catch {
+      // Not valid JSON from this "{" — try the next one.
+    }
   }
 
-  // Re-balance a missing trailing "}" (the mirror of the slip above).
+  // Nothing parsed cleanly (e.g. a missing trailing "}"). Strip leading prose to
+  // the first "{" and re-balance any unclosed braces, then let the caller parse.
+  const first = s.indexOf("{");
+  if (first > 0) s = s.slice(first);
   const opens = (s.match(/{/g) ?? []).length;
   const closes = (s.match(/}/g) ?? []).length;
   if (opens > closes) s += "}".repeat(opens - closes);
