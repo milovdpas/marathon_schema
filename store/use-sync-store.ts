@@ -53,6 +53,10 @@ let suppressAutoPush = false;
 let autoPushTimer: ReturnType<typeof setTimeout> | null = null;
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let listenersBound = false;
+// True while a connect()/resume() auth handshake is running. Guards against a
+// second handshake firing concurrently — e.g. the visibilitychange that fires
+// when the OAuth popup closes racing the connect() that opened it.
+let authInFlight = false;
 
 /** Stamp the training store's lastModified without triggering an auto-push. */
 function stampLocal(time: string) {
@@ -87,11 +91,16 @@ function scheduleProactiveRefresh() {
   if (!expiry) return;
   const delay = Math.max(0, expiry - Date.now() - 120_000);
   refreshTimer = setTimeout(async () => {
-    if (!useSyncStore.getState().connected) return;
-    if (await silentRefresh()) {
-      scheduleProactiveRefresh();
-    } else {
-      useSyncStore.setState({ needsReauth: true, status: "error", error: REAUTH_MSG });
+    if (!useSyncStore.getState().connected || authInFlight) return;
+    authInFlight = true;
+    try {
+      if (await silentRefresh()) {
+        scheduleProactiveRefresh();
+      } else {
+        useSyncStore.setState({ needsReauth: true, status: "error", error: REAUTH_MSG });
+      }
+    } finally {
+      authInFlight = false;
     }
   }, delay);
 }
@@ -162,21 +171,24 @@ async function pushLocal(): Promise<void> {
  */
 async function resume(): Promise<void> {
   const { connected } = useSyncStore.getState();
-  if (!connected) return;
+  if (!connected || authInFlight) return;
   if (hasValidToken() && useSyncStore.getState().status === "connected") return;
 
+  authInFlight = true;
   useSyncStore.setState({ status: "reconnecting", error: null });
-  if (!(await silentRefresh())) {
-    useSyncStore.setState({ status: "error", needsReauth: true, error: REAUTH_MSG });
-    return;
-  }
   try {
+    if (!(await silentRefresh())) {
+      useSyncStore.setState({ status: "error", needsReauth: true, error: REAUTH_MSG });
+      return;
+    }
     const user = await fetchUserInfo();
     useSyncStore.setState({ user, needsReauth: false, status: "connected", error: null });
     scheduleProactiveRefresh();
     await reconcile();
   } catch {
     useSyncStore.setState({ status: "error", needsReauth: true, error: REAUTH_MSG });
+  } finally {
+    authInFlight = false;
   }
 }
 
@@ -196,6 +208,9 @@ function bindListeners() {
   if (typeof document !== "undefined") {
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState !== "visible") return;
+      // Don't race an in-progress handshake — e.g. this event also fires when
+      // the OAuth popup that connect() opened closes and returns focus.
+      if (authInFlight) return;
       const s = useSyncStore.getState();
       if (s.connected && !hasValidToken()) void resume();
     });
@@ -225,6 +240,7 @@ export const useSyncStore = create<SyncState>()(
       connect: async () => {
         if (!isSyncConfigured()) return;
         bindListeners();
+        authInFlight = true;
         set({ status: "connecting", error: null });
         try {
           // Open the account chooser directly (no await before it, so the click
@@ -237,6 +253,8 @@ export const useSyncStore = create<SyncState>()(
           set({ status: "connected" });
         } catch (e) {
           set({ status: "error", error: msg(e) });
+        } finally {
+          authInFlight = false;
         }
       },
 

@@ -103,16 +103,32 @@ export async function prepareSync(): Promise<void> {
   await ensureTokenClient();
 }
 
+// GIS has a single callback slot (`pending`), so overlapping token requests
+// would clobber each other. Serialize them: identical concurrent requests share
+// one in-flight promise; a differing request waits for the current one to settle.
+let inFlight: { prompt: string; promise: Promise<string> } | null = null;
+
 /**
  * Request an access token. `prompt: "consent"` shows the account chooser (used
  * on explicit connect); `prompt: ""` attempts a silent grant (reconnect/refresh).
  */
 export async function requestToken(prompt: "" | "consent"): Promise<string> {
-  const client = await ensureTokenClient();
-  return new Promise<string>((resolve, reject) => {
-    pending = { resolve, reject };
-    client.requestAccessToken({ prompt });
-  });
+  if (inFlight && inFlight.prompt === prompt) return inFlight.promise;
+  if (inFlight) await inFlight.promise.catch(() => {});
+
+  const promise = (async () => {
+    const client = await ensureTokenClient();
+    return new Promise<string>((resolve, reject) => {
+      pending = { resolve, reject };
+      client.requestAccessToken({ prompt });
+    });
+  })();
+  inFlight = { prompt, promise };
+  try {
+    return await promise;
+  } finally {
+    if (inFlight?.promise === promise) inFlight = null;
+  }
 }
 
 /** A valid cached token, or a silent refresh if expired/near-expiry. */

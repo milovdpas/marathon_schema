@@ -79,6 +79,87 @@ function weekIndexForDate(plan: TrainingPlan, date: string): number {
   return plan.weeks.findIndex((w) => date >= w.startDate && date <= w.endDate);
 }
 
+/** A workout the user has actually run/logged (worth preserving across re-import). */
+function isLogged(w: Workout): boolean {
+  return w.completed || w.actualDistanceKm != null;
+}
+
+/**
+ * Decide whether an imported plan is an *update* to one we already have, by
+ * looking for shared workout ids (the AI edits the exported JSON, keeping ids).
+ * Returns the existing plan id with the most overlap, or null for a new plan.
+ */
+function findMatchingPlanId(
+  plans: Record<string, TrainingPlan>,
+  imported: TrainingPlan,
+): string | null {
+  if (imported.id && plans[imported.id]) return imported.id;
+  const importedIds = new Set(Object.keys(imported.workouts));
+  let best: string | null = null;
+  let bestOverlap = 0;
+  for (const [pid, pl] of Object.entries(plans)) {
+    let overlap = 0;
+    for (const wid of Object.keys(pl.workouts)) {
+      if (importedIds.has(wid)) overlap += 1;
+    }
+    if (overlap > bestOverlap) {
+      bestOverlap = overlap;
+      best = pid;
+    }
+  }
+  return bestOverlap > 0 ? best : null;
+}
+
+/**
+ * Overlay the user's finished sessions onto an imported plan. An AI-edited plan
+ * is often built from an older export, so it can be "behind" — missing workouts
+ * the user has since completed. Matched by id, we keep the logged result; any
+ * logged workout the import dropped is re-attached to its week so it's not lost.
+ */
+function mergeLoggedWorkouts(
+  imported: TrainingPlan,
+  source: TrainingPlan,
+): TrainingPlan {
+  const logged = new Map<string, Workout>();
+  for (const w of Object.values(source.workouts)) {
+    if (isLogged(w)) logged.set(w.id, w);
+  }
+  if (logged.size === 0) return imported;
+
+  const workouts: Record<string, Workout> = {};
+  for (const [wid, w] of Object.entries(imported.workouts)) {
+    const prior = logged.get(wid);
+    workouts[wid] = prior
+      ? {
+          ...w, // keep the imported planned structure (title, planned km, type…)
+          completed: prior.completed,
+          actualDistanceKm: prior.actualDistanceKm,
+          actualPace: prior.actualPace,
+          durationMin: prior.durationMin,
+          notes: prior.notes ?? w.notes,
+          date: prior.completed ? prior.date : w.date,
+        }
+      : w;
+  }
+
+  // Re-attach finished workouts the imported plan no longer contains.
+  const weeks = imported.weeks.map((wk) => ({
+    ...wk,
+    workoutIds: [...wk.workoutIds],
+  }));
+  for (const [wid, w] of logged) {
+    if (workouts[wid]) continue;
+    const idx = weeks.findIndex(
+      (wk) => w.date >= wk.startDate && w.date <= wk.endDate,
+    );
+    if (idx < 0) continue; // outside the new plan's range — leave it behind
+    workouts[wid] = w;
+    if (!weeks[idx].workoutIds.includes(wid)) weeks[idx].workoutIds.push(wid);
+  }
+
+  return { ...imported, weeks, workouts };
+}
+
 /** Produce a state patch that replaces the active plan via `fn`. */
 function mutateActive(
   state: TrainingState,
@@ -134,15 +215,23 @@ export const useTrainingStore = create<TrainingState>()(
         const { plans: imported } = parseImport(json);
         const entries = Object.values(imported);
         if (entries.length === 0) throw new Error("No plan found in file.");
-        const next = { ...get().plans };
+        const existing = get().plans;
+        const next = { ...existing };
         let activeId = get().activePlanId;
         for (const p of entries) {
-          const id = newId();
+          // If this import updates a plan we already have (shared workout ids),
+          // replace it in place and carry over completed sessions — so a "behind"
+          // AI plan never wipes finished workouts, and stats aren't double-counted.
+          const targetId = findMatchingPlanId(existing, p);
+          const source = targetId ? existing[targetId] : null;
+          const merged = source ? mergeLoggedWorkouts(p, source) : p;
+          const id = targetId ?? newId();
           next[id] = {
-            ...p,
+            ...merged,
             id,
-            trainingPrefs: trainingPrefs ?? p.trainingPrefs,
-            startDate: startDate ?? p.startDate,
+            createdAt: source?.createdAt ?? merged.createdAt,
+            trainingPrefs: trainingPrefs ?? p.trainingPrefs ?? source?.trainingPrefs,
+            startDate: startDate ?? p.startDate ?? source?.startDate,
           };
           activeId = id;
         }
@@ -322,8 +411,18 @@ export const useTrainingStore = create<TrainingState>()(
 
       importData: (json) => {
         const { plans, activePlanId, preferences } = parseImport(json);
+        // Carry over finished sessions by id: an AI-modified import is often
+        // built from a stale export, so merge logged workouts from the current
+        // plans rather than letting the import overwrite them.
+        const prev = get().plans;
+        const mergedPlans: Record<string, TrainingPlan> = {};
+        for (const [id, p] of Object.entries(plans)) {
+          const sourceId = findMatchingPlanId(prev, p);
+          const source = sourceId ? prev[sourceId] : null;
+          mergedPlans[id] = source ? mergeLoggedWorkouts(p, source) : p;
+        }
         set((s) => ({
-          plans,
+          plans: mergedPlans,
           activePlanId,
           preferences: preferences
             ? { ...s.preferences, ...preferences }
