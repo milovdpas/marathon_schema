@@ -63,6 +63,12 @@ export const nl: Dict = {
     custom: "eigen",
     flexible: "Flexibel",
   },
+  completeWorkout: {
+    title: "Loop vastleggen",
+    desc: "We hebben je geplande doel ingevuld — pas het aan naar wat je werkelijk liep.",
+    confirm: "Vastleggen & voltooien",
+    planned: "Gepland: {{km}} km · {{pace}}/km",
+  },
   plan: {
     title: "Marathonplan",
     subtitle: "Je trainingsblok, gegroepeerd per week.",
@@ -201,6 +207,7 @@ Je MOET je aan deze regels houden:
 - WIJZIG NOOIT een voltooide training: elke training met "completed": true moet exact zo blijven, inclusief "id", "completed", "actualDistanceKm", "actualPace" en "durationMin" (zodat ik mijn vastgelegde voortgang niet verlies).
 - Houd de JSON-structuur geldig (plans, weeks, workouts). Als je een training naar een andere week verplaatst, verplaats dan ook zijn id naar de "workoutIds" van die week, en houd de "date" van elke training binnen het start/eind-bereik van zijn week.
 - Geef alleen de volledige bijgewerkte JSON terug, niets anders.
+- BELANGRIJK — geef het resultaat als een downloadbaar .json-BESTAND zodat ik het direct kan toevoegen. Als je geen bestand kunt maken, zet dan de VOLLEDIGE JSON in één \`\`\`json-codeblok, inclusief de allereerste { en de allerlaatste } — splits het nooit en laat geen tekens weg.
 
 JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
 [plak hier je geëxporteerde JSON]`,
@@ -213,7 +220,8 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
       "Dit vervangt “{{name}}” en verwijdert alle voltooide en eigen trainingen erin. Dit kan niet ongedaan worden gemaakt.",
     regenerateYes: "Ja, opnieuw genereren",
     importedOk: "Plannen succesvol geïmporteerd.",
-    importFailed: "Importeren mislukt.",
+    importFailed:
+      "Importeren mislukt — de JSON is mogelijk onvolledig gekopieerd. Kopieer het hele antwoord van de AI (inclusief de eerste { en laatste }), of gebruik het .json-bestand met Bestand importeren.",
     planRegenerated: "Plan opnieuw gegenereerd.",
     planDeleted: "Plan verwijderd.",
   },
@@ -310,8 +318,9 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     importLabel: "Plak de plan-JSON van de AI",
     attachFile: "Bestand toevoegen",
     completePlan: "Plan voltooien",
+    created: "Plan aangemaakt",
     completeError:
-      "Kon dit niet als plan lezen. Zorg dat het de JSON is die de AI teruggaf.",
+      "Kon dit niet als plan lezen — het is mogelijk onvolledig gekopieerd. Kopieer het hele antwoord van de AI (inclusief de eerste { en laatste }), of voeg het .json-bestand toe.",
     aiPrompt: `Je bouwt een hardloop-trainingsplan voor mij. Ik voeg een plan-aanvraag-JSON toe met mijn wedstrijd en voorkeuren. Lees het en geef daarna een plan terug in EXACT onderstaand JSON-schema zodat ik het in mijn app kan importeren.
 
 Wat de velden in de bijgevoegde plan-aanvraag betekenen:
@@ -365,6 +374,7 @@ Regels:
 - Gebruik mijn laatste lopen om conditie en tempo's te schatten. Zet elke training op "completed": false.
 - Als mijn doeltijd/-tempo niet is gegeven, leid dan een logische "goalPace"/"goalLabel" af uit mijn laatste lopen en de wedstrijdafstand (of vraag het me eerst).
 - Het id van elke training moet in de "workoutIds" van zijn week staan, en de "date" moet binnen die week vallen.
+- Geef het resultaat als een downloadbaar .json-BESTAND zodat ik het direct kan toevoegen. Als je geen bestand kunt maken, zet dan de VOLLEDIGE JSON in één \`\`\`json-codeblok, inclusief de allereerste { en de allerlaatste } — splits het nooit en laat geen tekens weg.
 - Stel eerst eventuele verduidelijkende vragen en geef daarna ALLEEN de JSON terug.`,
   },
 };

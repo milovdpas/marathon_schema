@@ -61,6 +61,12 @@ export const en = {
     custom: "custom",
     flexible: "Flexible",
   },
+  completeWorkout: {
+    title: "Log this run",
+    desc: "We pre-filled your planned target — adjust it to what you actually ran.",
+    confirm: "Log & complete",
+    planned: "Planned: {{km}} km · {{pace}}/km",
+  },
   plan: {
     title: "Marathon Plan",
     subtitle: "Your training block, grouped by week.",
@@ -198,6 +204,7 @@ You MUST follow these rules:
 - NEVER alter a completed workout: any workout with "completed": true must stay exactly as-is, including its "id", "completed", "actualDistanceKm", "actualPace" and "durationMin" (don't lose my logged progress).
 - Keep the JSON structure valid (plans, weeks, workouts). If you move a workout to a different week, also move its id into that week's "workoutIds", and keep each workout's "date" inside its week's start/end range.
 - Return the complete updated JSON only, nothing else.
+- IMPORTANT — give me the result as a downloadable .json FILE so I can attach it directly. If you can't create a file, put the ENTIRE JSON in a single \`\`\`json code block, including the very first { and the very last } — never split it or leave characters out.
 
 JSON (paste below, or attach the exported .json file):
 [paste your exported JSON here]`,
@@ -210,7 +217,8 @@ JSON (paste below, or attach the exported .json file):
       "This replaces “{{name}}” and removes all completed and custom workouts in it. This cannot be undone.",
     regenerateYes: "Yes, regenerate",
     importedOk: "Plans imported successfully.",
-    importFailed: "Import failed.",
+    importFailed:
+      "Import failed — the JSON may have been copied incompletely. Copy the AI's whole response (including the first { and last }), or use the .json file with Import file.",
     planRegenerated: "Plan regenerated.",
     planDeleted: "Plan deleted.",
   },
@@ -307,8 +315,9 @@ JSON (paste below, or attach the exported .json file):
     importLabel: "Paste the AI's plan JSON",
     attachFile: "Attach file",
     completePlan: "Complete plan",
+    created: "Plan created",
     completeError:
-      "Couldn't read that as a plan. Make sure it's the JSON the AI returned.",
+      "Couldn't read that as a plan — it may have been copied incompletely. Copy the AI's whole response (including the first { and last }), or attach the .json file.",
     aiPrompt: `You are building a running training plan for me. I'll attach a plan-request JSON describing my race and preferences. Read it, then output a plan in EXACTLY the JSON schema below so I can import it into my app.
 
 What the attached plan-request fields mean:
@@ -362,6 +371,7 @@ Rules:
 - Use my latest runs to estimate fitness and paces. Set every workout "completed": false.
 - If my goal time/pace isn't provided, infer a sensible "goalPace"/"goalLabel" from my latest runs and the race distance (or ask me first).
 - Each workout's id must appear in its week's "workoutIds", and its "date" must fall within that week.
+- Give me the result as a downloadable .json FILE so I can attach it directly. If you can't create a file, put the ENTIRE JSON in a single \`\`\`json code block, including the very first { and the very last } — never split it or leave characters out.
 - Ask me any clarifying questions first, then return ONLY the JSON.`,
   },
 };

@@ -3,6 +3,7 @@
 import { ChevronDown, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CompleteWorkoutDialog } from "@/components/common/complete-workout-dialog";
 import { FlexibleDayPicker } from "@/components/common/flexible-day-picker";
 import { NoPlanState } from "@/components/common/no-plan-state";
 import { WorkoutRow } from "@/components/common/workout-row";
@@ -39,8 +40,17 @@ export function PlanView() {
   );
   const [editing, setEditing] = useState<Workout | null>(null);
   const [adding, setAdding] = useState(false);
+  const [completing, setCompleting] = useState<Workout | null>(null);
 
   if (!plan) return <NoPlanState />;
+
+  // Completing opens the quick-log dialog (prefilled); un-checking just flips it.
+  const handleToggle = (id: string) => {
+    const w = plan.workouts[id];
+    if (!w) return;
+    if (w.completed) toggleComplete(id);
+    else setCompleting(w);
+  };
 
   const toggleWeek = (n: number) =>
     setOpen((prev) => {
@@ -128,22 +138,54 @@ export function PlanView() {
                     {t("plan.restWeek")}
                   </p>
                 ) : (
-                  workouts.map((w) => (
-                    <div key={w.id} className="space-y-1.5">
+                  workouts.map((w) => {
+                    const isFlexible =
+                      w.flexible && w.windowStart && w.windowEnd;
+                    if (isFlexible) {
+                      // Row + day-picker read as one card with an orange tint.
+                      return (
+                        <div
+                          key={w.id}
+                          className={cn(
+                            "overflow-hidden rounded-xl border bg-card",
+                            w.completed
+                              ? "border-primary/30 bg-primary/[0.04]"
+                              : "border-tempo/40 bg-tempo/[0.05]",
+                          )}
+                        >
+                          <WorkoutRow
+                            workout={w}
+                            onToggle={handleToggle}
+                            onEdit={setEditing}
+                            className="rounded-none border-0 bg-transparent"
+                          />
+                          <div
+                            className={cn(
+                              "border-t px-3 py-2",
+                              w.completed
+                                ? "border-primary/20"
+                                : "border-tempo/20",
+                            )}
+                          >
+                            <FlexibleDayPicker
+                              workout={w}
+                              onPick={(iso) =>
+                                updateWorkout(w.id, { date: iso })
+                              }
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
                       <WorkoutRow
+                        key={w.id}
                         workout={w}
-                        onToggle={toggleComplete}
+                        onToggle={handleToggle}
                         onEdit={setEditing}
                       />
-                      {w.flexible ? (
-                        <FlexibleDayPicker
-                          workout={w}
-                          onPick={(iso) => updateWorkout(w.id, { date: iso })}
-                          className="pl-10"
-                        />
-                      ) : null}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             ) : null}
@@ -160,6 +202,11 @@ export function PlanView() {
         open={adding}
         onOpenChange={setAdding}
         defaultDate={today}
+      />
+      <CompleteWorkoutDialog
+        workout={completing}
+        open={!!completing}
+        onOpenChange={(o) => !o && setCompleting(null)}
       />
     </div>
   );

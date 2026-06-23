@@ -34,6 +34,7 @@ import { LOCALE_LABELS, LOCALES, type Locale } from "@/lib/i18n";
 import { DEFAULT_TRAINING_PREFS } from "@/lib/plan-generator";
 import { downloadJSON } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";
 
 const THEMES = [
@@ -88,12 +89,11 @@ export function SettingsView() {
     try {
       importData(json);
       setStatus({ ok: true, msg: t("settings.importedOk") });
+      toast.success(t("settings.importedOk"));
       setImportText("");
     } catch (e) {
-      setStatus({
-        ok: false,
-        msg: e instanceof Error ? e.message : t("settings.importFailed"),
-      });
+      console.error("Import failed:", e);
+      setStatus({ ok: false, msg: t("settings.importFailed") });
     }
   };
 

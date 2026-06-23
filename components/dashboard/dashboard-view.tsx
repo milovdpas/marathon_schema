@@ -3,7 +3,9 @@
 import { differenceInCalendarDays, format } from "date-fns";
 import { CalendarDays, Flame, Footprints, Target } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { CompleteWorkoutDialog } from "@/components/common/complete-workout-dialog";
 import { NoPlanState } from "@/components/common/no-plan-state";
 import { ProgressRing } from "@/components/common/progress-ring";
 import { StatCard } from "@/components/common/stat-card";
@@ -11,6 +13,7 @@ import { WorkoutRow } from "@/components/common/workout-row";
 import { Card } from "@/components/ui/card";
 import { fromISO, startOfToday } from "@/lib/date";
 import { getDateLocale } from "@/lib/date-locale";
+import type { Workout } from "@/lib/types";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -20,6 +23,16 @@ export function DashboardView() {
   const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
   const stats = useStats(plan);
+  const [completing, setCompleting] = useState<Workout | null>(null);
+
+  // Completing a run opens the quick-log dialog (prefilled with the planned
+  // target); un-checking a done run just flips it back.
+  const handleToggle = (id: string) => {
+    const w = plan?.workouts[id];
+    if (!w) return;
+    if (w.completed) toggleComplete(id);
+    else setCompleting(w);
+  };
 
   if (!plan || !stats) return <NoPlanState />;
 
@@ -139,7 +152,7 @@ export function DashboardView() {
             </Card>
           ) : (
             stats.upcoming.map((w) => (
-              <WorkoutRow key={w.id} workout={w} onToggle={toggleComplete} />
+              <WorkoutRow key={w.id} workout={w} onToggle={handleToggle} />
             ))
           )}
         </div>
@@ -151,11 +164,17 @@ export function DashboardView() {
           <h3 className="mb-2 text-sm font-semibold">{t("dashboard.recent")}</h3>
           <div className="space-y-2">
             {stats.recent.map((w) => (
-              <WorkoutRow key={w.id} workout={w} onToggle={toggleComplete} />
+              <WorkoutRow key={w.id} workout={w} onToggle={handleToggle} />
             ))}
           </div>
         </section>
       ) : null}
+
+      <CompleteWorkoutDialog
+        workout={completing}
+        open={!!completing}
+        onOpenChange={(o) => !o && setCompleting(null)}
+      />
     </div>
   );
 }

@@ -35,6 +35,39 @@ function newId(): string {
     : `plan-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
 }
 
+/**
+ * Best-effort repair of JSON that was pasted from an AI chat. Handles the common
+ * copy slips: a wrapping ```json code fence, surrounding prose, a missing
+ * leading `{` (the text starts straight at the first key), or a missing
+ * trailing `}`. Returns a string to hand to JSON.parse.
+ */
+export function sanitizeImportJson(raw: string): string {
+  let s = raw.trim();
+
+  // Unwrap a ```json … ``` (or plain ``` … ```) code fence.
+  const fence = s.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  if (fence) s = fence[1].trim();
+
+  if (/^"[\w-]+"\s*:/.test(s)) {
+    // Classic slip: the opening "{" was left out, so it starts at the first key
+    // (e.g. `"plans": { … }`). Put the brace back.
+    s = `{${s}`;
+  } else {
+    // Otherwise strip any prose/markers around the JSON object payload.
+    const first = s.indexOf("{");
+    const last = s.lastIndexOf("}");
+    if (first >= 0 && last >= first) s = s.slice(first, last + 1);
+    else if (first >= 0) s = s.slice(first);
+  }
+
+  // Re-balance a missing trailing "}" (the mirror of the slip above).
+  const opens = (s.match(/{/g) ?? []).length;
+  const closes = (s.match(/}/g) ?? []).length;
+  if (opens > closes) s += "}".repeat(opens - closes);
+
+  return s;
+}
+
 function isValidPlanShape(p: unknown): p is TrainingPlan {
   const plan = p as TrainingPlan;
   return (
@@ -85,7 +118,14 @@ export function parseImport(json: string): {
   activePlanId: string | null;
   preferences?: Preferences;
 } {
-  const data = JSON.parse(json);
+  let data;
+  try {
+    data = JSON.parse(sanitizeImportJson(json));
+  } catch {
+    throw new Error(
+      "That doesn't look like valid JSON — it may have been copied incompletely. Copy the AI's whole response (including the first { and last }), or use Attach file.",
+    );
+  }
 
   // New multi-plan bundle.
   if (data?.plans && typeof data.plans === "object") {

@@ -24,6 +24,7 @@ import { paceFromDistanceDuration, parseDurationToMinutes } from "@/lib/pace";
 import { downloadJSON } from "@/lib/storage";
 import type { OffDay, TrainingPrefs } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";
 
 interface LatestRun {
@@ -164,9 +165,11 @@ export function AddPlanWizard() {
   const complete = (json: string) => {
     try {
       addPlanFromImport(json, draft.prefs, draft.startDate);
+      toast.success(t("wizard.created"));
       router.push("/");
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("wizard.completeError"));
+      console.error("Plan import failed:", e);
+      setError(t("wizard.completeError"));
     }
   };
 
