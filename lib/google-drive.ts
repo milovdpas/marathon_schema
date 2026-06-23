@@ -68,6 +68,42 @@ let pending: {
   reject: (err: Error) => void;
 } | null = null;
 
+// We cache the short-lived access token in localStorage so a page refresh can
+// keep using it until it expires (~1h) instead of forcing a re-auth every time
+// — silent token refresh fails in browsers that block third-party cookies.
+const TOKEN_KEY = "marathon-drive-token";
+
+function persistToken(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    if (accessToken && tokenExpiry > Date.now()) {
+      localStorage.setItem(TOKEN_KEY, JSON.stringify({ accessToken, tokenExpiry }));
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  } catch {
+    // storage unavailable (private mode / quota) — token just stays in memory
+  }
+}
+
+function restoreToken(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const raw = localStorage.getItem(TOKEN_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw) as { accessToken?: string; tokenExpiry?: number };
+    if (saved.accessToken && typeof saved.tokenExpiry === "number") {
+      accessToken = saved.accessToken;
+      tokenExpiry = saved.tokenExpiry;
+    }
+  } catch {
+    // ignore malformed cache
+  }
+}
+
+// Restore any cached token as soon as this module loads on the client.
+restoreToken();
+
 async function ensureTokenClient(): Promise<TokenClient> {
   await loadGis();
   const oauth2 = window.google!.accounts.oauth2;
@@ -83,6 +119,7 @@ async function ensureTokenClient(): Promise<TokenClient> {
       }
       accessToken = response.access_token;
       tokenExpiry = Date.now() + (response.expires_in ?? 3600) * 1000;
+      persistToken();
       pending?.resolve(accessToken);
       pending = null;
     },
@@ -164,6 +201,7 @@ export function revokeToken(): void {
   }
   accessToken = null;
   tokenExpiry = 0;
+  persistToken();
 }
 
 // ---- Identity -------------------------------------------------------------

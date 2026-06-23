@@ -177,7 +177,9 @@ async function resume(): Promise<void> {
   authInFlight = true;
   useSyncStore.setState({ status: "reconnecting", error: null });
   try {
-    if (!(await silentRefresh())) {
+    // Reuse a still-valid cached token (survives page refresh); only fall back to
+    // a silent refresh when it's gone or expired.
+    if (!hasValidToken() && !(await silentRefresh())) {
       useSyncStore.setState({ status: "error", needsReauth: true, error: REAUTH_MSG });
       return;
     }
