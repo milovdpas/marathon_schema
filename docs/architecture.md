@@ -5,11 +5,12 @@ making changes. (`README.md` is user-facing and may lag behind features.)
 
 ## What this app is
 
-A **marathon / running training tracker**. Pure **client-side SPA on Next.js
-(App Router)** — **no backend, no database, no auth**. All data lives in the
-browser's `localStorage`; an **optional** Google Drive sync layers cloud backup
-on top (still 100% client-side). Deploys to Vercel as static output. Mobile-first,
-dark mode, English + Dutch.
+A **marathon / running training tracker**. Almost entirely a **client-side SPA on
+Next.js (App Router)** — **no database**. All data lives in the browser's
+`localStorage`. The **only** server code is a thin set of Route Handlers under
+`app/api/*` that implement **server-side Google OAuth** for the optional Drive
+sync (refresh token in an encrypted session cookie; no DB). Deploys to Vercel
+(Route Handlers run as Functions). Mobile-first, dark mode, English + Dutch.
 
 ## Tech stack & non-obvious gotchas
 
@@ -45,9 +46,12 @@ The single source of truth. Shape: `{ plans: Record<id,TrainingPlan>, activePlan
 
 ## Key flows
 
-- **Onboarding** (`components/common/onboarding-gate.tsx`): fresh install (`!onboardingSeen` & no plans) shows a Drive popup (if `isSyncConfigured()`) then a "create plan?" popup. "Just look around" seeds the example; "Create my plan" → `/plan/new`. Migration marks existing users `onboardingSeen: true`. `initializePlan` only seeds once `onboardingSeen` is true.
+- **Onboarding** (`components/common/onboarding-gate.tsx`): fresh install (`!onboardingSeen` & no plans) shows a Drive dialog (when `useSyncStore().configured` && not yet connected) then a "create plan?" popup. "Just look around" seeds the example; "Create my plan" → `/plan/new`. Migration marks existing users `onboardingSeen: true`. `initializePlan` only seeds once `onboardingSeen` is true.
 - **AI Add-Plan wizard** (`app/plan/new`, `components/wizard/add-plan-wizard.tsx`): 4 steps collect a `PlanDraft` → step 4 exports a **plan-request JSON** + a localized **prompt** (`wizard.aiPrompt` in the dictionaries, which documents the importable plan schema). User pastes/attaches the AI's plan → `addPlanFromImport(json, trainingPrefs, startDate)` validates via `parseImport` and inserts it as a new active plan. The importable schema == what `parseImport` accepts.
-- **Google Drive sync** (`lib/google-drive.ts`, `store/use-sync-store.ts`): Google Identity Services token client + Drive REST against the hidden `appDataFolder`. **Tokens are never persisted** (in-memory; silent refresh + proactive refresh + retry-on-401). Conflict = newest-wins (`lastModified` vs Drive `modifiedTime`). Enabled only when `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is set (`.env.local`); otherwise the UI shows "not configured" and the app is local-only. `next.config.ts` sets a COOP header for the OAuth popup.
+- **Google Drive sync** — **server-side OAuth**:
+  - **Server** (`lib/server/*` + `app/api/*`): `google-oauth.ts` (auth URL, code exchange, refresh, `getValidAccessToken`, revoke, userinfo), `session.ts` (iron-session encrypted cookie `marathon-session` holding `{refreshToken, accessToken, accessTokenExpiry, user}`), `drive.ts` (Drive REST against the hidden `appDataFolder`, token-parameterized). Routes: `auth/google/login` (redirect to consent w/ `access_type=offline&prompt=consent`, CSRF `state` cookie), `auth/google/callback` (exchange + save session), `auth/session` (`{configured, connected, user}` — no tokens), `auth/logout` (revoke + destroy), `drive/meta` (findFile), `drive/content` (GET download / POST create / PATCH update). All `runtime="nodejs"`, `dynamic="force-dynamic"`; a 401 (refresh failed / Drive 401) → client re-auth.
+  - **Client** (`lib/google-drive.ts`, `store/use-sync-store.ts`): a thin same-origin fetch client (`findFile`/`downloadFile`/`createFile`/`updateFile` → `/api/drive/*`, serialized via a single-flight queue; `fetchSession`/`loginUrl`/`logout`). `connect()` is a **full-page redirect** to `/api/auth/google/login`. The store learns `configured`/`connected`/`user` from `/api/auth/session` on `init()`; conflict = newest-wins (`lastModified` vs Drive `modifiedTime`); 3s debounced auto-push + refresh-on-refocus unchanged.
+  - Enabled only when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`SESSION_SECRET` are set; otherwise the UI shows "not configured". No COOP header / no Google SDK in the browser (the old GIS token flow is gone).
 - **Workout dialog** (`components/plan/workout-form-dialog.tsx`): a **Plan vs Log** mode toggle. Plan mode = scheduling (date or flexible window + planned distance/pace; no actuals). Log mode = actuals (distance, duration `mm:ss`, pace, notes, completed). Distance + (duration *or* pace) auto-computes and locks the third field.
 
 ## i18n — `lib/i18n/`
@@ -61,7 +65,9 @@ app/                      routes (dashboard /, plan, plan/new, calendar, off-day
 components/ui/            shadcn (Base UI) primitives — generally don't edit
 components/{layout,common,dashboard,plan,calendar,off-days,stats,settings,wizard}/  feature UI
 hooks/                    useActivePlan, useStats, useHydrated, useMounted
-lib/                      types, plan-generator, stats (derived), pace, date(+date-locale), storage(export/import+migrate), google-drive, i18n, utils
+lib/                      types, plan-generator, stats (derived), pace, date(+date-locale), storage(export/import+migrate), google-drive (thin sync client), drive-types, i18n, utils
+lib/server/               server-only Drive OAuth: session (iron-session), google-oauth, drive, api (error helper)
+app/api/                  Route Handlers: auth/google/{login,callback}, auth/{session,logout}, drive/{meta,content}
 store/                    use-training-store, use-sync-store
 docs/                     this guide, roadmap.md (planned features), ai-plan-coach.md (deferred design)
 ```
@@ -69,9 +75,9 @@ docs/                     this guide, roadmap.md (planned features), ai-plan-coa
 ## Build & verify
 
 - `npm install` then `npm run dev`. `npm run build` (Vercel-ready), `npm run lint` — **keep both green** (lint runs `react-hooks` rules stricter than build; avoid `setState`-in-effect — use the render-time reset or `useMounted`).
-- Optional Drive sync: copy `.env.local.example` → `.env.local`, set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (see README "Cloud sync setup").
+- Optional Drive sync: copy `.env.local.example` → `.env.local`, set `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI`/`SESSION_SECRET`, and register the redirect URI + publish the consent screen (see README "Cloud sync setup").
 - **Test the generator** without a browser: `npx tsx` a small script importing `generateDefaultPlan` from `lib/plan-generator.ts`.
-- **Browser smoke** (no extra deps committed): `npm i -D playwright-core`, launch with `chromium.launch({ channel: "chrome" })` (uses system Chrome — no browser download), drive the app, then `npm uninstall playwright-core`. Use isolated `browser.newContext()` per scenario to reset localStorage. Onboarding popups appear on fresh state — dismiss "Not now" (Drive) then choose a plan option.
+- **Browser smoke** (no extra deps committed): `npm i -D playwright-core`, launch with `chromium.launch({ channel: "chrome" })` (uses system Chrome — no browser download), drive the app, then `npm uninstall playwright-core`. Use isolated `browser.newContext()` per scenario to reset localStorage. Onboarding popups appear on fresh state — the Drive dialog only shows when sync is configured (server env set), otherwise you go straight to the "create plan?" popup; choose a plan option.
 
 ## When extending
 

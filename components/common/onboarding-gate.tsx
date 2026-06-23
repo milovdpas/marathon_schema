@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { isSyncConfigured } from "@/lib/google-drive";
 import { useSyncStore } from "@/store/use-sync-store";
 import { useTrainingStore } from "@/store/use-training-store";
 
@@ -25,13 +24,14 @@ export function OnboardingGate() {
   const setPreferences = useTrainingStore((s) => s.setPreferences);
   const initializePlan = useTrainingStore((s) => s.initializePlan);
   const connect = useSyncStore((s) => s.connect);
+  const configured = useSyncStore((s) => s.configured);
+  const connected = useSyncStore((s) => s.connected);
+  const ready = useSyncStore((s) => s.ready);
 
-  // Ask about Drive first (if available), then about creating a plan.
-  const [phase, setPhase] = useState<"drive" | "plan">(
-    isSyncConfigured() ? "drive" : "plan",
-  );
+  // Ask about Drive first (if available + not yet linked), then about a plan.
+  const [phase, setPhase] = useState<"drive" | "plan">("drive");
 
-  if (!hydrated || onboardingSeen) return null;
+  if (!hydrated || onboardingSeen || !ready) return null;
 
   const lookAround = () => {
     setPreferences({ onboardingSeen: true });
@@ -43,7 +43,7 @@ export function OnboardingGate() {
     router.push("/plan/new");
   };
 
-  if (phase === "drive") {
+  if (phase === "drive" && configured && !connected) {
     return (
       <Dialog open onOpenChange={() => setPhase("plan")}>
         <DialogContent className="sm:max-w-sm">

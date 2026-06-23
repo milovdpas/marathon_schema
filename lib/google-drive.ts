@@ -1,25 +1,12 @@
-// Client-side Google Drive sync. No backend, no client secret: we use Google
-// Identity Services (GIS) for an OAuth access token and call the Drive REST API
-// directly with fetch. Data lives in the hidden appDataFolder.
+// Client sync layer. Authentication + Drive access now live in the Next.js
+// backend (server-side OAuth with refresh tokens); this module just calls the
+// same-origin /api routes. No Google SDK, no tokens in the browser.
 
-const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
-const SCOPES =
-  "openid email profile https://www.googleapis.com/auth/drive.appdata";
-const FILE_NAME = "marathon-tracker.json";
-const GIS_SRC = "https://accounts.google.com/gsi/client";
+import type { DriveFileMeta, SyncUser } from "@/lib/drive-types";
 
-export interface SyncUser {
-  email: string;
-  name: string;
-  picture: string;
-}
+export type { DriveFileMeta, SyncUser };
 
-export interface DriveFileMeta {
-  id: string;
-  modifiedTime: string; // RFC 3339, Drive's server clock
-}
-
-/** Thrown on a 401 so callers can refresh the token and retry once. */
+/** Thrown when an /api/drive call returns 401 (session/refresh gone). */
 export class DriveAuthError extends Error {
   constructor() {
     super("UNAUTHORIZED");
@@ -27,268 +14,91 @@ export class DriveAuthError extends Error {
   }
 }
 
-export function isSyncConfigured(): boolean {
-  return CLIENT_ID.length > 0;
+// Serialize Drive calls so an auto-push can't overlap a reconcile and race the
+// server-side token refresh / session-cookie write.
+let chain: Promise<unknown> = Promise.resolve();
+function serialize<T>(fn: () => Promise<T>): Promise<T> {
+  const run = chain.then(fn, fn);
+  chain = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
 }
 
-// ---- GIS loading + token client ------------------------------------------
-
-let gisPromise: Promise<void> | null = null;
-
-function loadGis(): Promise<void> {
-  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
-  if (window.google?.accounts?.oauth2) return Promise.resolve();
-  if (gisPromise) return gisPromise;
-
-  gisPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(
-      `script[src="${GIS_SRC}"]`,
-    );
-    if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("GIS failed to load")));
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = GIS_SRC;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("GIS failed to load"));
-    document.head.appendChild(script);
-  });
-  return gisPromise;
-}
-
-let tokenClient: TokenClient | null = null;
-let accessToken: string | null = null;
-let tokenExpiry = 0; // epoch ms
-let pending: {
-  resolve: (token: string) => void;
-  reject: (err: Error) => void;
-} | null = null;
-
-// We cache the short-lived access token in localStorage so a page refresh can
-// keep using it until it expires (~1h) instead of forcing a re-auth every time
-// — silent token refresh fails in browsers that block third-party cookies.
-const TOKEN_KEY = "marathon-drive-token";
-
-function persistToken(): void {
-  if (typeof localStorage === "undefined") return;
-  try {
-    if (accessToken && tokenExpiry > Date.now()) {
-      localStorage.setItem(TOKEN_KEY, JSON.stringify({ accessToken, tokenExpiry }));
-    } else {
-      localStorage.removeItem(TOKEN_KEY);
-    }
-  } catch {
-    // storage unavailable (private mode / quota) — token just stays in memory
-  }
-}
-
-function restoreToken(): void {
-  if (typeof localStorage === "undefined") return;
-  try {
-    const raw = localStorage.getItem(TOKEN_KEY);
-    if (!raw) return;
-    const saved = JSON.parse(raw) as { accessToken?: string; tokenExpiry?: number };
-    if (saved.accessToken && typeof saved.tokenExpiry === "number") {
-      accessToken = saved.accessToken;
-      tokenExpiry = saved.tokenExpiry;
-    }
-  } catch {
-    // ignore malformed cache
-  }
-}
-
-// Restore any cached token as soon as this module loads on the client.
-restoreToken();
-
-async function ensureTokenClient(): Promise<TokenClient> {
-  await loadGis();
-  const oauth2 = window.google!.accounts.oauth2;
-  if (tokenClient) return tokenClient;
-  tokenClient = oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (response) => {
-      if (response.error || !response.access_token) {
-        pending?.reject(new Error(response.error_description || response.error || "Token request failed"));
-        pending = null;
-        return;
-      }
-      accessToken = response.access_token;
-      tokenExpiry = Date.now() + (response.expires_in ?? 3600) * 1000;
-      persistToken();
-      pending?.resolve(accessToken);
-      pending = null;
-    },
-    error_callback: (err) => {
-      pending?.reject(new Error(err.message || err.type || "Token request failed"));
-      pending = null;
-    },
-  });
-  return tokenClient;
-}
-
-/**
- * Preload the GIS script + token client so a later connect() can open its popup
- * synchronously inside the click gesture (otherwise the browser blocks it).
- */
-export async function prepareSync(): Promise<void> {
-  if (!isSyncConfigured()) return;
-  await ensureTokenClient();
-}
-
-// GIS has a single callback slot (`pending`), so overlapping token requests
-// would clobber each other. Serialize them: identical concurrent requests share
-// one in-flight promise; a differing request waits for the current one to settle.
-let inFlight: { prompt: string; promise: Promise<string> } | null = null;
-
-/**
- * Request an access token. `prompt: "consent"` shows the account chooser (used
- * on explicit connect); `prompt: ""` attempts a silent grant (reconnect/refresh).
- */
-export async function requestToken(prompt: "" | "consent"): Promise<string> {
-  if (inFlight && inFlight.prompt === prompt) return inFlight.promise;
-  if (inFlight) await inFlight.promise.catch(() => {});
-
-  const promise = (async () => {
-    const client = await ensureTokenClient();
-    return new Promise<string>((resolve, reject) => {
-      pending = { resolve, reject };
-      client.requestAccessToken({ prompt });
-    });
-  })();
-  inFlight = { prompt, promise };
-  try {
-    return await promise;
-  } finally {
-    if (inFlight?.promise === promise) inFlight = null;
-  }
-}
-
-/** A valid cached token, or a silent refresh if expired/near-expiry. */
-async function getValidToken(): Promise<string> {
-  if (accessToken && Date.now() < tokenExpiry - 60_000) return accessToken;
-  return requestToken("");
-}
-
-/** Whether we currently hold a non-expired access token. */
-export function hasValidToken(): boolean {
-  return !!accessToken && Date.now() < tokenExpiry - 60_000;
-}
-
-/** Epoch ms when the current token expires (0 if none). */
-export function getTokenExpiry(): number {
-  return accessToken ? tokenExpiry : 0;
-}
-
-/** Attempt a silent token grant. Returns true on success, false if Google
- * requires user interaction (e.g. session gone / third-party cookies blocked). */
-export async function silentRefresh(): Promise<boolean> {
-  try {
-    await requestToken("");
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function revokeToken(): void {
-  if (accessToken && window.google?.accounts?.oauth2) {
-    window.google.accounts.oauth2.revoke(accessToken);
-  }
-  accessToken = null;
-  tokenExpiry = 0;
-  persistToken();
-}
-
-// ---- Identity -------------------------------------------------------------
-
-export async function fetchUserInfo(): Promise<SyncUser> {
-  const token = await getValidToken();
-  const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (res.status === 401) throw new DriveAuthError();
-  if (!res.ok) throw new Error(`userinfo failed (${res.status})`);
-  const data = await res.json();
-  return {
-    email: data.email ?? "",
-    name: data.name ?? data.email ?? "Google account",
-    picture: data.picture ?? "",
-  };
-}
-
-// ---- Drive REST -----------------------------------------------------------
-
-async function driveFetch(url: string, init: RequestInit): Promise<Response> {
-  const token = await getValidToken();
-  const res = await fetch(url, {
-    ...init,
-    headers: { ...init.headers, Authorization: `Bearer ${token}` },
-  });
+async function api(path: string, init?: RequestInit): Promise<Response> {
+  const res = await fetch(path, { ...init, cache: "no-store" });
   if (res.status === 401) throw new DriveAuthError();
   return res;
 }
 
 export async function findFile(): Promise<DriveFileMeta | null> {
-  const q = encodeURIComponent(`name='${FILE_NAME}'`);
-  const res = await driveFetch(
-    `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime)`,
-    { method: "GET" },
-  );
-  if (!res.ok) throw new Error(`Drive list failed (${res.status})`);
-  const data = await res.json();
-  const file = data.files?.[0];
-  return file ? { id: file.id, modifiedTime: file.modifiedTime } : null;
+  return serialize(async () => {
+    const res = await api("/api/drive/meta");
+    if (!res.ok) throw new Error(`Drive meta failed (${res.status})`);
+    const data = await res.json();
+    return data && data.id ? (data as DriveFileMeta) : null;
+  });
 }
 
 export async function downloadFile(id: string): Promise<string> {
-  const res = await driveFetch(
-    `https://www.googleapis.com/drive/v3/files/${id}?alt=media`,
-    { method: "GET" },
-  );
-  if (!res.ok) throw new Error(`Drive download failed (${res.status})`);
-  return res.text();
+  return serialize(async () => {
+    const res = await api(`/api/drive/content?id=${encodeURIComponent(id)}`);
+    if (!res.ok) throw new Error(`Drive download failed (${res.status})`);
+    return res.text();
+  });
 }
 
 export async function createFile(json: string): Promise<DriveFileMeta> {
-  const boundary = "marathon_tracker_boundary";
-  const metadata = { name: FILE_NAME, parents: ["appDataFolder"] };
-  const body =
-    `--${boundary}\r\n` +
-    "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
-    JSON.stringify(metadata) +
-    `\r\n--${boundary}\r\n` +
-    "Content-Type: application/json\r\n\r\n" +
-    json +
-    `\r\n--${boundary}--`;
-  const res = await driveFetch(
-    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime",
-    {
+  return serialize(async () => {
+    const res = await api("/api/drive/content", {
       method: "POST",
-      headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
-      body,
-    },
-  );
-  if (!res.ok) throw new Error(`Drive create failed (${res.status})`);
-  return res.json();
+      headers: { "Content-Type": "application/json" },
+      body: json,
+    });
+    if (!res.ok) throw new Error(`Drive create failed (${res.status})`);
+    return res.json();
+  });
 }
 
 export async function updateFile(
   id: string,
   json: string,
 ): Promise<DriveFileMeta> {
-  const res = await driveFetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media&fields=id,modifiedTime`,
-    {
+  return serialize(async () => {
+    const res = await api(`/api/drive/content?id=${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: json,
-    },
-  );
-  if (!res.ok) throw new Error(`Drive update failed (${res.status})`);
-  return res.json();
+    });
+    if (!res.ok) throw new Error(`Drive update failed (${res.status})`);
+    return res.json();
+  });
+}
+
+// ---- Auth / session -------------------------------------------------------
+
+export interface SessionInfo {
+  configured: boolean;
+  connected: boolean;
+  user: SyncUser | null;
+}
+
+export async function fetchSession(): Promise<SessionInfo> {
+  try {
+    const res = await fetch("/api/auth/session", { cache: "no-store" });
+    if (!res.ok) return { configured: false, connected: false, user: null };
+    return res.json();
+  } catch {
+    return { configured: false, connected: false, user: null };
+  }
+}
+
+/** Full-page redirect target that starts the Google consent flow. */
+export function loginUrl(returnTo: string): string {
+  return `/api/auth/google/login?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+export async function logout(): Promise<void> {
+  await fetch("/api/auth/logout", { method: "POST" });
 }

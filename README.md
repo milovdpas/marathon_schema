@@ -2,7 +2,7 @@
 
 A clean, mobile-first web app for tracking marathon training — built for a sub-3:30 goal on **October 11, 2026**, with an auto-generated 16-week plan that builds to a 30 km peak and works around real-life interruptions (vacations, a surf trip).
 
-No backend, no login. Everything lives in your browser's **localStorage**. Deploys to Vercel as a static app.
+No login required. Everything lives in your browser's **localStorage**. Optional Google Drive sync uses a thin Next.js backend (server-side OAuth) — there's no database. Deploys to Vercel.
 
 > Design language: **Strava × Notion** — calm surfaces, data-dense cards, an orange race-day accent, and full dark mode.
 
@@ -82,39 +82,48 @@ npm run start   # serve the production build
 
 ### Deploy to Vercel
 
-Push to a Git repo and import it in Vercel. It builds and serves as a fully static client app. The only (optional) configuration is the Google Drive sync client ID below — leave it unset and the app runs localStorage-only.
+Push to a Git repo and import it in Vercel. The app is mostly client-side but serves a few server Route Handlers under `app/api/*` for Google Drive OAuth (running as Vercel Functions). The only (optional) configuration is the Google Drive sync env below — leave it unset and the app runs localStorage-only.
 
 ---
 
 ## Cloud sync setup (optional)
 
-By default everything lives in your browser's localStorage. You can optionally connect a **Google account** to back up and sync your progress via **Google Drive** — done entirely client-side (no backend, no secrets). Data is stored in Drive's hidden **app-data folder**, invisible in your Drive and accessible only to this app.
+By default everything lives in your browser's localStorage. You can optionally connect a **Google account** to back up and sync your progress via **Google Drive**, using a **server-side OAuth 2.0 authorization-code flow** (refresh tokens kept in an encrypted session cookie — no database, no tokens in the browser). Data is stored in Drive's hidden **app-data folder**, invisible in your Drive and accessible only to this app.
 
-Without a client ID, the app still works fully (local only) and the Settings → Cloud sync card simply shows "not configured".
+Without the env below, the app still works fully (local only) and the Settings → Cloud sync card shows "not configured".
 
 To enable it, create an OAuth client in the [Google Cloud Console](https://console.cloud.google.com/):
 
 1. **Create a project** (or pick one).
 2. **APIs & Services → Library →** enable **Google Drive API**.
-3. **APIs & Services → OAuth consent screen:** choose **External**, keep it in **Testing** mode, add your own Google account under **Test users**, and add the scope `https://www.googleapis.com/auth/drive.appdata`.
-4. **APIs & Services → Credentials → Create credentials → OAuth client ID → Web application.** Under **Authorized JavaScript origins** add `http://localhost:3000` and your deployed URL (e.g. `https://your-app.vercel.app`). No redirect URIs are needed (token flow).
-5. Copy the **Client ID** into `.env.local` (see `.env.local.example`):
+3. **APIs & Services → OAuth consent screen:** choose **External**, add the scope `https://www.googleapis.com/auth/drive.appdata`, and **Publish the app (set it to "In production")**. ⚠️ Don't leave it in *Testing* — Google expires refresh tokens after **7 days** in Testing mode, which defeats staying signed in. `drive.appdata` is *sensitive* but not *restricted*, so publishing needs no formal verification; users just click past a one-time "unverified app" warning.
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID → Web application.** Under **Authorized redirect URIs** add:
+   - `http://localhost:3000/api/auth/google/callback`
+   - `https://<your-stable-domain>/api/auth/google/callback` (use a stable Vercel alias or custom domain — **not** a per-deployment hash URL).
+5. Copy the **Client ID** and **Client secret** into `.env.local` (see `.env.local.example`):
 
    ```bash
-   NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+   GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=xxxxxxxx
+   GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+   SESSION_SECRET=$(openssl rand -base64 32)   # ≥32 chars; encrypts the session cookie
    ```
 
-   For Vercel, add the same variable under **Project → Settings → Environment Variables** and redeploy.
+   For Vercel, add the same four variables under **Project → Settings → Environment Variables** (set `GOOGLE_REDIRECT_URI` to your production callback URL) and redeploy.
 
-Then open **Settings → Cloud sync → Connect Google Drive**.
+Then open **Settings → Cloud sync → Connect Google Drive** — you'll be redirected to Google and back.
 
-- The client ID is public/safe to ship; there is no client secret in the browser.
-- In Testing mode Google shows an "unverified app" screen — expected for personal use; continue past it.
-- Sync is **newest-wins**: it pulls on connect, auto-pushes a few seconds after each edit, and offers a manual **Sync now**. Disconnecting revokes the token but keeps your local data.
+- The **client secret** is confidential: it lives only in server env, never `NEXT_PUBLIC_`, never committed.
+- The browser never sees an access/refresh token — it only calls same-origin `/api/*` routes; the server refreshes tokens transparently, so sessions survive page refreshes and the 1-hour token lifetime.
+- Sync is **newest-wins**: it pulls on connect/refocus, auto-pushes a few seconds after each edit, and offers a manual **Sync now**. Disconnecting revokes the token server-side and clears the session, but keeps your local data.
 
-### Troubleshooting: `Error 403: access_denied` ("has not completed the Google verification process")
+### Troubleshooting: `redirect_uri_mismatch`
 
-Your consent screen is in **Testing** mode and the account you signed in with isn't an approved tester. Fix it in **OAuth consent screen → Audience → Test users → + Add users**, add the exact email you log in with, wait a minute, and retry. (Or **Publish app** to skip the test-user list — still works behind the unverified-app warning for personal use.)
+The `GOOGLE_REDIRECT_URI` (and the live callback URL) must **exactly** match an Authorized redirect URI on the OAuth client — scheme, host, and path. Per-deployment Vercel URLs (with a hash) change every deploy; register a stable alias/custom domain instead.
+
+### Troubleshooting: signed out after ~7 days
+
+Your consent screen is still in **Testing** mode (refresh tokens expire after 7 days). **Publish the app** in OAuth consent screen → Audience, then reconnect.
 
 ---
 

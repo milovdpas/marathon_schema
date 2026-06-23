@@ -14,12 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getDateLocale } from "@/lib/date-locale";
 import { useMounted } from "@/hooks/use-mounted";
-import { isSyncConfigured } from "@/lib/google-drive";
 import { useSyncStore } from "@/store/use-sync-store";
 
 export function CloudSyncCard() {
   const { t } = useTranslation();
   const status = useSyncStore((s) => s.status);
+  const configured = useSyncStore((s) => s.configured);
+  const ready = useSyncStore((s) => s.ready);
   const connected = useSyncStore((s) => s.connected);
   const needsReauth = useSyncStore((s) => s.needsReauth);
   const user = useSyncStore((s) => s.user);
@@ -30,14 +31,16 @@ export function CloudSyncCard() {
   const syncNow = useSyncStore((s) => s.syncNow);
 
   const mounted = useMounted();
+  // Until the session check resolves we don't know configured/connected yet.
+  const loading = !mounted || !ready;
 
   const busy =
     status === "connecting" ||
     status === "syncing" ||
     status === "reconnecting";
 
-  // Not configured: render a static, hydration-safe note.
-  if (!isSyncConfigured()) {
+  // Not configured (server env missing): render a static note.
+  if (!loading && !configured) {
     return (
       <Card className="gap-0 p-4">
         <div className="mb-1 flex items-center gap-2">
@@ -54,7 +57,7 @@ export function CloudSyncCard() {
       <div className="mb-1 flex items-center gap-2">
         <Cloud className="size-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold">{t("sync.title")}</h3>
-        {mounted && connected ? (
+        {!loading && connected ? (
           needsReauth ? (
             <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-tempo">
               <span className="size-1.5 rounded-full bg-tempo" />{" "}
@@ -73,7 +76,7 @@ export function CloudSyncCard() {
         ) : null}
       </div>
 
-      {!mounted ? (
+      {loading ? (
         <div className="h-9 w-40 animate-pulse rounded-md bg-muted" />
       ) : connected ? (
         <div className="space-y-3">
@@ -155,7 +158,7 @@ export function CloudSyncCard() {
         </div>
       )}
 
-      {mounted && error && !needsReauth ? (
+      {!loading && error && !needsReauth ? (
         <p className="mt-3 flex items-start gap-1.5 text-xs text-destructive">
           <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
           {error}

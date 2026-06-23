@@ -10,7 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Quick orientation:
 
-- **Client-only Next.js (App Router) SPA. No backend / DB / auth.** Data lives in `localStorage` (Zustand `persist`); optional client-side Google Drive sync. Deploys static to Vercel. Mobile-first, dark mode, English + Dutch.
+- **Mostly client-side Next.js (App Router) SPA. No database.** Data lives in `localStorage` (Zustand `persist`). The only server code is `app/api/*` Route Handlers for **server-side Google Drive OAuth** (refresh token in an encrypted iron-session cookie; see `lib/server/*`). Deploys to Vercel (Functions). Mobile-first, dark mode, English + Dutch.
 - **Single source of truth:** `store/use-training-store.ts` — a `plans` map + `activePlanId`. Read the active plan via `useActivePlan()` (there is no `s.plan`). Domain types: `lib/types.ts`.
 - **Top gotchas that will bite you:**
   - shadcn here is **Base UI (`@base-ui/react`), not Radix** → compose with the **`render` prop**, not `asChild`.
