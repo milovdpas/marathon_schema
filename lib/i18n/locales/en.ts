@@ -11,6 +11,8 @@ export const en = {
     appName: "Marathon",
     appTagline: "Training tracker",
     createPlan: "Create a plan",
+    decrease: "Decrease",
+    increase: "Increase",
   },
   nav: {
     dashboard: "Dashboard",

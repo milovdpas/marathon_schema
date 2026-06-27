@@ -13,6 +13,8 @@ export const nl: Dict = {
     appName: "Marathon",
     appTagline: "Trainingstracker",
     createPlan: "Maak een plan",
+    decrease: "Verlagen",
+    increase: "Verhogen",
   },
   nav: {
     dashboard: "Dashboard",

@@ -1,6 +1,7 @@
 "use client";
 
 import { addDays, format, startOfWeek } from "date-fns";
+import { Minus, Plus } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -35,17 +36,33 @@ export function TrainingPrefsFields({
         <Label className="text-xs text-muted-foreground">
           {t("wizard.daysPerWeek")}
         </Label>
-        <Input
-          type="number"
-          min={1}
-          max={7}
-          value={prefs.daysPerWeek}
-          onChange={(e) =>
-            onChange({
-              daysPerWeek: Math.max(1, Math.min(7, Number(e.target.value) || 1)),
-            })
-          }
-        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={t("common.decrease")}
+            disabled={prefs.daysPerWeek <= 1}
+            onClick={() =>
+              onChange({ daysPerWeek: Math.max(1, prefs.daysPerWeek - 1) })
+            }
+            className="grid size-9 shrink-0 place-items-center rounded-lg border transition-colors hover:bg-accent disabled:opacity-40"
+          >
+            <Minus className="size-4" />
+          </button>
+          <span className="w-10 text-center text-sm font-semibold tabular-nums">
+            {prefs.daysPerWeek}
+          </span>
+          <button
+            type="button"
+            aria-label={t("common.increase")}
+            disabled={prefs.daysPerWeek >= 7}
+            onClick={() =>
+              onChange({ daysPerWeek: Math.min(7, prefs.daysPerWeek + 1) })
+            }
+            className="grid size-9 shrink-0 place-items-center rounded-lg border transition-colors hover:bg-accent disabled:opacity-40"
+          >
+            <Plus className="size-4" />
+          </button>
+        </div>
       </div>
 
       <div>
