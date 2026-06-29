@@ -30,6 +30,7 @@ import {
 } from "@/lib/pace";
 import { WORKOUT_TYPES, type Workout, type WorkoutType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { attachWeather } from "@/lib/weather-sync";
 import { useTrainingStore } from "@/store/use-training-store";
 
 interface FormState {
@@ -41,6 +42,7 @@ interface FormState {
   actualDistanceKm: string;
   durationMin: string;
   actualPace: string;
+  finishTime: string;
   notes: string;
   completed: boolean;
   flexible: boolean;
@@ -58,6 +60,7 @@ function blankForm(defaultDate: string): FormState {
     actualDistanceKm: "",
     durationMin: "",
     actualPace: "",
+    finishTime: "",
     notes: "",
     completed: false,
     flexible: false,
@@ -76,6 +79,7 @@ function fromWorkout(w: Workout): FormState {
     actualDistanceKm: w.actualDistanceKm != null ? String(w.actualDistanceKm) : "",
     durationMin: formatClock(w.durationMin),
     actualPace: w.actualPace ?? "",
+    finishTime: w.finishTime ?? "",
     notes: w.notes ?? "",
     completed: w.completed,
     flexible: w.flexible ?? false,
@@ -165,6 +169,7 @@ export function WorkoutFormDialog({
         actualDistanceKm,
         durationMin,
         actualPace,
+        finishTime: form.finishTime.trim() || undefined,
         notes: form.notes.trim() || undefined,
         completed: form.completed,
         // A logged activity has a concrete date.
@@ -188,10 +193,15 @@ export function WorkoutFormDialog({
       };
     }
 
+    let targetId: string;
     if (isEdit && workout) {
       updateWorkout(workout.id, payload);
+      targetId = workout.id;
     } else {
-      addWorkout(payload as Parameters<typeof addWorkout>[0]);
+      targetId = addWorkout(payload as Parameters<typeof addWorkout>[0]);
+    }
+    if (mode === "log") {
+      void attachWeather(targetId, payload.date, form.finishTime.trim() || undefined);
     }
     onOpenChange(false);
   };
@@ -364,6 +374,13 @@ export function WorkoutFormDialog({
               <p className="text-xs text-muted-foreground">
                 {t("workoutForm.computeHint")}
               </p>
+              <Field label={t("workoutForm.finishTime")}>
+                <Input
+                  type="time"
+                  value={form.finishTime}
+                  onChange={(e) => set("finishTime", e.target.value)}
+                />
+              </Field>
               <Field label={t("workoutForm.notes")}>
                 <textarea
                   className="min-h-16 w-full resize-y rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"

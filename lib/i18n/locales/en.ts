@@ -104,6 +104,7 @@ export const en = {
     flexible: "Flexible (complete any day in a window)",
     windowStart: "Window start",
     windowEnd: "Window end",
+    finishTime: "Finished at (optional)",
   },
   calendar: {
     title: "Calendar",
@@ -111,6 +112,8 @@ export const en = {
     today: "Today",
     prevMonth: "Previous month",
     nextMonth: "Next month",
+    weather: "Weather",
+    offDayLabel: "Off day",
     legend:
       "Tap a day to see or edit its workouts. Faded dots are planned; solid dots are completed.",
     flexLegend:
@@ -201,9 +204,11 @@ The plan has an "offDays" list (vacations/trips with a note on whether I can tra
 
 You MAY freely reschedule, add, remove or modify any PLANNED (not-yet-completed) future workout to make this work.
 
+Each workout has PLANNED targets ("plannedDistanceKm", "plannedPace") and, once I've done it, LOGGED actuals ("actualDistanceKm", "actualPace", "durationMin" in minutes, optional "finishTime" as "HH:mm", and optional "weather" = {tempC, condition, ...}). Compare planned vs actual to judge how the training is actually going (e.g. consistently slower/shorter than planned, or hard sessions done in heat) and adapt upcoming workouts accordingly.
+
 You MUST follow these rules:
 - NEVER change the race date. Keep "raceDate" exactly the same and keep the marathon / race-day workout on its date — the marathon date is fixed.
-- NEVER alter a completed workout: any workout with "completed": true must stay exactly as-is, including its "id", "completed", "actualDistanceKm", "actualPace" and "durationMin" (don't lose my logged progress).
+- NEVER alter a completed workout: any workout with "completed": true must stay exactly as-is, including its "id", "completed", "actualDistanceKm", "actualPace", "durationMin", "finishTime" and "weather" (don't lose my logged progress).
 - Keep the JSON structure valid (plans, weeks, workouts). If you move a workout to a different week, also move its id into that week's "workoutIds", and keep each workout's "date" inside its week's start/end range.
 - Return the complete updated JSON only, nothing else.
 - IMPORTANT — give me the result as a downloadable .json FILE so I can attach it directly. If you can't create a file, put the ENTIRE JSON in a single \`\`\`json code block, including the very first { and the very last } — never split it or leave characters out.
@@ -253,6 +258,22 @@ JSON (paste below, or attach the exported .json file):
       "Connect Google Drive to back up your progress and pick up your plan on any device.",
     connect: "Connect Google Drive",
     notNow: "Not now",
+    weatherTitle: "Show weather?",
+    weatherBody:
+      "See the forecast in your calendar and capture the conditions for each run. Uses your device location.",
+    enableWeather: "Enable weather",
+  },
+  weather: {
+    title: "Weather",
+    notConfigured:
+      "Weather isn't configured for this deployment. Add an OpenWeather key to enable it.",
+    enable: "Show weather",
+    enableBody:
+      "Use your location to record the weather conditions of each run you log. Toggle the calendar display from the calendar's legend.",
+    inCalendar: "Show weather in calendar",
+    locationDenied:
+      "Location access was denied — allow it in your browser to use weather.",
+    locationUnavailable: "Couldn't get your location. Try again.",
   },
   wizard: {
     title: "Create a plan",
@@ -357,6 +378,9 @@ Output schema (return exactly this shape, nothing else):
           "title": "...", "weekNumber": 1, "plannedDistanceKm": <number>, "plannedPace": "mm:ss",
           "completed": false
           // For flexible scheduling also add: "flexible": true, "windowStart": "YYYY-MM-DD", "windowEnd": "YYYY-MM-DD"
+          // New plans set "completed": false. Once I log a run the app fills in actuals:
+          // "actualDistanceKm", "actualPace" ("mm:ss"), "durationMin" (number), optional
+          // "finishTime" ("HH:mm") and optional "weather" {tempC, condition, ...} — leave these out for new plans.
         }
       }
     }

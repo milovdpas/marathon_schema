@@ -65,7 +65,7 @@ interface TrainingState {
   addWorkout: (
     input: Omit<Workout, "id" | "weekNumber" | "completed"> &
       Partial<Pick<Workout, "completed">>,
-  ) => void;
+  ) => string;
   deleteWorkout: (id: string) => void;
 
   setPreferences: (patch: Partial<Preferences>) => void;
@@ -361,12 +361,12 @@ export const useTrainingStore = create<TrainingState>()(
           }),
         ),
 
-      addWorkout: (input) =>
+      addWorkout: (input) => {
+        const id = newId();
         set((s) =>
           mutateActive(s, (p) => {
             const idx = weekIndexForDate(p, input.date);
             const week = idx >= 0 ? p.weeks[idx] : undefined;
-            const id = newId();
             const workout: Workout = {
               ...input,
               id,
@@ -382,7 +382,9 @@ export const useTrainingStore = create<TrainingState>()(
                 : p.weeks;
             return { ...p, weeks, workouts: { ...p.workouts, [id]: workout } };
           }),
-        ),
+        );
+        return id;
+      },
 
       deleteWorkout: (id) =>
         set((s) =>
@@ -445,7 +447,10 @@ export const useTrainingStore = create<TrainingState>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 4,
+      // v5: additive — Workout.finishTime/weather + Preferences weather flags.
+      // No transform needed (absent = correct default); the migrate below is
+      // idempotent and runs for all prior versions.
+      version: 5,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,

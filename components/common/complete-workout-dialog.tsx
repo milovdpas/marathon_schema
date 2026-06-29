@@ -22,11 +22,18 @@ import {
 } from "@/lib/pace";
 import type { Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { attachWeather } from "@/lib/weather-sync";
 import { useTrainingStore } from "@/store/use-training-store";
 
 function num(v: string): number | undefined {
   const n = parseFloat(v);
   return Number.isFinite(n) ? n : undefined;
+}
+
+/** Current local time as "HH:mm". */
+function nowHHmm(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 /**
@@ -48,6 +55,7 @@ export function CompleteWorkoutDialog({
   const [distance, setDistance] = useState("");
   const [duration, setDuration] = useState("");
   const [pace, setPace] = useState("");
+  const [finishTime, setFinishTime] = useState("");
 
   // Prefill from the planned target when the dialog opens (reset during render).
   const [wasOpen, setWasOpen] = useState(false);
@@ -58,6 +66,7 @@ export function CompleteWorkoutDialog({
     );
     setPace(workout.actualPace ?? workout.plannedPace ?? "");
     setDuration(formatClock(workout.durationMin));
+    setFinishTime(workout.finishTime ?? nowHHmm());
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
@@ -91,12 +100,15 @@ export function CompleteWorkoutDialog({
         if (ps != null) durationMin = (ps * actualDistanceKm) / 60;
       }
     }
+    const finish = finishTime.trim() || undefined;
     updateWorkout(workout.id, {
       actualDistanceKm,
       durationMin,
       actualPace,
+      finishTime: finish,
       completed: true,
     });
+    void attachWeather(workout.id, workout.date, finish);
     onOpenChange(false);
   };
 
@@ -165,6 +177,17 @@ export function CompleteWorkoutDialog({
             <p className="text-xs text-muted-foreground">
               {t("workoutForm.computeHint")}
             </p>
+
+            <div className="grid gap-1.5">
+              <Label className="text-xs text-muted-foreground">
+                {t("workoutForm.finishTime")}
+              </Label>
+              <Input
+                type="time"
+                value={finishTime}
+                onChange={(e) => setFinishTime(e.target.value)}
+              />
+            </div>
           </div>
         ) : null}
 

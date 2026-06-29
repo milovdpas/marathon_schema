@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TrainingPrefsFields } from "@/components/common/training-prefs-fields";
 import { CloudSyncCard } from "@/components/settings/cloud-sync-card";
+import { WeatherCard } from "@/components/settings/weather-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -302,6 +303,9 @@ export function SettingsView() {
 
       {/* Cloud sync */}
       <CloudSyncCard />
+
+      {/* Weather */}
+      <WeatherCard />
 
       {/* Data */}
       <Card className="gap-0 p-4">

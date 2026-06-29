@@ -127,6 +127,29 @@ Your consent screen is still in **Testing** mode (refresh tokens expire after 7 
 
 ---
 
+## Weather setup (optional)
+
+Turn on **Settings → Weather** (or accept the onboarding prompt) to see per-day weather in the calendar and record the conditions of each logged run. It uses your **device location** (browser permission) and a server-side weather key — the key never reaches the browser.
+
+To enable it:
+
+1. Create an API key at [OpenWeatherMap](https://openweathermap.org/api/one-call-3) and subscribe to **"One Call by Call"** — **1000 calls/day are free**, but a **credit card is required even for the free tier**.
+2. In your OWM dashboard, set a **"Calls per day" cap** to hard-stop at the free limit (the app caches aggressively, but this is your safety net).
+3. Add the key to `.env.local` (and Vercel env), server-side only:
+
+   ```bash
+   OPENWEATHER_API_KEY=xxxxxxxx
+   ```
+
+Notes & limits:
+
+- The key is **server-only** (never `NEXT_PUBLIC_`); the browser calls same-origin `/api/weather/*`. Without it, the Settings card shows "not configured".
+- Responses are cached in `localStorage`; past days cache ~permanently, near-future briefly. The calendar fetches **one call per visible week**.
+- **Hourly precision** (the logged finish time) resolves within ~48 h ahead or any past date; further-future planned runs only get the daily value.
+- Weather uses your **current** location, so runs done while travelling/abroad will show your current-location weather.
+
+---
+
 ## Project structure
 
 ```

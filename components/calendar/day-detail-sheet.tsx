@@ -2,7 +2,9 @@
 
 import { format } from "date-fns";
 import { Plus, Umbrella } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { WeatherIcon } from "@/components/calendar/weather-badge";
 import { FlexibleDayPicker } from "@/components/common/flexible-day-picker";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,10 @@ import {
 } from "@/components/ui/sheet";
 import { fromISO } from "@/lib/date";
 import { getDateLocale } from "@/lib/date-locale";
-import type { OffDay, Workout } from "@/lib/types";
+import type { OffDay, WeatherSnapshot, Workout } from "@/lib/types";
+import { getDayWeather } from "@/lib/weather";
+import { useTrainingStore } from "@/store/use-training-store";
+import { useWeatherStore } from "@/store/use-weather-store";
 
 export function DayDetailSheet({
   date,
@@ -44,6 +49,33 @@ export function DayDetailSheet({
     ...workouts,
     ...flexibleInWindow.filter((w) => !workouts.some((x) => x.id === w.id)),
   ];
+
+  // Day weather (when the feature is enabled — independent of the calendar toggle).
+  const weatherEnabled = useTrainingStore((s) => s.preferences.weatherEnabled);
+  const weatherConfigured = useWeatherStore((s) => s.configured);
+  const coords = useWeatherStore((s) => s.lastCoords);
+  // Keyed by date so a stale snapshot never shows against a different day.
+  const [weather, setWeather] = useState<{
+    iso: string;
+    snap: WeatherSnapshot;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!date || !weatherEnabled || !weatherConfigured || !coords) return;
+    let cancelled = false;
+    (async () => {
+      const snap = await getDayWeather(coords.lat, coords.lon, date).catch(
+        () => null,
+      );
+      if (!cancelled && snap) setWeather({ iso: date, snap });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, weatherEnabled, weatherConfigured, coords?.lat, coords?.lon]);
+
+  const dayWeather = weather && weather.iso === date ? weather.snap : null;
   return (
     <Sheet open={!!date} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="mx-auto max-w-2xl rounded-t-2xl">
@@ -59,6 +91,21 @@ export function DayDetailSheet({
         </SheetHeader>
 
         <div className="space-y-2 overflow-y-auto px-4 pb-4">
+          {dayWeather ? (
+            <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
+              <WeatherIcon id={dayWeather.conditionId} className="size-5" />
+              {dayWeather.tempC != null ? (
+                <span className="text-sm font-semibold tabular-nums">
+                  {Math.round(dayWeather.tempC)}°C
+                </span>
+              ) : null}
+              {dayWeather.condition ? (
+                <span className="text-xs text-muted-foreground">
+                  {dayWeather.condition}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {offDay ? (
             <div className="flex items-start gap-2 rounded-lg border border-tempo/30 bg-tempo/10 px-3 py-2">
               <Umbrella className="mt-0.5 size-4 shrink-0 text-tempo" />

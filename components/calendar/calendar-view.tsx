@@ -18,7 +18,10 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NoPlanState } from "@/components/common/no-plan-state";
 import { TYPE_STYLE, WorkoutTypeDot } from "@/components/common/workout-type-badge";
+import { CalendarLegend } from "@/components/calendar/calendar-legend";
 import { DayDetailSheet } from "@/components/calendar/day-detail-sheet";
+import { useCalendarWeather } from "@/components/calendar/use-calendar-weather";
+import { WeatherBadge } from "@/components/calendar/weather-badge";
 import { WorkoutFormDialog } from "@/components/plan/workout-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,8 +29,11 @@ import { fromISO, offDayForDate, toISO } from "@/lib/date";
 import { getDateLocale } from "@/lib/date-locale";
 import type { Workout, WorkoutType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { enableWeather } from "@/lib/weather-sync";
 import { useActivePlan } from "@/hooks/use-active-plan";
+import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";
+import { useWeatherStore } from "@/store/use-weather-store";
 
 /** A multi-day period rendered as a spanning bar (off day or flexible workout). */
 interface BarEvent {
@@ -94,6 +100,31 @@ export function CalendarView() {
   const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
   const updateWorkout = useTrainingStore((s) => s.updateWorkout);
+  const setPreferences = useTrainingStore((s) => s.setPreferences);
+  const weatherEnabled = useTrainingStore((s) => s.preferences.weatherEnabled);
+  const weatherCalendar = useTrainingStore((s) => s.preferences.weatherCalendar);
+  const weatherConfigured = useWeatherStore((s) => s.configured);
+  const [weatherBusy, setWeatherBusy] = useState(false);
+
+  const weatherOn = !!weatherEnabled && !!weatherCalendar;
+
+  // Calendar weather chip: turning it on enables the feature (location prompt)
+  // if needed, then shows weather in the calendar; turning it off just hides it.
+  const toggleCalendarWeather = async () => {
+    if (weatherOn) {
+      setPreferences({ weatherCalendar: false });
+      return;
+    }
+    if (weatherEnabled) {
+      setPreferences({ weatherCalendar: true });
+      return;
+    }
+    setWeatherBusy(true);
+    const result = await enableWeather();
+    setWeatherBusy(false);
+    if (result === "ok") setPreferences({ weatherCalendar: true });
+    else toast.error(t("weather.locationDenied"));
+  };
 
   // Localized Mon–Sun short weekday headers.
   const weekdays = useMemo(() => {
@@ -146,6 +177,8 @@ export function CalendarView() {
     const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
     return eachDayOfInterval({ start, end });
   }, [month]);
+
+  const weather = useCalendarWeather(days);
 
   if (!plan) return <NoPlanState />;
 
@@ -277,6 +310,9 @@ export function CalendarView() {
                             />
                           ))}
                         </span>
+                        {weather[iso] ? (
+                          <WeatherBadge snapshot={weather[iso]} />
+                        ) : null}
                       </button>
                     );
                   })}
@@ -338,10 +374,13 @@ export function CalendarView() {
         </div>
       </Card>
 
-      <p className="text-xs text-muted-foreground">{t("calendar.legend")}</p>
-      <p className="-mt-2 text-xs text-muted-foreground">
-        {t("calendar.flexLegend")}
-      </p>
+      <CalendarLegend
+        weatherConfigured={weatherConfigured}
+        weatherOn={weatherOn}
+        weatherBusy={weatherBusy}
+        onToggleWeather={() => void toggleCalendarWeather()}
+      />
+      <p className="text-xs text-muted-foreground">{t("calendar.flexLegend")}</p>
 
       <DayDetailSheet
         date={selectedDate}

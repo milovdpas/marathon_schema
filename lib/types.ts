@@ -3,6 +3,18 @@
 
 export type WorkoutType = "easy" | "tempo" | "interval" | "long" | "recovery";
 
+/** A weather observation captured for a workout (from OpenWeatherMap One Call 4.0). */
+export interface WeatherSnapshot {
+  tempC: number | null; // °C, 1 decimal (null if the source omitted it)
+  conditionId: number; // OWM weather[0].id (0 if unknown)
+  condition: string; // OWM weather[0].main, e.g. "Rain"
+  icon: string; // OWM weather[0].icon, e.g. "10d" ("" if unknown)
+  source: "forecast" | "historical"; // which timeline it came from
+  observedAt: string; // ISO UTC of the observation
+  lat: number;
+  lon: number;
+}
+
 export type WeekPhase =
   | "base"
   | "build"
@@ -23,6 +35,10 @@ export interface Workout {
   actualPace?: string; // entered, or derived from distance + duration
   durationMin?: number;
   notes?: string;
+  /** Local time of day the run was finished, "HH:mm" (optional). */
+  finishTime?: string;
+  /** Weather captured for this workout (when the weather feature is on). */
+  weather?: WeatherSnapshot;
   completed: boolean;
   isCustom?: boolean;
   /** When true, the workout may be done any day within [windowStart, windowEnd]. */
@@ -45,6 +61,12 @@ export interface Preferences {
   locale?: "en" | "nl";
   /** Whether the first-run onboarding has been shown. */
   onboardingSeen?: boolean;
+  /** Weather feature opted in (needs geolocation + a configured server key). */
+  weatherEnabled?: boolean;
+  /** Show per-day weather in the calendar. */
+  weatherCalendar?: boolean;
+  /** Whether the onboarding weather prompt has been shown. */
+  weatherOnboardingSeen?: boolean;
 }
 
 /** Editable per-plan metadata (race + goal), independent of the schedule. */
