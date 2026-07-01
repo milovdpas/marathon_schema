@@ -232,6 +232,10 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
       "Importeren mislukt — de JSON is mogelijk onvolledig gekopieerd. Kopieer het hele antwoord van de AI (inclusief de eerste { en laatste }), of gebruik het .json-bestand met Bestand importeren.",
     planRegenerated: "Plan opnieuw gegenereerd.",
     planDeleted: "Plan verwijderd.",
+    support: "Steun",
+    supportDesc:
+      "Deze app is gratis en draait volledig in je browser. Vind je hem nuttig voor je training? Dan mag je iets in het potje doen.",
+    buyMeAWater: "Trakteer me op water",
   },
   sync: {
     title: "Cloudsynchronisatie",

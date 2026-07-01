@@ -150,6 +150,14 @@ Notes & limits:
 
 ---
 
+## Support
+
+This app is free and runs entirely in your browser, with no accounts, no ads, and no database. If it helps your training, you can leave a small tip. 💧
+
+→ [buymeacoffee.com/milovanderpas](https://buymeacoffee.com/milovanderpas)
+
+---
+
 ## Project structure
 
 ```

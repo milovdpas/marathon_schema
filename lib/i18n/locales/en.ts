@@ -229,6 +229,10 @@ JSON (paste below, or attach the exported .json file):
       "Import failed — the JSON may have been copied incompletely. Copy the AI's whole response (including the first { and last }), or use the .json file with Import file.",
     planRegenerated: "Plan regenerated.",
     planDeleted: "Plan deleted.",
+    support: "Support",
+    supportDesc:
+      "This app is free and runs entirely in your browser. If it helps your training, you can leave a small tip.",
+    buyMeAWater: "Buy me a water",
   },
   sync: {
     title: "Cloud sync",
