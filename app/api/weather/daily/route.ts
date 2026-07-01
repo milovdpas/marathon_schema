@@ -16,12 +16,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "bad_coords" }, { status: 400 });
   }
   try {
-    const days = await getDaily(
+    const { days, tzOffset } = await getDaily(
       lat,
       lon,
       startRaw ? Number(startRaw) : undefined,
     );
-    return NextResponse.json({ days }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(
+      { days, tzOffset },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (e) {
     console.error("Weather daily failed:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });

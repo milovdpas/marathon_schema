@@ -2,7 +2,13 @@
 // holds the key) only on a cache miss, and coalesces concurrent identical calls.
 import { fromISO, toISO } from "@/lib/date";
 import type { WeatherSnapshot } from "@/lib/types";
-import { coordKey, readCache, writeCache } from "@/lib/weather-cache";
+import {
+  coordKey,
+  readCache,
+  readTzOffset,
+  writeCache,
+  writeTzOffset,
+} from "@/lib/weather-cache";
 
 const DAY_MS = 86_400_000;
 
@@ -88,46 +94,86 @@ export async function getWeekWeather(
       tripCooldown();
       return;
     }
-    const { days } = (await res.json()) as { days: WeatherSnapshot[] };
+    const { days, tzOffset } = (await res.json()) as {
+      days: WeatherSnapshot[];
+      tzOffset: number | null;
+    };
     for (const snap of days ?? []) {
       const iso = toISO(new Date(snap.observedAt));
       writeCache(`${ck}:${iso}`, snap, ttlFor(iso));
+      if (tzOffset != null) writeTzOffset(ck, iso, tzOffset); // per-date offset
       if (isos.includes(iso)) result[iso] = snap;
     }
   });
   return result;
 }
 
-/** Weather for one day, at a precise finish time when given + in hourly range. */
+/** UTC unix seconds for a wall-clock (date + "HH:mm") given a UTC offset. */
+function utcFromWallclock(iso: string, time: string): number {
+  const [y, mo, d] = iso.split("-").map(Number);
+  const [hh, mm] = time.split(":").map(Number);
+  return Math.floor(Date.UTC(y, mo - 1, d, hh, mm) / 1000);
+}
+
+/** Seconds east of UTC the browser would use for this wall-clock (fallback). */
+function browserOffsetSec(iso: string, time: string): number {
+  return -new Date(`${iso}T${time}:00`).getTimezoneOffset() * 60;
+}
+
+async function fetchHourly(
+  lat: number,
+  lon: number,
+  dt: number,
+): Promise<{ snapshot: WeatherSnapshot | null; tzOffset: number | null } | null> {
+  const res = await fetch(`/api/weather/hourly?lat=${lat}&lon=${lon}&dt=${dt}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    tripCooldown();
+    return null;
+  }
+  return res.json();
+}
+
+/** Weather for one day, at a precise time of day when given + in hourly range. */
 export async function getDayWeather(
   lat: number,
   lon: number,
   iso: string,
-  finishTime?: string,
+  time?: string,
 ): Promise<WeatherSnapshot | null> {
   const ck = coordKey(lat, lon);
 
-  if (finishTime && /^\d{2}:\d{2}$/.test(finishTime)) {
-    const key = `${ck}:${iso}:${finishTime}`;
+  if (time && /^\d{2}:\d{2}$/.test(time) && !inCooldown()) {
+    const key = `${ck}:${iso}:${time}`;
     const cached = readCache(key);
     if (cached) return cached;
-    const dt = Math.floor(new Date(`${iso}T${finishTime}:00`).getTime() / 1000);
-    const snap = inCooldown()
-      ? null
-      : await once(`hourly:${key}`, async () => {
-          const res = await fetch(
-            `/api/weather/hourly?lat=${lat}&lon=${lon}&dt=${dt}`,
-            { cache: "no-store" },
+    const snap = await once(`hourly:${key}`, async () => {
+      // Interpret the wall-clock in the RUN's timezone: use the per-date cached
+      // offset, else the browser's. Then, if the response reveals a different
+      // offset applied on that date, refetch with the corrected instant so we
+      // never cache the wrong hour.
+      const usedOffset = readTzOffset(ck, iso) ?? browserOffsetSec(iso, time);
+      const first = await fetchHourly(
+        lat,
+        lon,
+        utcFromWallclock(iso, time) - usedOffset,
+      );
+      if (!first) return null;
+      let snapshot = first.snapshot;
+      if (first.tzOffset != null) {
+        writeTzOffset(ck, iso, first.tzOffset);
+        if (first.tzOffset !== usedOffset) {
+          const corrected = await fetchHourly(
+            lat,
+            lon,
+            utcFromWallclock(iso, time) - first.tzOffset,
           );
-          if (!res.ok) {
-            tripCooldown();
-            return null;
-          }
-          const { snapshot } = (await res.json()) as {
-            snapshot: WeatherSnapshot | null;
-          };
-          return snapshot;
-        });
+          if (corrected) snapshot = corrected.snapshot;
+        }
+      }
+      return snapshot;
+    });
     if (snap) {
       writeCache(key, snap, ttlFor(iso));
       return snap;

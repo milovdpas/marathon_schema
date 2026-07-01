@@ -62,6 +62,48 @@ export function writeCache(
   write(store);
 }
 
+// The location's DST-aware UTC offset (seconds), remembered per coordinate + DATE
+// so a run is interpreted in the RUN's timezone on THAT date (DST-correct), not
+// the browser's.
+const TZ_KEY = "marathon-weather-tz-v1";
+const TZ_MAX = 500;
+
+export function readTzOffset(coordKey: string, iso: string): number | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const map = JSON.parse(localStorage.getItem(TZ_KEY) ?? "{}") as Record<
+      string,
+      number
+    >;
+    const v = map[`${coordKey}:${iso}`];
+    return typeof v === "number" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeTzOffset(
+  coordKey: string,
+  iso: string,
+  offsetSec: number,
+): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const map = JSON.parse(localStorage.getItem(TZ_KEY) ?? "{}") as Record<
+      string,
+      number
+    >;
+    map[`${coordKey}:${iso}`] = offsetSec;
+    const keys = Object.keys(map);
+    if (keys.length > TZ_MAX) {
+      for (const k of keys.slice(0, keys.length - TZ_MAX)) delete map[k];
+    }
+    localStorage.setItem(TZ_KEY, JSON.stringify(map));
+  } catch {
+    // best-effort
+  }
+}
+
 export function pruneExpired(): void {
   const store = read();
   const now = Date.now();

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { paceFromDistanceDuration } from "@/lib/pace";
+import { deriveStartTime, paceFromDistanceDuration } from "@/lib/pace";
 import {
   DEFAULT_OFF_DAYS,
   DEFAULT_PLAN_ID,
@@ -447,10 +447,10 @@ export const useTrainingStore = create<TrainingState>()(
     }),
     {
       name: STORAGE_KEY,
-      // v5: additive — Workout.finishTime/weather + Preferences weather flags.
-      // No transform needed (absent = correct default); the migrate below is
-      // idempotent and runs for all prior versions.
-      version: 5,
+      // v5: additive — Workout.startTime/weather + Preferences weather flags.
+      // v6: rename Workout.finishTime -> startTime (derive start via duration).
+      // The migrate below is idempotent and runs for all prior versions.
+      version: 6,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,
@@ -514,6 +514,30 @@ export const useTrainingStore = create<TrainingState>()(
               onboardingSeen: true,
             },
           };
+        }
+
+        // v6: rename the old `finishTime` (finish) to `startTime` (start),
+        // deriving the start from the finish minus the run's duration.
+        if (state && state.plans) {
+          const plans = { ...(state.plans as Record<string, TrainingPlan>) };
+          for (const [key, plan] of Object.entries(plans)) {
+            let touched = false;
+            const workouts: Record<string, Workout> = { ...plan.workouts };
+            for (const [wid, w] of Object.entries(workouts)) {
+              const legacy = w as Workout & { finishTime?: string };
+              if (legacy.finishTime === undefined) continue;
+              const { finishTime, ...rest } = legacy;
+              workouts[wid] = {
+                ...rest,
+                startTime:
+                  rest.startTime ??
+                  deriveStartTime(finishTime, rest.durationMin),
+              };
+              touched = true;
+            }
+            if (touched) plans[key] = { ...plan, workouts };
+          }
+          state = { ...state, plans };
         }
 
         return state;

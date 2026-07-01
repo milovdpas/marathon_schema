@@ -13,6 +13,7 @@ export const en = {
     createPlan: "Create a plan",
     decrease: "Decrease",
     increase: "Increase",
+    now: "Now",
   },
   nav: {
     dashboard: "Dashboard",
@@ -104,7 +105,7 @@ export const en = {
     flexible: "Flexible (complete any day in a window)",
     windowStart: "Window start",
     windowEnd: "Window end",
-    finishTime: "Finished at (optional)",
+    startTime: "Started at (optional)",
   },
   calendar: {
     title: "Calendar",
@@ -204,11 +205,11 @@ The plan has an "offDays" list (vacations/trips with a note on whether I can tra
 
 You MAY freely reschedule, add, remove or modify any PLANNED (not-yet-completed) future workout to make this work.
 
-Each workout has PLANNED targets ("plannedDistanceKm", "plannedPace") and, once I've done it, LOGGED actuals ("actualDistanceKm", "actualPace", "durationMin" in minutes, optional "finishTime" as "HH:mm", and optional "weather" = {tempC, condition, ...}). Compare planned vs actual to judge how the training is actually going (e.g. consistently slower/shorter than planned, or hard sessions done in heat) and adapt upcoming workouts accordingly.
+Each workout has PLANNED targets ("plannedDistanceKm", "plannedPace") and, once I've done it, LOGGED actuals ("actualDistanceKm", "actualPace", "durationMin" in minutes, optional "startTime" as "HH:mm", and optional "weather" = {tempC, condition, ...}). Compare planned vs actual to judge how the training is actually going (e.g. consistently slower/shorter than planned, or hard sessions done in heat) and adapt upcoming workouts accordingly.
 
 You MUST follow these rules:
 - NEVER change the race date. Keep "raceDate" exactly the same and keep the marathon / race-day workout on its date — the marathon date is fixed.
-- NEVER alter a completed workout: any workout with "completed": true must stay exactly as-is, including its "id", "completed", "actualDistanceKm", "actualPace", "durationMin", "finishTime" and "weather" (don't lose my logged progress).
+- NEVER alter a completed workout: any workout with "completed": true must stay exactly as-is, including its "id", "completed", "actualDistanceKm", "actualPace", "durationMin", "startTime" and "weather" (don't lose my logged progress).
 - Keep the JSON structure valid (plans, weeks, workouts). If you move a workout to a different week, also move its id into that week's "workoutIds", and keep each workout's "date" inside its week's start/end range.
 - Return the complete updated JSON only, nothing else.
 - IMPORTANT — give me the result as a downloadable .json FILE so I can attach it directly. If you can't create a file, put the ENTIRE JSON in a single \`\`\`json code block, including the very first { and the very last } — never split it or leave characters out.
@@ -380,7 +381,7 @@ Output schema (return exactly this shape, nothing else):
           // For flexible scheduling also add: "flexible": true, "windowStart": "YYYY-MM-DD", "windowEnd": "YYYY-MM-DD"
           // New plans set "completed": false. Once I log a run the app fills in actuals:
           // "actualDistanceKm", "actualPace" ("mm:ss"), "durationMin" (number), optional
-          // "finishTime" ("HH:mm") and optional "weather" {tempC, condition, ...} — leave these out for new plans.
+          // "startTime" ("HH:mm") and optional "weather" {tempC, condition, ...} — leave these out for new plans.
         }
       }
     }

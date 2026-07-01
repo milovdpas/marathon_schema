@@ -35,8 +35,8 @@ export interface Workout {
   actualPace?: string; // entered, or derived from distance + duration
   durationMin?: number;
   notes?: string;
-  /** Local time of day the run was finished, "HH:mm" (optional). */
-  finishTime?: string;
+  /** Local time of day the run was started, "HH:mm" (optional). */
+  startTime?: string;
   /** Weather captured for this workout (when the weather feature is on). */
   weather?: WeatherSnapshot;
   completed: boolean;

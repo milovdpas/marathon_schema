@@ -41,13 +41,13 @@ export async function enableWeather(): Promise<"ok" | "denied" | "unavailable"> 
 export async function attachWeather(
   workoutId: string,
   date: string,
-  finishTime?: string,
+  startTime?: string,
 ): Promise<void> {
   if (!enabled()) return;
   const coords = await resolveCoords();
   if (!coords) return;
   try {
-    const snap = await getDayWeather(coords.lat, coords.lon, date, finishTime);
+    const snap = await getDayWeather(coords.lat, coords.lon, date, startTime);
     if (snap) useTrainingStore.getState().updateWorkout(workoutId, { weather: snap });
   } catch {
     // network/quota issues are non-fatal
@@ -81,9 +81,9 @@ export async function backfillFinishedWorkouts(maxCalls = 5): Promise<void> {
     for (const w of todo) {
       const cached =
         readCache(`${ck}:${w.date}`) ??
-        (w.finishTime ? readCache(`${ck}:${w.date}:${w.finishTime}`) : null);
+        (w.startTime ? readCache(`${ck}:${w.date}:${w.startTime}`) : null);
       if (!cached && netCalls >= maxCalls) continue; // budget spent for this run
-      const snap = await getDayWeather(coords.lat, coords.lon, w.date, w.finishTime);
+      const snap = await getDayWeather(coords.lat, coords.lon, w.date, w.startTime);
       if (snap) useTrainingStore.getState().updateWorkout(w.id, { weather: snap });
       if (!cached) {
         netCalls += 1;

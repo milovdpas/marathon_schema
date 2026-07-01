@@ -16,9 +16,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "bad_params" }, { status: 400 });
   }
   try {
-    const snapshot = await getHourly(lat, lon, dt);
+    const { snapshot, tzOffset } = await getHourly(lat, lon, dt);
     return NextResponse.json(
-      { snapshot },
+      { snapshot, tzOffset },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {

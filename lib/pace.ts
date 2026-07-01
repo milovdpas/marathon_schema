@@ -72,6 +72,26 @@ export function formatClock(minutes?: number | null): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
+/**
+ * Given a finish "HH:mm" and a run duration (minutes), return the start "HH:mm".
+ * Falls back to the finish time when there's no usable duration. Wraps at midnight.
+ */
+export function deriveStartTime(
+  finishHHmm: string,
+  durationMin?: number,
+): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(finishHHmm.trim());
+  if (!m) return finishHHmm;
+  let mins = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  if (durationMin != null && Number.isFinite(durationMin) && durationMin > 0) {
+    mins -= Math.round(durationMin);
+  }
+  mins = ((mins % 1440) + 1440) % 1440;
+  const hh = String(Math.floor(mins / 60)).padStart(2, "0");
+  const mm = String(mins % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 /** Format minutes as "1h 23m" or "45m". */
 export function formatDuration(minutes?: number | null): string {
   if (minutes == null || minutes <= 0) return "—";

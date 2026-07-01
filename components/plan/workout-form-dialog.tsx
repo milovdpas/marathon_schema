@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { TimeField } from "@/components/common/time-field";
 import {
   formatClock,
   paceFromDistanceDuration,
@@ -42,7 +43,7 @@ interface FormState {
   actualDistanceKm: string;
   durationMin: string;
   actualPace: string;
-  finishTime: string;
+  startTime: string;
   notes: string;
   completed: boolean;
   flexible: boolean;
@@ -60,7 +61,7 @@ function blankForm(defaultDate: string): FormState {
     actualDistanceKm: "",
     durationMin: "",
     actualPace: "",
-    finishTime: "",
+    startTime: "",
     notes: "",
     completed: false,
     flexible: false,
@@ -79,7 +80,7 @@ function fromWorkout(w: Workout): FormState {
     actualDistanceKm: w.actualDistanceKm != null ? String(w.actualDistanceKm) : "",
     durationMin: formatClock(w.durationMin),
     actualPace: w.actualPace ?? "",
-    finishTime: w.finishTime ?? "",
+    startTime: w.startTime ?? "",
     notes: w.notes ?? "",
     completed: w.completed,
     flexible: w.flexible ?? false,
@@ -169,7 +170,7 @@ export function WorkoutFormDialog({
         actualDistanceKm,
         durationMin,
         actualPace,
-        finishTime: form.finishTime.trim() || undefined,
+        startTime: form.startTime.trim() || undefined,
         notes: form.notes.trim() || undefined,
         completed: form.completed,
         // A logged activity has a concrete date.
@@ -201,7 +202,7 @@ export function WorkoutFormDialog({
       targetId = addWorkout(payload as Parameters<typeof addWorkout>[0]);
     }
     if (mode === "log") {
-      void attachWeather(targetId, payload.date, form.finishTime.trim() || undefined);
+      void attachWeather(targetId, payload.date, form.startTime.trim() || undefined);
     }
     onOpenChange(false);
   };
@@ -351,7 +352,7 @@ export function WorkoutFormDialog({
               <div className="grid grid-cols-2 gap-3">
                 <Field label={t("workoutForm.durationMin")}>
                   <Input
-                    inputMode="numeric"
+                    inputMode="text"
                     placeholder="mm:ss"
                     readOnly={durationComputed}
                     aria-readonly={durationComputed}
@@ -374,11 +375,10 @@ export function WorkoutFormDialog({
               <p className="text-xs text-muted-foreground">
                 {t("workoutForm.computeHint")}
               </p>
-              <Field label={t("workoutForm.finishTime")}>
-                <Input
-                  type="time"
-                  value={form.finishTime}
-                  onChange={(e) => set("finishTime", e.target.value)}
+              <Field label={t("workoutForm.startTime")}>
+                <TimeField
+                  value={form.startTime}
+                  onChange={(v) => set("startTime", v)}
                 />
               </Field>
               <Field label={t("workoutForm.notes")}>

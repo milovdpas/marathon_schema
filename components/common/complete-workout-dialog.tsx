@@ -22,18 +22,13 @@ import {
 } from "@/lib/pace";
 import type { Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { TimeField } from "@/components/common/time-field";
 import { attachWeather } from "@/lib/weather-sync";
 import { useTrainingStore } from "@/store/use-training-store";
 
 function num(v: string): number | undefined {
   const n = parseFloat(v);
   return Number.isFinite(n) ? n : undefined;
-}
-
-/** Current local time as "HH:mm". */
-function nowHHmm(): string {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 /**
@@ -55,7 +50,7 @@ export function CompleteWorkoutDialog({
   const [distance, setDistance] = useState("");
   const [duration, setDuration] = useState("");
   const [pace, setPace] = useState("");
-  const [finishTime, setFinishTime] = useState("");
+  const [startTime, setStartTime] = useState("");
 
   // Prefill from the planned target when the dialog opens (reset during render).
   const [wasOpen, setWasOpen] = useState(false);
@@ -66,7 +61,7 @@ export function CompleteWorkoutDialog({
     );
     setPace(workout.actualPace ?? workout.plannedPace ?? "");
     setDuration(formatClock(workout.durationMin));
-    setFinishTime(workout.finishTime ?? nowHHmm());
+    setStartTime(workout.startTime ?? "");
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
@@ -100,15 +95,15 @@ export function CompleteWorkoutDialog({
         if (ps != null) durationMin = (ps * actualDistanceKm) / 60;
       }
     }
-    const finish = finishTime.trim() || undefined;
+    const start = startTime.trim() || undefined;
     updateWorkout(workout.id, {
       actualDistanceKm,
       durationMin,
       actualPace,
-      finishTime: finish,
+      startTime: start,
       completed: true,
     });
-    void attachWeather(workout.id, workout.date, finish);
+    void attachWeather(workout.id, workout.date, start);
     onOpenChange(false);
   };
 
@@ -149,7 +144,7 @@ export function CompleteWorkoutDialog({
                   {t("workoutForm.durationMin")}
                 </Label>
                 <Input
-                  inputMode="numeric"
+                  inputMode="text"
                   placeholder="mm:ss"
                   readOnly={durationComputed}
                   aria-readonly={durationComputed}
@@ -180,13 +175,9 @@ export function CompleteWorkoutDialog({
 
             <div className="grid gap-1.5">
               <Label className="text-xs text-muted-foreground">
-                {t("workoutForm.finishTime")}
+                {t("workoutForm.startTime")}
               </Label>
-              <Input
-                type="time"
-                value={finishTime}
-                onChange={(e) => setFinishTime(e.target.value)}
-              />
+              <TimeField value={startTime} onChange={setStartTime} />
             </div>
           </div>
         ) : null}

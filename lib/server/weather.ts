@@ -22,6 +22,16 @@ interface OwmRecord {
 }
 interface OwmTimeline {
   data?: OwmRecord[];
+  timezone_offset?: number; // DST-aware shift from UTC (seconds) for the location
+}
+
+export interface DailyResult {
+  days: WeatherSnapshot[];
+  tzOffset: number | null;
+}
+export interface HourlyResult {
+  snapshot: WeatherSnapshot | null;
+  tzOffset: number | null;
 }
 
 /** Daily `temp` is an object; hourly `temp` is a number. Normalize to a number. */
@@ -111,12 +121,15 @@ export async function getDaily(
   lat: number,
   lon: number,
   startUnix?: number,
-): Promise<WeatherSnapshot[]> {
+): Promise<DailyResult> {
   const params: Record<string, string | number> = { lat, lon };
   if (startUnix) params.start = startUnix;
   const json = (await owmFetch("/timeline/1day", params)) as OwmTimeline;
   const src = sourceFor(startUnix ?? Math.floor(Date.now() / 1000));
-  return (json.data ?? []).map((r) => toSnapshot(r, lat, lon, src));
+  return {
+    days: (json.data ?? []).map((r) => toSnapshot(r, lat, lon, src)),
+    tzOffset: json.timezone_offset ?? null,
+  };
 }
 
 /** Single hourly observation at/just after `dtUnix`. */
@@ -124,12 +137,15 @@ export async function getHourly(
   lat: number,
   lon: number,
   dtUnix: number,
-): Promise<WeatherSnapshot | null> {
+): Promise<HourlyResult> {
   const json = (await owmFetch("/timeline/1h", {
     lat,
     lon,
     start: dtUnix,
   })) as OwmTimeline;
   const rec = json.data?.[0];
-  return rec ? toSnapshot(rec, lat, lon, sourceFor(dtUnix)) : null;
+  return {
+    snapshot: rec ? toSnapshot(rec, lat, lon, sourceFor(dtUnix)) : null,
+    tzOffset: json.timezone_offset ?? null,
+  };
 }
