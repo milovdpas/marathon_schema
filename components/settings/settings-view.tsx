@@ -7,7 +7,6 @@ import {
   Download,
   Droplet,
   Plus,
-  RefreshCw,
   Sparkles,
   Trash2,
   Upload,
@@ -63,7 +62,6 @@ export function SettingsView() {
   const deletePlan = useTrainingStore((s) => s.deletePlan);
   const updatePlanMeta = useTrainingStore((s) => s.updatePlanMeta);
   const updateTrainingPrefs = useTrainingStore((s) => s.updateTrainingPrefs);
-  const regenerateActivePlan = useTrainingStore((s) => s.regenerateActivePlan);
   const exportData = useTrainingStore((s) => s.exportData);
   const importData = useTrainingStore((s) => s.importData);
   const locale = useTrainingStore((s) => s.preferences.locale);
@@ -431,47 +429,6 @@ export function SettingsView() {
         >
           <Droplet className="size-4" /> {t("settings.buyMeAWater")}
         </Button>
-      </Card>
-
-      {/* Danger zone */}
-      <Card className="gap-0 border-destructive/30 p-4">
-        <h3 className="mb-1 text-sm font-semibold">
-          {t("settings.regenerateTitle")}
-        </h3>
-        <p className="mb-3 text-xs text-muted-foreground">
-          {t("settings.regenerateDesc", { name: activePlan?.name })}
-        </p>
-        <Dialog>
-          <DialogTrigger render={<Button variant="outline" size="sm" />}>
-            <RefreshCw className="size-4" /> {t("settings.regenerate")}
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-sm">
-            <DialogHeader>
-              <DialogTitle>{t("settings.regenerateConfirmTitle")}</DialogTitle>
-              <DialogDescription>
-                {t("settings.regenerateConfirmDesc", { name: activePlan?.name })}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2 sm:justify-end">
-              <DialogClose render={<Button variant="outline" />}>
-                {t("common.cancel")}
-              </DialogClose>
-              <DialogClose
-                render={
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      regenerateActivePlan();
-                      setStatus({ ok: true, msg: t("settings.planRegenerated") });
-                    }}
-                  />
-                }
-              >
-                {t("settings.regenerateYes")}
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </Card>
     </div>
   );

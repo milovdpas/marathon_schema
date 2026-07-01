@@ -52,7 +52,6 @@ interface TrainingState {
   deletePlan: (id: string) => void;
   updatePlanMeta: (patch: Partial<PlanMeta>) => void;
   updateTrainingPrefs: (patch: Partial<TrainingPrefs>) => void;
-  regenerateActivePlan: () => void;
 
   // Off days (operate on the active plan)
   addOffDay: (input: Omit<OffDay, "id">) => void;
@@ -271,36 +270,6 @@ export const useTrainingStore = create<TrainingState>()(
             },
           })),
         ),
-
-      regenerateActivePlan: () =>
-        set((s) => {
-          const id = s.activePlanId;
-          const cur = id ? s.plans[id] : null;
-          if (!id || !cur) return {};
-          // Re-seed history only for the primary plan.
-          const isPrimary =
-            cur.id === DEFAULT_PLAN_ID || cur.name === DEFAULT_PLAN_META.name;
-          const fresh = generateDefaultPlan({
-            id: cur.id,
-            name: cur.name,
-            raceName: cur.raceName,
-            raceDistanceKm: cur.raceDistanceKm,
-            raceDate: cur.raceDate,
-            startDate: cur.startDate,
-            goalPace: cur.goalPace,
-            goalLabel: cur.goalLabel,
-            seedRuns: isPrimary ? MILO_SEED_RUNS : undefined,
-            // Regenerate restores defaults: the primary plan gets the default
-            // off days back; other plans keep whatever they had.
-            offDays: isPrimary ? DEFAULT_OFF_DAYS : (cur.offDays ?? []),
-            trainingPrefs: cur.trainingPrefs,
-            // Anchor to the plan's start so already-elapsed weeks are
-            // reproduced rather than dropped, with a stable creation timestamp.
-            planStart: cur.startDate ?? cur.createdAt,
-            createdAt: cur.createdAt,
-          });
-          return { plans: { ...s.plans, [id]: fresh }, lastModified: nowISO() };
-        }),
 
       addOffDay: (input) =>
         set((s) =>

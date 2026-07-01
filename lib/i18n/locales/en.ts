@@ -178,7 +178,7 @@ export const en = {
     raceDate: "Race date",
     goalLabel: "Goal label",
     goalPace: "Goal pace (mm:ss /km)",
-    raceDateNote: "Changing the race date takes effect when you regenerate this plan.",
+    raceDateNote: "Changing the race date updates race details only — use the AI plan tools to reshape the schedule.",
     appearance: "Appearance",
     language: "Language",
     themeLight: "Light",
@@ -216,18 +216,9 @@ You MUST follow these rules:
 
 JSON (paste below, or attach the exported .json file):
 [paste your exported JSON here]`,
-    regenerateTitle: "Regenerate plan",
-    regenerateDesc:
-      "Rebuild “{{name}}” from scratch for its race date. This erases all logged progress and custom workouts in this plan.",
-    regenerate: "Regenerate",
-    regenerateConfirmTitle: "Regenerate this plan?",
-    regenerateConfirmDesc:
-      "This replaces “{{name}}” and removes all completed and custom workouts in it. This cannot be undone.",
-    regenerateYes: "Yes, regenerate",
     importedOk: "Plans imported successfully.",
     importFailed:
       "Import failed — the JSON may have been copied incompletely. Copy the AI's whole response (including the first { and last }), or use the .json file with Import file.",
-    planRegenerated: "Plan regenerated.",
     planDeleted: "Plan deleted.",
     support: "Support",
     supportDesc:

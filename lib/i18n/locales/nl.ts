@@ -181,7 +181,7 @@ export const nl: Dict = {
     goalLabel: "Doel-label",
     goalPace: "Doeltempo (mm:ss /km)",
     raceDateNote:
-      "Het wijzigen van de wedstrijddatum gaat in wanneer je dit plan opnieuw genereert.",
+      "Het wijzigen van de wedstrijddatum werkt alleen de wedstrijdgegevens bij — gebruik de AI-plantools om het schema aan te passen.",
     appearance: "Weergave",
     language: "Taal",
     themeLight: "Licht",
@@ -219,18 +219,9 @@ Je MOET je aan deze regels houden:
 
 JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
 [plak hier je geëxporteerde JSON]`,
-    regenerateTitle: "Plan opnieuw genereren",
-    regenerateDesc:
-      "Bouw “{{name}}” opnieuw op voor de wedstrijddatum. Dit wist alle vastgelegde voortgang en eigen trainingen in dit plan.",
-    regenerate: "Opnieuw genereren",
-    regenerateConfirmTitle: "Dit plan opnieuw genereren?",
-    regenerateConfirmDesc:
-      "Dit vervangt “{{name}}” en verwijdert alle voltooide en eigen trainingen erin. Dit kan niet ongedaan worden gemaakt.",
-    regenerateYes: "Ja, opnieuw genereren",
     importedOk: "Plannen succesvol geïmporteerd.",
     importFailed:
       "Importeren mislukt — de JSON is mogelijk onvolledig gekopieerd. Kopieer het hele antwoord van de AI (inclusief de eerste { en laatste }), of gebruik het .json-bestand met Bestand importeren.",
-    planRegenerated: "Plan opnieuw gegenereerd.",
     planDeleted: "Plan verwijderd.",
     support: "Steun",
     supportDesc:

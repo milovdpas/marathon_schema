@@ -47,7 +47,6 @@ store/
 - `add_workout(workout)` → `addWorkout`
 - `delete_workout(id)` → `deleteWorkout`
 - `update_plan_meta(patch)` → `updatePlanMeta`
-- `regenerate_active_plan()` → `regenerateActivePlan`
 - (maybe) `move_workout(id, newDate)` → convenience wrapper over `updateWorkout`
 
 Pass the workout/plan TypeScript types as JSON schema for the tool inputs. Reuse `lib/types.ts`.

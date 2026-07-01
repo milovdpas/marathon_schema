@@ -36,13 +36,13 @@ sync (refresh token in an encrypted session cookie; no DB). Deploys to Vercel
 The single source of truth. Shape: `{ plans: Record<id,TrainingPlan>, activePlanId, preferences, hydrated, lastModified }`.
 
 - **Active plan** is read via the `useActivePlan()` hook (`hooks/use-active-plan.ts`) — components select it, not `s.plan` (there is no `s.plan`).
-- **Actions:** plan mgmt (`addPlan`, `addPlanFromImport`, `selectPlan`, `deletePlan`, `updatePlanMeta`, `updateTrainingPrefs`, `regenerateActivePlan`, `initializePlan`), off days (`add/update/deleteOffDay`), workouts (`toggleComplete`, `updateWorkout`, `addWorkout`, `deleteWorkout`), data (`exportData`, `importData`, `applyRemote`), and `setPreferences`. Mutations bump `lastModified` (used for sync conflict resolution).
+- **Actions:** plan mgmt (`addPlan`, `addPlanFromImport`, `selectPlan`, `deletePlan`, `updatePlanMeta`, `updateTrainingPrefs`, `initializePlan`), off days (`add/update/deleteOffDay`), workouts (`toggleComplete`, `updateWorkout`, `addWorkout`, `deleteWorkout`), data (`exportData`, `importData`, `applyRemote`), and `setPreferences`. Mutations bump `lastModified` (used for sync conflict resolution).
 - **persist**: key `marathon-training-v1`, **`version: 4`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan`.
 - **Hydration**: `<HydrationGate>` (`hooks/use-hydrated.ts`) renders a skeleton until rehydrated, avoiding SSR/client mismatch. `useMounted()` is used where a value differs server vs client.
 
 ## Plan generation — `lib/plan-generator.ts`
 
-`generateDefaultPlan(opts)` builds the **seeded "Milo's Marathon" example** plan (Mon/Wed/Thu/Sun schedule, sub-3:30 paces, 30 km peak then taper). Honors `planStart`/`createdAt` (regenerate reproduces elapsed weeks), `seedRuns` (logged history), `offDays`, `trainingPrefs`. `DEFAULT_PLAN_ID = "milo-marathon"`; `SPECIAL_PERIODS` in `lib/date.ts` shape the seeded plan. This generator is for the **example/default plan only** — real user plans come from the AI wizard import.
+`generateDefaultPlan(opts)` builds the **seeded "Milo's Marathon" example** plan (Mon/Wed/Thu/Sun schedule, sub-3:30 paces, 30 km peak then taper). Honors `planStart`/`createdAt` (rebuild reproduces elapsed weeks), `seedRuns` (logged history), `offDays`, `trainingPrefs`. `DEFAULT_PLAN_ID = "milo-marathon"`; `SPECIAL_PERIODS` in `lib/date.ts` shape the seeded plan. This generator is for the **example/default plan only** — real user plans come from the AI wizard import.
 
 ## Key flows
 

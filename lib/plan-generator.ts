@@ -240,10 +240,10 @@ export interface GeneratePlanOptions {
   /**
    * Anchor the plan's first week to this date instead of today. When set,
    * already-elapsed weeks/days are still generated (the skip-past rule is
-   * disabled), so a regenerate reproduces the plan from its original start.
+   * disabled), so the plan can be rebuilt from its original start.
    */
   planStart?: string;
-  /** Preserve a fixed creation timestamp across regenerates. */
+  /** Preserve a fixed creation timestamp when rebuilding a plan. */
   createdAt?: string;
 }
 
