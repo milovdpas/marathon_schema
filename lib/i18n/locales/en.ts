@@ -261,6 +261,10 @@ JSON (paste below, or attach the exported .json file):
     weatherBody:
       "See the forecast in your calendar and capture the conditions for each run. Uses your device location.",
     enableWeather: "Enable weather",
+    splitsTitle: "Scan your splits?",
+    splitsBody:
+      "Upload your Strava splits screenshot when logging a run and the pace for every kilometre is read from it automatically. It runs on your device, so the image is never uploaded.",
+    enableSplits: "Enable scanning",
   },
   weather: {
     title: "Weather",
@@ -282,7 +286,7 @@ JSON (paste below, or attach the exported .json file):
     title: "Split scanner",
     enable: "Scan splits from a screenshot",
     enableBody:
-      "When logging a run, upload your Strava splits screenshot and the per-kilometre paces are read from it automatically. Runs on your device — the image is never uploaded and is discarded after scanning.",
+      "When logging a run, upload your Strava splits screenshot and the per-kilometre paces are read from it automatically. It runs on your device, so the image is never uploaded and is discarded after scanning.",
     scanButton: "Scan screenshot",
     scanning: "Scanning…",
     scanned_one: "Scanned {{count}} split",
@@ -292,6 +296,13 @@ JSON (paste below, or attach the exported .json file):
     splitsTitle: "Splits",
     clear: "Clear splits",
     km: "km",
+    helpTitle: "Which screenshot?",
+    helpBody:
+      "In Strava, open a run and screenshot the “Splits” table: the part listing each kilometre and its pace.",
+    exampleCaption: "Example of what to capture",
+    tip1: "Make sure the whole Splits table is visible, including the last partial kilometre.",
+    tip2: "Extra content around it (the pace chart, best efforts) is fine, because it gets ignored.",
+    tip3: "Works in any language, and in light or dark mode.",
   },
   wizard: {
     title: "Create a plan",

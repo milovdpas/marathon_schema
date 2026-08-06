@@ -420,8 +420,10 @@ export const useTrainingStore = create<TrainingState>()(
       // v6: rename Workout.finishTime -> startTime (derive start via duration).
       // v7: additive — Workout.splits + Preferences.splitScannerEnabled
       //     (absent = correct default, so no transform needed).
+      // v8: additive — Preferences.splitScannerOnboardingSeen. Left unset for
+      //     existing users on purpose, so they get the one-time prompt too.
       // The migrate below is idempotent and runs for all prior versions.
-      version: 7,
+      version: 8,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,

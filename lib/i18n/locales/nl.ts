@@ -264,6 +264,10 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     weatherBody:
       "Zie de voorspelling in je kalender en leg de omstandigheden van elke loop vast. Gebruikt de locatie van je apparaat.",
     enableWeather: "Weer inschakelen",
+    splitsTitle: "Rondetijden scannen?",
+    splitsBody:
+      "Upload bij het vastleggen van een loop je Strava-screenshot met rondetijden; het tempo van elke kilometer wordt er automatisch uit gelezen. Het draait op je apparaat, dus de afbeelding wordt nooit geüpload.",
+    enableSplits: "Scannen inschakelen",
   },
   weather: {
     title: "Weer",
@@ -285,7 +289,7 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     title: "Rondetijden-scanner",
     enable: "Rondetijden scannen uit screenshot",
     enableBody:
-      "Upload bij het vastleggen van een loop je Strava-screenshot met rondetijden; de tempo's per kilometer worden er automatisch uit gelezen. Draait op je apparaat — de afbeelding wordt nooit geüpload en na het scannen weggegooid.",
+      "Upload bij het vastleggen van een loop je Strava-screenshot met rondetijden; de tempo's per kilometer worden er automatisch uit gelezen. Het draait op je apparaat, dus de afbeelding wordt nooit geüpload en wordt na het scannen weggegooid.",
     scanButton: "Screenshot scannen",
     scanning: "Scannen…",
     scanned_one: "{{count}} rondetijd gescand",
@@ -295,6 +299,13 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     splitsTitle: "Rondetijden",
     clear: "Rondetijden wissen",
     km: "km",
+    helpTitle: "Welke screenshot?",
+    helpBody:
+      "Open in Strava een loop en maak een screenshot van de “Splits”-tabel: het deel met elke kilometer en het tempo.",
+    exampleCaption: "Voorbeeld van wat je vastlegt",
+    tip1: "Zorg dat de hele tabel zichtbaar is, inclusief de laatste gedeeltelijke kilometer.",
+    tip2: "Extra inhoud eromheen (de tempografiek, beste prestaties) is geen probleem, want dat wordt genegeerd.",
+    tip3: "Werkt in elke taal en in lichte of donkere modus.",
   },
   wizard: {
     title: "Een plan maken",

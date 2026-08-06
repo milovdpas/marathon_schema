@@ -78,6 +78,8 @@ export interface Preferences {
   weatherOnboardingSeen?: boolean;
   /** Scan a Strava screenshot for per-km splits when logging a run. */
   splitScannerEnabled?: boolean;
+  /** Whether the one-time split-scanner prompt has been shown. */
+  splitScannerOnboardingSeen?: boolean;
 }
 
 /** Editable per-plan metadata (race + goal), independent of the schedule. */

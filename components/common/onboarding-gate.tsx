@@ -1,9 +1,10 @@
 "use client";
 
-import { Cloud, CloudSun, Sparkles } from "lucide-react";
+import { Cloud, CloudSun, ScanText, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SplitsExample } from "@/components/settings/splits-example";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,11 +33,62 @@ export function OnboardingGate() {
   const weatherConfigured = useWeatherStore((s) => s.configured);
   const weatherReady = useWeatherStore((s) => s.ready);
   const weatherEnabled = useTrainingStore((s) => s.preferences.weatherEnabled);
+  const splitsSeen = useTrainingStore(
+    (s) => s.preferences.splitScannerOnboardingSeen,
+  );
 
-  // Ask about Drive, then Weather, then creating a plan.
-  const [phase, setPhase] = useState<"drive" | "weather" | "plan">("drive");
+  // Ask about Drive, then Weather, then split scanning, then creating a plan.
+  const [phase, setPhase] = useState<"drive" | "weather" | "splits" | "plan">(
+    "drive",
+  );
 
-  if (!hydrated || onboardingSeen || !ready || !weatherReady) return null;
+  if (!hydrated || !ready || !weatherReady) return null;
+
+  const markSplitsSeen = (enable: boolean) =>
+    setPreferences({
+      splitScannerOnboardingSeen: true,
+      ...(enable ? { splitScannerEnabled: true } : {}),
+    });
+
+  const splitsPrompt = (onDone: () => void) => {
+    const dismiss = () => {
+      markSplitsSeen(false);
+      onDone();
+    };
+    return (
+      <Dialog open onOpenChange={dismiss}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ScanText className="size-5 text-primary" />{" "}
+              {t("onboarding.splitsTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("onboarding.splitsBody")}</DialogDescription>
+          </DialogHeader>
+          <SplitsExample />
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button variant="outline" onClick={dismiss}>
+              {t("onboarding.notNow")}
+            </Button>
+            <Button
+              onClick={() => {
+                markSplitsSeen(true);
+                onDone();
+              }}
+            >
+              <ScanText className="size-4" /> {t("onboarding.enableSplits")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  // Returning users finished onboarding long ago, so newer feature prompts are
+  // shown standalone — once each — rather than being lost with the first run.
+  if (onboardingSeen) {
+    return splitsSeen ? null : splitsPrompt(() => {});
+  }
 
   const driveApplicable = configured && !connected;
   const weatherApplicable = weatherConfigured && !weatherEnabled;
@@ -49,7 +101,7 @@ export function OnboardingGate() {
         ? { weatherOnboardingSeen: true, weatherCalendar: true }
         : { weatherOnboardingSeen: true },
     );
-    setPhase("plan");
+    setPhase("splits");
   };
 
   const lookAround = () => {
@@ -90,9 +142,9 @@ export function OnboardingGate() {
     );
   }
 
-  if (phase !== "plan" && weatherApplicable) {
+  if (phase !== "splits" && phase !== "plan" && weatherApplicable) {
     return (
-      <Dialog open onOpenChange={() => setPhase("plan")}>
+      <Dialog open onOpenChange={() => setPhase("splits")}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -102,7 +154,7 @@ export function OnboardingGate() {
             <DialogDescription>{t("onboarding.weatherBody")}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-end">
-            <Button variant="outline" onClick={() => setPhase("plan")}>
+            <Button variant="outline" onClick={() => setPhase("splits")}>
               {t("onboarding.notNow")}
             </Button>
             <Button onClick={() => void handleEnableWeather()}>
@@ -112,6 +164,10 @@ export function OnboardingGate() {
         </DialogContent>
       </Dialog>
     );
+  }
+
+  if (phase !== "plan" && !splitsSeen) {
+    return splitsPrompt(() => setPhase("plan"));
   }
 
   return (

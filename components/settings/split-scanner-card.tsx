@@ -1,8 +1,17 @@
 "use client";
 
-import { ScanText } from "lucide-react";
+import { HelpCircle, ScanText } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { SplitsExample } from "@/components/settings/splits-example";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useMounted } from "@/hooks/use-mounted";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -18,6 +27,34 @@ export function SplitScannerCard() {
       <div className="mb-1 flex items-center gap-2">
         <ScanText className="size-4 text-muted-foreground" />
         <h3 className="text-sm font-semibold">{t("splitScanner.title")}</h3>
+
+        <Dialog>
+          <DialogTrigger
+            render={
+              <button
+                type="button"
+                aria-label={t("splitScanner.helpTitle")}
+                className="ml-auto grid size-7 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+              />
+            }
+          >
+            <HelpCircle className="size-4" />
+          </DialogTrigger>
+          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{t("splitScanner.helpTitle")}</DialogTitle>
+              <DialogDescription>
+                {t("splitScanner.helpBody")}
+              </DialogDescription>
+            </DialogHeader>
+            <SplitsExample />
+            <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+              <li>{t("splitScanner.tip1")}</li>
+              <li>{t("splitScanner.tip2")}</li>
+              <li>{t("splitScanner.tip3")}</li>
+            </ul>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {!mounted ? (
