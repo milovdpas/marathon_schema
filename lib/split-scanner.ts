@@ -13,107 +13,6 @@ const MIN_PACE_SEC = 2 * 60;
 const MAX_PACE_SEC = 15 * 60;
 const MAX_ELEV_M = 500;
 
-/** Fix the digit-shaped characters OCR commonly returns for numerals. */
-function normalizeDigits(s: string): string {
-  return s
-    .replace(/[Oo]/g, "0")
-    .replace(/[lI|]/g, "1")
-    .replace(/[Ss]/g, "5")
-    .replace(/[B]/g, "8");
-}
-
-interface Candidate {
-  km: number;
-  pace: string;
-  paceSec: number;
-  elevM?: number;
-}
-
-/**
- * Pull `index  m:ss  [elev]` rows out of raw OCR text.
- *
- * A Strava screenshot also contains numbers that *look* like splits — the pace
- * chart's axis labels ("3:00 … 6:30", "1 km … 6 km") and PR lines ("0.58 km
- * 2:20 3:58 /km"). So candidates are only accepted as a **strictly sequential
- * run** (1, 2, 3 …), optionally closed by one fractional partial km. That
- * structural check — not the row regex — is what rejects the decoys.
- *
- * Header words are never read, so a Dutch screenshot parses identically.
- */
-export function parseSplits(rawText: string): WorkoutSplit[] {
-  const candidates: Candidate[] = [];
-
-  for (const line of rawText.split(/\r?\n/)) {
-    const cleaned = line.trim();
-    if (!cleaned) continue;
-    // index, then a m:ss pace, then optionally a signed elevation.
-    const m =
-      /^([0-9OolI|SsB]{1,3}(?:[.,][0-9OolI|SsB]{1,2})?)\s+([0-9OolI|SsB]{1,2}[:.][0-9OolI|SsB]{2})(?:\s+(-?\s?[0-9OolI|SsB]{1,3}(?:[.,][0-9OolI|SsB]+)?))?\s*$/.exec(
-        cleaned,
-      );
-    if (!m) continue;
-
-    const km = parseFloat(normalizeDigits(m[1]).replace(",", "."));
-    const paceRaw = normalizeDigits(m[2]).replace(".", ":");
-    const [mm, ss] = paceRaw.split(":").map(Number);
-    if (!Number.isFinite(km) || !Number.isFinite(mm) || !Number.isFinite(ss)) {
-      continue;
-    }
-    if (ss > 59) continue;
-    const paceSec = mm * 60 + ss;
-    if (paceSec < MIN_PACE_SEC || paceSec > MAX_PACE_SEC) continue;
-
-    let elevM: number | undefined;
-    if (m[3] != null) {
-      const e = parseFloat(
-        normalizeDigits(m[3].replace(/\s/g, "")).replace(",", "."),
-      );
-      if (Number.isFinite(e) && Math.abs(e) <= MAX_ELEV_M) elevM = e;
-    }
-
-    candidates.push({
-      km,
-      pace: `${mm}:${String(ss).padStart(2, "0")}`,
-      paceSec,
-      elevM,
-    });
-  }
-
-  return longestSequentialRun(candidates).map(({ km, pace, elevM }) => ({
-    km,
-    pace,
-    ...(elevM != null ? { elevM } : {}),
-  }));
-}
-
-/**
- * Longest run of candidates whose km values read 1, 2, 3, … — optionally
- * followed by a single fractional value (< 1), which is Strava's partial
- * final kilometre.
- */
-function longestSequentialRun(candidates: Candidate[]): Candidate[] {
-  let best: Candidate[] = [];
-  for (let i = 0; i < candidates.length; i++) {
-    if (candidates[i].km !== 1) continue; // a real table always starts at 1
-    const run: Candidate[] = [candidates[i]];
-    let expected = 2;
-    for (let j = i + 1; j < candidates.length; j++) {
-      const c = candidates[j];
-      if (c.km === expected) {
-        run.push(c);
-        expected += 1;
-      } else if (c.km > 0 && c.km < 1) {
-        run.push(c); // trailing partial km closes the table
-        break;
-      } else {
-        break;
-      }
-    }
-    if (run.length > best.length) best = run;
-  }
-  return best;
-}
-
 /** A 2D context with the best resampling the browser offers. */
 function smoothCanvas(w: number, h: number): {
   canvas: HTMLCanvasElement;
@@ -275,6 +174,31 @@ export function findPaceColumn(
   return best.col;
 }
 
+/**
+ * Read Strava's trailing partial kilometre ("0.4", "0.1").
+ *
+ * OCR frequently loses the decimal point ("0.1" → "01") or splits the label
+ * into separate words ("0" + "1"), which would otherwise parse as 1 and make
+ * the row look like another whole kilometre. A leading zero followed by digits
+ * is therefore read as the fraction it must be. Whole indices ("1", "10") never
+ * match, so this can't corrupt a normal row.
+ */
+export function parsePartialKm(raw: string): number | null {
+  const t = raw.replace(/[^\d.,]/g, "").replace(",", ".");
+  if (!t) return null;
+
+  const direct = Number.parseFloat(t);
+  if (Number.isFinite(direct) && direct > 0 && direct < 1) return direct;
+
+  // "01" / "025" — the decimal point didn't survive OCR.
+  const lost = /^0(\d+)$/.exec(t);
+  if (lost) {
+    const v = Number(`0.${lost[1]}`);
+    return v > 0 && v < 1 ? v : null;
+  }
+  return null;
+}
+
 export function parseSplitsFromWords(
   words: OcrWord[],
   imageWidth: number,
@@ -310,13 +234,19 @@ export function parseSplitsFromWords(
     }
     let km = kmCounter;
 
-    // A leading fraction marks Strava's final partial kilometre.
-    const left = words
-      .filter((w) => w !== paceWord && sameRow(w, paceWord) && w.x1 <= paceWord.x0)
-      .sort((a, b) => b.x0 - a.x0)[0];
-    if (left) {
-      const n = parseFloat(left.text.trim().replace(",", "."));
-      if (Number.isFinite(n) && n > 0 && n < 1) km = n;
+    // Only Strava's final row can be a partial kilometre ("0.4"), and OCR
+    // mangles it often — so join everything left of the pace on that row and
+    // parse leniently.
+    if (i === column.length - 1) {
+      const leftText = words
+        .filter(
+          (w) => w !== paceWord && sameRow(w, paceWord) && w.x1 <= paceWord.x0,
+        )
+        .sort((a, b) => a.x0 - b.x0)
+        .map((w) => w.text.trim())
+        .join("");
+      const partial = parsePartialKm(leftText);
+      if (partial != null) km = partial;
     }
 
     const elevM = elevations?.get(i);
@@ -447,6 +377,10 @@ export async function scanSplits(file: File): Promise<ScanResult> {
       // The table is purely numeric — the whitelist is the biggest accuracy win.
       tessedit_char_whitelist: whitelist,
       tessedit_pageseg_mode: psm,
+      // Canvases carry no DPI metadata, so Tesseract would guess and log
+      // "Estimating resolution as N". Our upscaled input is ~300dpi-equivalent;
+      // stating it keeps the console clean and the estimate consistent.
+      user_defined_dpi: "300",
     });
     const { data } = await worker.recognize(image, {}, { blocks: true, text: true });
     const words: OcrWord[] = [];
@@ -473,7 +407,10 @@ export async function scanSplits(file: File): Promise<ScanResult> {
     );
     let column = findPaceColumn(words, canvas.width);
     if (column.length === 0) {
-      return { splits: parseSplits(rawText), rawText };
+      // No pace column found — not a splits screenshot we can read. (A
+      // line-text fallback used to live here; it never once succeeded, since
+      // the far-apart columns break Tesseract's line segmentation.)
+      return { splits: [], rawText };
     }
 
     // If the row pitch says a pace row was skipped, re-read just the table
@@ -489,8 +426,7 @@ export async function scanSplits(file: File): Promise<ScanResult> {
 
     const elevations = await readElevations(canvas, column, read, PSM);
     const splits = parseSplitsFromWords(tableWords, canvas.width, elevations);
-    // Geometry is the reliable path; fall back to line text if it found nothing.
-    return { splits: splits.length > 0 ? splits : parseSplits(rawText), rawText };
+    return { splits, rawText };
   } finally {
     await worker.terminate();
   }
@@ -538,10 +474,10 @@ async function rereadTable(
 
 /**
  * Elevation is a 1–2 character glyph ("-0", "1") that the full-page pass either
- * misses or misreads. Re-OCR just that narrow column, blown up 4×, twice:
- * a block pass finds every row (a bare "1" is a single thin stroke that sparse
- * mode discards as noise), and a sparse pass reliably keeps the minus sign.
- * Merge them, preferring the signed reading.
+ * misses or misreads. Re-OCR just that narrow column, blown up 4×, as a single
+ * block — that pass finds every row (a bare "1" is a single thin stroke that
+ * sparse mode discards as noise), and `resolveElevations` recovers any minus
+ * sign the OCR dropped from the word-box widths.
  */
 async function readElevations(
   canvas: HTMLCanvasElement,
@@ -572,8 +508,7 @@ async function readElevations(
 
   try {
     const block = await read(crop, "0123456789-", PSM.SINGLE_BLOCK as never);
-    const sparse = await read(crop, "0123456789-", PSM.SPARSE_TEXT as never);
-    const candidates = [...block.words, ...sparse.words].filter((w) =>
+    const candidates = block.words.filter((w) =>
       /^-?\d{1,3}$/.test(w.text.trim()),
     );
 
@@ -583,7 +518,7 @@ async function readElevations(
       const mid = ((paceWord.y0 + paceWord.y1) / 2 - top) * SCALE;
       const hits = candidates.filter((w) => mid >= w.y0 && mid <= w.y1);
       if (hits.length === 0) return;
-      // Prefer a signed reading — the block pass tends to drop the minus.
+      // Prefer a signed reading — OCR tends to drop the minus.
       const best = hits.find((w) => w.text.trim().startsWith("-")) ?? hits[0];
       const text = best.text.trim();
       const e = Number(text);
