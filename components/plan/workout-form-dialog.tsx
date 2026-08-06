@@ -413,25 +413,25 @@ export function WorkoutFormDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:justify-between">
+        {/* Flat children so each button stacks full-width on mobile. The
+            footer reverses on mobile, so DOM order puts Save on top and the
+            destructive Delete furthest from it; on desktop `mr-auto` pushes
+            Delete back to the left. */}
+        <DialogFooter className="sm:justify-end">
           {isEdit ? (
             <Button
               type="button"
               variant="ghost"
-              className="text-destructive hover:text-destructive"
+              className="mt-1 text-destructive hover:text-destructive sm:mt-0 sm:mr-auto"
               onClick={handleDelete}
             >
               <Trash2 className="size-4" /> {t("common.delete")}
             </Button>
-          ) : (
-            <span />
-          )}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={handleSave}>{t("common.save")}</Button>
-          </div>
+          ) : null}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("common.cancel")}
+          </Button>
+          <Button onClick={handleSave}>{t("common.save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

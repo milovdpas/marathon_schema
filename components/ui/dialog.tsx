@@ -103,6 +103,10 @@ function DialogFooter({
       data-slot="dialog-footer"
       className={cn(
         "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        // Mobile: full-width buttons with a 44px touch target (the default h-8
+        // is far below the ~44px guideline and fiddly to hit one-handed).
+        "[&>button]:h-11 [&>button]:w-full [&>button]:justify-center",
+        "sm:[&>button]:h-8 sm:[&>button]:w-auto",
         className
       )}
       {...props}
