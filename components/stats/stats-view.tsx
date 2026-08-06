@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { NoPlanState } from "@/components/common/no-plan-state";
 import { StatCard } from "@/components/common/stat-card";
 import { LongRunProgressChart } from "@/components/stats/longrun-progress-chart";
+import { SplitPaceChart } from "@/components/stats/split-pace-chart";
 import { WeeklyHistoryChart } from "@/components/stats/weekly-history-chart";
 import { WeeklyTrendChart } from "@/components/stats/weekly-trend-chart";
 import {
@@ -19,7 +20,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";
-import { weeklyHistory } from "@/lib/stats";
+import { formatDayLabel } from "@/lib/date";
+import { latestSplitRun, weeklyHistory } from "@/lib/stats";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function StatsView() {
@@ -39,6 +41,8 @@ export function StatsView() {
 
   if (!plan || !stats) return <NoPlanState />;
   const { overall } = stats;
+  // Most recent run that has scanned splits (null until one is scanned).
+  const splitRun = latestSplitRun(plan);
 
   return (
     <div className="space-y-5">
@@ -96,6 +100,21 @@ export function StatsView() {
         </div>
         <WeeklyTrendChart data={stats.weekly} />
       </Card>
+
+      {splitRun ? (
+        <Card className="p-4">
+          <h3 className="mb-1 text-sm font-semibold">{t("stats.splitPaces")}</h3>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {t("stats.splitPacesSub", {
+              title: splitRun.title,
+              date: formatDayLabel(splitRun.date),
+              fastest: splitRun.fastestPace,
+              slowest: splitRun.slowestPace,
+            })}
+          </p>
+          <SplitPaceChart splits={splitRun.splits} />
+        </Card>
+      ) : null}
 
       <Card className="p-4">
         <h3 className="mb-1 text-sm font-semibold">

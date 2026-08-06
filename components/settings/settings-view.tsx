@@ -17,6 +17,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TrainingPrefsFields } from "@/components/common/training-prefs-fields";
 import { CloudSyncCard } from "@/components/settings/cloud-sync-card";
+import { SplitScannerCard } from "@/components/settings/split-scanner-card";
 import { WeatherCard } from "@/components/settings/weather-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -312,8 +313,17 @@ export function SettingsView() {
       {/* Cloud sync */}
       <CloudSyncCard />
 
-      {/* Weather */}
-      <WeatherCard />
+      {/* Optional features */}
+      <section className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">{t("features.title")}</h3>
+          <p className="text-xs text-muted-foreground">
+            {t("features.subtitle")}
+          </p>
+        </div>
+        <WeatherCard />
+        <SplitScannerCard />
+      </section>
 
       {/* Data */}
       <Card className="gap-0 p-4">

@@ -12,7 +12,8 @@ export function Toaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 md:bottom-6">
+    // Above dialogs/sheets (both z-50) so a toast fired from inside one is seen.
+    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-[100] flex flex-col items-center gap-2 px-4 md:bottom-6">
       {toasts.map((toast) => (
         <div
           key={toast.id}

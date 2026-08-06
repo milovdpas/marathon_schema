@@ -20,8 +20,9 @@ import {
   paceToSeconds,
   parseDurationToMinutes,
 } from "@/lib/pace";
-import type { Workout } from "@/lib/types";
+import type { Workout, WorkoutSplit } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { SplitScanField } from "@/components/common/split-scan-field";
 import { TimeField } from "@/components/common/time-field";
 import { attachWeather } from "@/lib/weather-sync";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -51,6 +52,7 @@ export function CompleteWorkoutDialog({
   const [duration, setDuration] = useState("");
   const [pace, setPace] = useState("");
   const [startTime, setStartTime] = useState("");
+  const [splits, setSplits] = useState<WorkoutSplit[]>([]);
 
   // Prefill from the planned target when the dialog opens (reset during render).
   const [wasOpen, setWasOpen] = useState(false);
@@ -62,6 +64,7 @@ export function CompleteWorkoutDialog({
     setPace(workout.actualPace ?? workout.plannedPace ?? "");
     setDuration(formatClock(workout.durationMin));
     setStartTime(workout.startTime ?? "");
+    setSplits(workout.splits ?? []);
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
@@ -101,6 +104,7 @@ export function CompleteWorkoutDialog({
       durationMin,
       actualPace,
       startTime: start,
+      splits: splits.length > 0 ? splits : undefined,
       completed: true,
     });
     void attachWeather(workout.id, workout.date, start);
@@ -179,6 +183,8 @@ export function CompleteWorkoutDialog({
               </Label>
               <TimeField value={startTime} onChange={setStartTime} />
             </div>
+
+            <SplitScanField splits={splits} onChange={setSplits} />
           </div>
         ) : null}
 

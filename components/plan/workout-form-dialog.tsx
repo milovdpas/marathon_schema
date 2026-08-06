@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { SplitScanField } from "@/components/common/split-scan-field";
 import { TimeField } from "@/components/common/time-field";
 import {
   formatClock,
@@ -29,7 +30,12 @@ import {
   paceToSeconds,
   parseDurationToMinutes,
 } from "@/lib/pace";
-import { WORKOUT_TYPES, type Workout, type WorkoutType } from "@/lib/types";
+import {
+  WORKOUT_TYPES,
+  type Workout,
+  type WorkoutSplit,
+  type WorkoutType,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { attachWeather } from "@/lib/weather-sync";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -114,6 +120,8 @@ export function WorkoutFormDialog({
   const [form, setForm] = useState<FormState>(blankForm(defaultDate ?? ""));
   // "plan" = schedule a future workout; "log" = record one you've done.
   const [mode, setMode] = useState<"plan" | "log">("plan");
+  // Splits are an array, so they live beside the string-based FormState.
+  const [splits, setSplits] = useState<WorkoutSplit[]>([]);
 
   // Reset the form to the target workout whenever the dialog opens (adjusting
   // state during render — the recommended alternative to a reset-in-effect).
@@ -122,6 +130,7 @@ export function WorkoutFormDialog({
     setWasOpen(true);
     setForm(workout ? fromWorkout(workout) : blankForm(defaultDate ?? ""));
     setMode(workout?.completed ? "log" : "plan");
+    setSplits(workout?.splits ?? []);
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
@@ -171,6 +180,7 @@ export function WorkoutFormDialog({
         durationMin,
         actualPace,
         startTime: form.startTime.trim() || undefined,
+        splits: splits.length > 0 ? splits : undefined,
         notes: form.notes.trim() || undefined,
         completed: form.completed,
         // A logged activity has a concrete date.
@@ -381,6 +391,7 @@ export function WorkoutFormDialog({
                   onChange={(v) => set("startTime", v)}
                 />
               </Field>
+              <SplitScanField splits={splits} onChange={setSplits} />
               <Field label={t("workoutForm.notes")}>
                 <textarea
                   className="min-h-16 w-full resize-y rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { WeatherIcon } from "@/components/calendar/weather-badge";
 import { FlexibleDayPicker } from "@/components/common/flexible-day-picker";
+import { SplitsList } from "@/components/common/splits-list";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,6 +131,9 @@ export function DayDetailSheet({
                   onEdit={onEdit}
                   showDate={false}
                 />
+                {w.splits && w.splits.length > 0 ? (
+                  <SplitsList splits={w.splits} className="pl-10" />
+                ) : null}
                 {w.flexible ? (
                   <FlexibleDayPicker
                     workout={w}

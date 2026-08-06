@@ -1,0 +1,606 @@
+// Scan a Strava "Splits" screenshot for per-kilometre splits, entirely in the
+// browser (tesseract.js WASM). The image never leaves the device and there's no
+// API key. tesseract is imported dynamically so it stays out of the main bundle.
+
+import type { WorkoutSplit } from "@/lib/types";
+
+/** Cap the long edge before OCR — phone screenshots are far bigger than needed. */
+const MAX_EDGE = 1600;
+/** Upscale factor after downscaling, so small table text has enough pixels. */
+const SCALE = 2;
+/** Plausible running pace bounds, in seconds per km. */
+const MIN_PACE_SEC = 2 * 60;
+const MAX_PACE_SEC = 15 * 60;
+const MAX_ELEV_M = 500;
+
+/** Fix the digit-shaped characters OCR commonly returns for numerals. */
+function normalizeDigits(s: string): string {
+  return s
+    .replace(/[Oo]/g, "0")
+    .replace(/[lI|]/g, "1")
+    .replace(/[Ss]/g, "5")
+    .replace(/[B]/g, "8");
+}
+
+interface Candidate {
+  km: number;
+  pace: string;
+  paceSec: number;
+  elevM?: number;
+}
+
+/**
+ * Pull `index  m:ss  [elev]` rows out of raw OCR text.
+ *
+ * A Strava screenshot also contains numbers that *look* like splits — the pace
+ * chart's axis labels ("3:00 … 6:30", "1 km … 6 km") and PR lines ("0.58 km
+ * 2:20 3:58 /km"). So candidates are only accepted as a **strictly sequential
+ * run** (1, 2, 3 …), optionally closed by one fractional partial km. That
+ * structural check — not the row regex — is what rejects the decoys.
+ *
+ * Header words are never read, so a Dutch screenshot parses identically.
+ */
+export function parseSplits(rawText: string): WorkoutSplit[] {
+  const candidates: Candidate[] = [];
+
+  for (const line of rawText.split(/\r?\n/)) {
+    const cleaned = line.trim();
+    if (!cleaned) continue;
+    // index, then a m:ss pace, then optionally a signed elevation.
+    const m =
+      /^([0-9OolI|SsB]{1,3}(?:[.,][0-9OolI|SsB]{1,2})?)\s+([0-9OolI|SsB]{1,2}[:.][0-9OolI|SsB]{2})(?:\s+(-?\s?[0-9OolI|SsB]{1,3}(?:[.,][0-9OolI|SsB]+)?))?\s*$/.exec(
+        cleaned,
+      );
+    if (!m) continue;
+
+    const km = parseFloat(normalizeDigits(m[1]).replace(",", "."));
+    const paceRaw = normalizeDigits(m[2]).replace(".", ":");
+    const [mm, ss] = paceRaw.split(":").map(Number);
+    if (!Number.isFinite(km) || !Number.isFinite(mm) || !Number.isFinite(ss)) {
+      continue;
+    }
+    if (ss > 59) continue;
+    const paceSec = mm * 60 + ss;
+    if (paceSec < MIN_PACE_SEC || paceSec > MAX_PACE_SEC) continue;
+
+    let elevM: number | undefined;
+    if (m[3] != null) {
+      const e = parseFloat(
+        normalizeDigits(m[3].replace(/\s/g, "")).replace(",", "."),
+      );
+      if (Number.isFinite(e) && Math.abs(e) <= MAX_ELEV_M) elevM = e;
+    }
+
+    candidates.push({
+      km,
+      pace: `${mm}:${String(ss).padStart(2, "0")}`,
+      paceSec,
+      elevM,
+    });
+  }
+
+  return longestSequentialRun(candidates).map(({ km, pace, elevM }) => ({
+    km,
+    pace,
+    ...(elevM != null ? { elevM } : {}),
+  }));
+}
+
+/**
+ * Longest run of candidates whose km values read 1, 2, 3, … — optionally
+ * followed by a single fractional value (< 1), which is Strava's partial
+ * final kilometre.
+ */
+function longestSequentialRun(candidates: Candidate[]): Candidate[] {
+  let best: Candidate[] = [];
+  for (let i = 0; i < candidates.length; i++) {
+    if (candidates[i].km !== 1) continue; // a real table always starts at 1
+    const run: Candidate[] = [candidates[i]];
+    let expected = 2;
+    for (let j = i + 1; j < candidates.length; j++) {
+      const c = candidates[j];
+      if (c.km === expected) {
+        run.push(c);
+        expected += 1;
+      } else if (c.km > 0 && c.km < 1) {
+        run.push(c); // trailing partial km closes the table
+        break;
+      } else {
+        break;
+      }
+    }
+    if (run.length > best.length) best = run;
+  }
+  return best;
+}
+
+/** A 2D context with the best resampling the browser offers. */
+function smoothCanvas(w: number, h: number): {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+} {
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas unavailable");
+  // Chrome defaults to "low", which visibly degrades OCR on small glyphs.
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  return { canvas, ctx };
+}
+
+/** Draw the image to a canvas, grayscale + invert it, and upscale for OCR. */
+async function preprocess(file: File): Promise<HTMLCanvasElement> {
+  const bitmap = await createImageBitmap(file);
+  const longEdge = Math.max(bitmap.width, bitmap.height);
+  const fit = longEdge > MAX_EDGE ? MAX_EDGE / longEdge : 1;
+  const w = Math.round(bitmap.width * fit * SCALE);
+  const h = Math.round(bitmap.height * fit * SCALE);
+
+  // Resize in two steps (fit, then upscale) rather than one big jump — it
+  // smooths JPEG artefacts and measurably improves recognition.
+  let source: CanvasImageSource = bitmap;
+  if (fit < 1) {
+    const fw = Math.max(1, Math.round(bitmap.width * fit));
+    const fh = Math.max(1, Math.round(bitmap.height * fit));
+    const mid = smoothCanvas(fw, fh);
+    mid.ctx.drawImage(bitmap, 0, 0, fw, fh);
+    source = mid.canvas;
+  }
+
+  const { canvas, ctx } = smoothCanvas(w, h);
+  ctx.drawImage(source, 0, 0, w, h);
+  bitmap.close();
+
+  // Tesseract expects dark text on a light background; Strava is dark mode.
+  const img = ctx.getImageData(0, 0, w, h);
+  const px = img.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const gray = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+    const v = 255 - gray;
+    px[i] = v;
+    px[i + 1] = v;
+    px[i + 2] = v;
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas;
+}
+
+/** A recognized word plus where it sits on the page. */
+export interface OcrWord {
+  text: string;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+const PACE_RE = /^(\d{1,2}):([0-5]\d)$/;
+
+/**
+ * Build splits from word **geometry** rather than line text.
+ *
+ * Strava's table puts Km / Pace / Elev far apart with a bar chart between them,
+ * which mangles Tesseract's line output (`1 4:50 1` comes back as `1450`). The
+ * per-word boxes are reliable though, so we:
+ *   1. keep only strict `m:ss` words within a plausible pace range,
+ *   2. cluster them by x — the biggest column is the Pace column (the pace
+ *      chart's axis labels form their own, smaller cluster at a different x),
+ *   3. read km from **row order** (the index column OCRs poorly and is just
+ *      1,2,3… anyway), honouring a leading fraction for the final partial km,
+ *   4. attach an elevation number found far to the right on the same row.
+ *
+ * Only numbers are ever inspected, so the screenshot's language is irrelevant.
+ */
+const paceSeconds = (w: OcrWord): number => {
+  const m = PACE_RE.exec(w.text.trim())!;
+  return Number(m[1]) * 60 + Number(m[2]);
+};
+
+/**
+ * Does this column read like a chart axis rather than a table of splits?
+ *
+ * A pace chart's Y axis is by definition an arithmetic progression (3:00, 3:30,
+ * 4:00 …), and it can easily be *longer* than the splits table, so size alone
+ * picks the wrong column. Real splits vary run to run. Constant-zero steps are
+ * allowed through — that's a perfectly even-paced run, not an axis.
+ */
+function looksLikeAxis(column: OcrWord[]): boolean {
+  if (column.length < 3) return false;
+  const secs = column.map(paceSeconds);
+  const steps = secs.slice(1).map((s, i) => s - secs[i]);
+  const first = steps[0];
+  if (first === 0) return false;
+  return steps.every((s) => Math.abs(s - first) <= 1);
+}
+
+/** The vertically-stacked column of `m:ss` words = the Pace column. */
+export function findPaceColumn(
+  words: OcrWord[],
+  imageWidth: number,
+): OcrWord[] {
+  const paces = words.filter((w) => {
+    const m = PACE_RE.exec(w.text.trim());
+    if (!m) return false;
+    const sec = Number(m[1]) * 60 + Number(m[2]);
+    return sec >= MIN_PACE_SEC && sec <= MAX_PACE_SEC;
+  });
+  if (paces.length === 0) return [];
+
+  // Cluster by left edge — the pace chart's axis labels sit at their own x.
+  const tol = Math.max(20, imageWidth * 0.05);
+  const columns: OcrWord[][] = [];
+  for (const w of paces) {
+    const col = columns.find((c) => Math.abs(c[0].x0 - w.x0) <= tol);
+    if (col) col.push(w);
+    else columns.push([w]);
+  }
+  for (const c of columns) c.sort((a, b) => a.y0 - b.y0);
+
+  const sameRow = (w: OcrWord, row: OcrWord) => {
+    const mid = (w.y0 + w.y1) / 2;
+    return mid >= row.y0 && mid <= row.y1;
+  };
+
+  // Score each candidate: a splits column has a km index to its left and often
+  // an elevation far to its right; an axis has neither.
+  const scored = columns.map((col) => {
+    const withIndex = col.filter((p) =>
+      words.some(
+        (w) => w !== p && sameRow(w, p) && w.x1 <= p.x0 && /^\d/.test(w.text),
+      ),
+    ).length;
+    const withElev = col.filter((p) =>
+      words.some(
+        (w) =>
+          w !== p &&
+          sameRow(w, p) &&
+          w.x0 > p.x1 + imageWidth * 0.1 &&
+          /^-?\d{1,3}$/.test(w.text.trim()),
+      ),
+    ).length;
+    return {
+      col,
+      axis: looksLikeAxis(col),
+      score: withIndex * 3 + withElev * 2 + col.length,
+    };
+  });
+
+  // Prefer non-axis columns outright; only fall back to one if nothing else.
+  const real = scored.filter((s) => !s.axis);
+  const pool = real.length > 0 ? real : scored;
+  const best = pool.sort((a, b) => b.score - a.score)[0];
+  if (!best || best.col.length < 2) return []; // a lone match is noise
+  return best.col;
+}
+
+export function parseSplitsFromWords(
+  words: OcrWord[],
+  imageWidth: number,
+  /** Elevation per row index, from the dedicated high-resolution pass. */
+  elevations?: Map<number, number>,
+): WorkoutSplit[] {
+  const column = findPaceColumn(words, imageWidth);
+  if (column.length === 0) return [];
+
+  // Row pitch lets us notice a *skipped* row: if OCR misses one pace, naive
+  // 1,2,3… numbering would silently renumber every split after it.
+  const gaps = column
+    .slice(1)
+    .map((w, i) => (w.y0 + w.y1) / 2 - (column[i].y0 + column[i].y1) / 2);
+  const pitch = median(gaps);
+
+  const sameRow = (w: OcrWord, row: OcrWord) => {
+    const mid = (w.y0 + w.y1) / 2;
+    return mid >= row.y0 && mid <= row.y1;
+  };
+
+  let kmCounter = 0;
+  return column.map((paceWord, i) => {
+    const m = PACE_RE.exec(paceWord.text.trim())!;
+    const pace = `${Number(m[1])}:${m[2]}`;
+
+    // Advance by however many row-slots we actually moved down the table.
+    if (i === 0) kmCounter = 1;
+    else {
+      const steps =
+        pitch > 0 ? Math.max(1, Math.round((gaps[i - 1] ?? pitch) / pitch)) : 1;
+      kmCounter += steps;
+    }
+    let km = kmCounter;
+
+    // A leading fraction marks Strava's final partial kilometre.
+    const left = words
+      .filter((w) => w !== paceWord && sameRow(w, paceWord) && w.x1 <= paceWord.x0)
+      .sort((a, b) => b.x0 - a.x0)[0];
+    if (left) {
+      const n = parseFloat(left.text.trim().replace(",", "."));
+      if (Number.isFinite(n) && n > 0 && n < 1) km = n;
+    }
+
+    const elevM = elevations?.get(i);
+    return { km, pace, ...(elevM != null ? { elevM } : {}) };
+  });
+}
+
+function median(ns: number[]): number {
+  if (ns.length === 0) return 0;
+  const s = [...ns].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+}
+
+export interface ScanResult {
+  splits: WorkoutSplit[];
+  rawText: string;
+}
+
+/** Crop a region of the preprocessed canvas and blow it up for tiny glyphs. */
+function cropScaled(
+  src: HTMLCanvasElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  scale: number,
+): HTMLCanvasElement {
+  const { canvas, ctx } = smoothCanvas(
+    Math.max(1, Math.round(w * scale)),
+    Math.max(1, Math.round(h * scale)),
+  );
+  ctx.drawImage(src, x, y, w, h, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+/**
+ * Recover minus signs that OCR dropped, from box geometry.
+ *
+ * Elevation is right-aligned, so a leading "-" simply makes the word box
+ * *wider* — in practice ~1.7× (e.g. 74px for "1" vs 129px for "-1"). That's a
+ * far stronger signal than asking Tesseract to classify a 2px dash. Words OCR
+ * already read as negative calibrate the threshold; if it found none, fall back
+ * to a generous multiple of the narrowest box.
+ */
+export type ElevEntry = {
+  row: number;
+  text: string;
+  value: number;
+  width: number;
+  signed: boolean;
+};
+
+/**
+ * Turn raw elevation readings into signed values, repairing OCR damage.
+ *
+ * Two corrections, both driven by the column being **right-aligned** so that a
+ * leading "-" simply makes the word box ~1.7× wider (74px for `1` vs 129px for
+ * `-1`) — far more reliable than asking OCR to classify a 2px dash:
+ *
+ *  1. **Missing dash** — a box in the wide band is negative even if OCR
+ *     returned no sign.
+ *  2. **Dash read as a digit** — "-1" sometimes comes back as "41". Such a
+ *     value is wildly out of line with the rest of the run *and* sits in the
+ *     wide band, so it's reinterpreted as minus-the-last-digit. If that still
+ *     looks implausible the row is dropped: no elevation beats a wrong one.
+ *
+ * Bounds scale with the run's own magnitudes, so a genuinely hilly run
+ * (±40 m/km) keeps every reading.
+ */
+export function resolveElevations(entries: ElevEntry[]): Map<number, number> {
+  const out = new Map<number, number>();
+  if (entries.length === 0) return out;
+
+  const digitsOf = (e: ElevEntry) => e.text.replace(/\D/g, "");
+  const mags = entries.map((e) => Math.abs(e.value)).sort((a, b) => a - b);
+  const limit = Math.max(5, mags[Math.floor(mags.length / 2)] * 8);
+  const plausible = entries.filter((e) => Math.abs(e.value) <= limit);
+
+  // Width of a single glyph, from the tightest *believable* reading. Comparing
+  // per-glyph matters: a two-digit "45" is as wide as a one-digit "-8", so a
+  // raw width threshold would call every hilly-run reading negative.
+  const unit = Math.min(
+    ...(plausible.length > 0 ? plausible : entries).map(
+      (e) => e.width / Math.max(1, digitsOf(e).length),
+    ),
+  );
+  const hasDash = (e: ElevEntry) =>
+    e.signed || e.width >= (digitsOf(e).length + 0.6) * unit;
+
+  for (const e of entries) {
+    if (Math.abs(e.value) <= limit || entries.length < 3) {
+      out.set(e.row, hasDash(e) ? -Math.abs(e.value) : e.value);
+      continue;
+    }
+    // Implausible magnitude in a two-glyph box → the leading glyph was a dash
+    // ("-1" read as "41"). Anything longer is junk, so drop the row instead.
+    const digits = digitsOf(e);
+    const salvaged = Number(digits.slice(-1));
+    if (digits.length === 2 && Number.isFinite(salvaged) && salvaged <= limit) {
+      out.set(e.row, -salvaged);
+    }
+  }
+  return out;
+}
+
+/** True when the row pitch implies OCR skipped a row inside the table. */
+function hasRowGap(column: OcrWord[]): boolean {
+  if (column.length < 3) return false;
+  const gaps = column
+    .slice(1)
+    .map((w, i) => (w.y0 + w.y1) / 2 - (column[i].y0 + column[i].y1) / 2);
+  const pitch = median(gaps);
+  return pitch > 0 && gaps.some((g) => Math.round(g / pitch) > 1);
+}
+
+/** OCR a Strava splits screenshot and return the parsed splits. */
+export async function scanSplits(file: File): Promise<ScanResult> {
+  const canvas = await preprocess(file);
+  const { createWorker, PSM } = await import("tesseract.js");
+  const worker = await createWorker("eng");
+
+  const read = async (
+    image: HTMLCanvasElement,
+    whitelist: string,
+    psm: (typeof PSM)[keyof typeof PSM],
+  ): Promise<{ words: OcrWord[]; text: string }> => {
+    await worker.setParameters({
+      // The table is purely numeric — the whitelist is the biggest accuracy win.
+      tessedit_char_whitelist: whitelist,
+      tessedit_pageseg_mode: psm,
+    });
+    const { data } = await worker.recognize(image, {}, { blocks: true, text: true });
+    const words: OcrWord[] = [];
+    for (const block of data.blocks ?? []) {
+      for (const para of block.paragraphs ?? []) {
+        for (const line of para.lines ?? []) {
+          for (const w of line.words ?? []) {
+            const text = (w.text ?? "").trim();
+            if (text) words.push({ text, ...w.bbox });
+          }
+        }
+      }
+    }
+    return { words, text: data.text ?? "" };
+  };
+
+  try {
+    // Pass 1 — locate the table. Sparse text, because the columns sit far apart
+    // and a "uniform block" model merges them and drops characters.
+    const { words, text: rawText } = await read(
+      canvas,
+      "0123456789:.-",
+      PSM.SPARSE_TEXT,
+    );
+    let column = findPaceColumn(words, canvas.width);
+    if (column.length === 0) {
+      return { splits: parseSplits(rawText), rawText };
+    }
+
+    // If the row pitch says a pace row was skipped, re-read just the table
+    // strip at higher resolution to recover it (only pays the cost when needed).
+    let tableWords = words;
+    if (hasRowGap(column)) {
+      const recovered = await rereadTable(canvas, column, read, PSM);
+      if (recovered && recovered.column.length > column.length) {
+        column = recovered.column;
+        tableWords = recovered.words;
+      }
+    }
+
+    const elevations = await readElevations(canvas, column, read, PSM);
+    const splits = parseSplitsFromWords(tableWords, canvas.width, elevations);
+    // Geometry is the reliable path; fall back to line text if it found nothing.
+    return { splits: splits.length > 0 ? splits : parseSplits(rawText), rawText };
+  } finally {
+    await worker.terminate();
+  }
+}
+
+/**
+ * Re-OCR only the table's rows at higher resolution to recover a pace the
+ * full-page pass dropped. Results are mapped back into canvas coordinates so
+ * the caller can keep working in one coordinate space.
+ */
+async function rereadTable(
+  canvas: HTMLCanvasElement,
+  column: OcrWord[],
+  read: (
+    image: HTMLCanvasElement,
+    whitelist: string,
+    psm: never,
+  ) => Promise<{ words: OcrWord[]; text: string }>,
+  PSM: typeof import("tesseract.js").PSM,
+): Promise<{ words: OcrWord[]; column: OcrWord[] } | null> {
+  const first = column[0];
+  const last = column[column.length - 1];
+  const rowH = (last.y0 - first.y0) / Math.max(1, column.length - 1);
+  const top = Math.max(0, Math.round(first.y0 - rowH));
+  const bottom = Math.min(canvas.height, Math.round(last.y1 + rowH));
+  if (bottom - top < 10) return null;
+
+  const SCALE_UP = 2;
+  try {
+    const strip = cropScaled(canvas, 0, top, canvas.width, bottom - top, SCALE_UP);
+    const { words } = await read(strip, "0123456789:.-", PSM.SPARSE_TEXT as never);
+    // Back into canvas space.
+    const mapped = words.map((w) => ({
+      text: w.text,
+      x0: w.x0 / SCALE_UP,
+      x1: w.x1 / SCALE_UP,
+      y0: w.y0 / SCALE_UP + top,
+      y1: w.y1 / SCALE_UP + top,
+    }));
+    return { words: mapped, column: findPaceColumn(mapped, canvas.width) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Elevation is a 1–2 character glyph ("-0", "1") that the full-page pass either
+ * misses or misreads. Re-OCR just that narrow column, blown up 4×, twice:
+ * a block pass finds every row (a bare "1" is a single thin stroke that sparse
+ * mode discards as noise), and a sparse pass reliably keeps the minus sign.
+ * Merge them, preferring the signed reading.
+ */
+async function readElevations(
+  canvas: HTMLCanvasElement,
+  column: OcrWord[],
+  read: (
+    image: HTMLCanvasElement,
+    whitelist: string,
+    psm: never,
+  ) => Promise<{ words: OcrWord[]; text: string }>,
+  PSM: typeof import("tesseract.js").PSM,
+): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  const first = column[0];
+  const last = column[column.length - 1];
+  const rowH =
+    column.length > 1
+      ? (last.y0 - first.y0) / (column.length - 1)
+      : first.y1 - first.y0;
+  const top = Math.max(0, Math.round(first.y0 - rowH * 0.6));
+  const bottom = Math.min(canvas.height, Math.round(last.y1 + rowH * 0.6));
+  // Right-hand slice, well clear of the pace column and the bar chart.
+  const xStart = Math.round(first.x1 + (canvas.width - first.x1) * 0.55);
+  const width = canvas.width - xStart;
+  if (width < 10 || bottom - top < 10) return out;
+
+  const SCALE = 4;
+  const crop = cropScaled(canvas, xStart, top, width, bottom - top, SCALE);
+
+  try {
+    const block = await read(crop, "0123456789-", PSM.SINGLE_BLOCK as never);
+    const sparse = await read(crop, "0123456789-", PSM.SPARSE_TEXT as never);
+    const candidates = [...block.words, ...sparse.words].filter((w) =>
+      /^-?\d{1,3}$/.test(w.text.trim()),
+    );
+
+    const entries: ElevEntry[] = [];
+
+    column.forEach((paceWord, i) => {
+      const mid = ((paceWord.y0 + paceWord.y1) / 2 - top) * SCALE;
+      const hits = candidates.filter((w) => mid >= w.y0 && mid <= w.y1);
+      if (hits.length === 0) return;
+      // Prefer a signed reading — the block pass tends to drop the minus.
+      const best = hits.find((w) => w.text.trim().startsWith("-")) ?? hits[0];
+      const text = best.text.trim();
+      const e = Number(text);
+      if (!Number.isFinite(e) || Math.abs(e) > MAX_ELEV_M) return;
+      entries.push({
+        row: i,
+        text,
+        value: e,
+        width: best.x1 - best.x0,
+        signed: text.startsWith("-"),
+      });
+    });
+
+    // Repair dropped/mis-scanned minus signs using the box widths.
+    for (const [row, value] of resolveElevations(entries)) out.set(row, value);
+  } catch {
+    // Elevation is a bonus — never fail the whole scan for it.
+  }
+  return out;
+}

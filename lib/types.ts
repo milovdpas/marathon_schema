@@ -15,6 +15,13 @@ export interface WeatherSnapshot {
   lon: number;
 }
 
+/** One kilometre split, typically scanned from a Strava screenshot. */
+export interface WorkoutSplit {
+  km: number; // 1, 2, 3 … or a fraction (0.4) for the final partial km
+  pace: string; // "mm:ss" per km — same format as plannedPace/actualPace
+  elevM?: number; // elevation delta in metres (may be negative)
+}
+
 export type WeekPhase =
   | "base"
   | "build"
@@ -39,6 +46,8 @@ export interface Workout {
   startTime?: string;
   /** Weather captured for this workout (when the weather feature is on). */
   weather?: WeatherSnapshot;
+  /** Per-kilometre splits (from the screenshot scanner). */
+  splits?: WorkoutSplit[];
   completed: boolean;
   isCustom?: boolean;
   /** When true, the workout may be done any day within [windowStart, windowEnd]. */
@@ -67,6 +76,8 @@ export interface Preferences {
   weatherCalendar?: boolean;
   /** Whether the onboarding weather prompt has been shown. */
   weatherOnboardingSeen?: boolean;
+  /** Scan a Strava screenshot for per-km splits when logging a run. */
+  splitScannerEnabled?: boolean;
 }
 
 /** Editable per-plan metadata (race + goal), independent of the schedule. */

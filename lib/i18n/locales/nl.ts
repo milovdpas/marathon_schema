@@ -156,6 +156,9 @@ export const nl: Dict = {
     historyTitle: "Kilometergeschiedenis",
     historySub:
       "Elke vastgelegde loop per kalenderweek — inclusief lopen van vóór dit plan en uit je andere plannen.",
+    splitPaces: "Tempo per kilometer",
+    splitPacesSub:
+      "{{title}} · {{date}} — snelste {{fastest}}, langzaamste {{slowest}} per km.",
     longRunProgression: "Opbouw lange duurloop",
     longRunHint: "Opbouw naar je piek, daarna afbouwen richting wedstrijddag.",
     planned: "Gepland",
@@ -208,11 +211,11 @@ Het plan heeft een "offDays"-lijst (vakanties/reizen met een notitie of ik kan t
 
 Je MAG elke GEPLANDE (nog niet voltooide) toekomstige training vrij verplaatsen, toevoegen, verwijderen of aanpassen om dit voor elkaar te krijgen.
 
-Elke training heeft GEPLANDE doelen ("plannedDistanceKm", "plannedPace") en, zodra ik hem gedaan heb, VASTGELEGDE werkelijke waarden ("actualDistanceKm", "actualPace", "durationMin" in minuten, optioneel "startTime" als "HH:mm", en optioneel "weather" = {tempC, condition, ...}). Vergelijk gepland met werkelijk om te beoordelen hoe de training echt verloopt (bijv. structureel langzamer/korter dan gepland, of zware sessies in de hitte) en pas de komende trainingen daarop aan.
+Elke training heeft GEPLANDE doelen ("plannedDistanceKm", "plannedPace") en, zodra ik hem gedaan heb, VASTGELEGDE werkelijke waarden ("actualDistanceKm", "actualPace", "durationMin" in minuten, optioneel "startTime" als "HH:mm", optioneel "weather" = {tempC, condition, ...}, en optioneel "splits" = tempo per kilometer [{km, pace "mm:ss", elevM}]). Gebruik "splits" om te zien hoe de loop verdeeld was (gelijkmatig, positieve/negatieve split, inzakken aan het eind, heuvels via elevM). Vergelijk gepland met werkelijk om te beoordelen hoe de training echt verloopt (bijv. structureel langzamer/korter dan gepland, of zware sessies in de hitte) en pas de komende trainingen daarop aan.
 
 Je MOET je aan deze regels houden:
 - WIJZIG NOOIT de wedstrijddatum. Houd "raceDate" exact hetzelfde en houd de marathon / wedstrijddag-training op zijn datum — de marathondatum staat vast.
-- WIJZIG NOOIT een voltooide training: elke training met "completed": true moet exact zo blijven, inclusief "id", "completed", "actualDistanceKm", "actualPace", "durationMin", "startTime" en "weather" (zodat ik mijn vastgelegde voortgang niet verlies).
+- WIJZIG NOOIT een voltooide training: elke training met "completed": true moet exact zo blijven, inclusief "id", "completed", "actualDistanceKm", "actualPace", "durationMin", "startTime", "weather" en "splits" (zodat ik mijn vastgelegde voortgang niet verlies).
 - Houd de JSON-structuur geldig (plans, weeks, workouts). Als je een training naar een andere week verplaatst, verplaats dan ook zijn id naar de "workoutIds" van die week, en houd de "date" van elke training binnen het start/eind-bereik van zijn week.
 - Geef alleen de volledige bijgewerkte JSON terug, niets anders.
 - BELANGRIJK — geef het resultaat als een downloadbaar .json-BESTAND zodat ik het direct kan toevoegen. Als je geen bestand kunt maken, zet dan de VOLLEDIGE JSON in één \`\`\`json-codeblok, inclusief de allereerste { en de allerlaatste } — splits het nooit en laat geen tekens weg.
@@ -273,6 +276,25 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     locationDenied:
       "Locatietoegang geweigerd — sta het toe in je browser om weer te gebruiken.",
     locationUnavailable: "Kon je locatie niet ophalen. Probeer opnieuw.",
+  },
+  features: {
+    title: "Functies",
+    subtitle: "Optionele extra's die je kunt inschakelen.",
+  },
+  splitScanner: {
+    title: "Rondetijden-scanner",
+    enable: "Rondetijden scannen uit screenshot",
+    enableBody:
+      "Upload bij het vastleggen van een loop je Strava-screenshot met rondetijden; de tempo's per kilometer worden er automatisch uit gelezen. Draait op je apparaat — de afbeelding wordt nooit geüpload en na het scannen weggegooid.",
+    scanButton: "Screenshot scannen",
+    scanning: "Scannen…",
+    scanned_one: "{{count}} rondetijd gescand",
+    scanned_other: "{{count}} rondetijden gescand",
+    scanFailed:
+      "Kon geen rondetijden uit die afbeelding lezen. Zorg dat de rondetijden-tabel zichtbaar is in de screenshot.",
+    splitsTitle: "Rondetijden",
+    clear: "Rondetijden wissen",
+    km: "km",
   },
   wizard: {
     title: "Een plan maken",
@@ -379,7 +401,8 @@ Uitvoer-schema (geef precies deze vorm terug, niets anders):
           // Voor flexibele planning voeg ook toe: "flexible": true, "windowStart": "YYYY-MM-DD", "windowEnd": "YYYY-MM-DD"
           // Nieuwe plannen zetten "completed": false. Zodra ik een training vastleg vult de app de werkelijke waarden in:
           // "actualDistanceKm", "actualPace" ("mm:ss"), "durationMin" (getal), optioneel
-          // "startTime" ("HH:mm") en optioneel "weather" {tempC, condition, ...} — laat deze weg bij nieuwe plannen.
+          // "startTime" ("HH:mm"), optioneel "weather" {tempC, condition, ...} en optioneel
+          // "splits" [{km, pace, elevM}] — laat deze weg bij nieuwe plannen.
         }
       }
     }

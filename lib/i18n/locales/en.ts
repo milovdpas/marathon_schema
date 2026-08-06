@@ -154,6 +154,9 @@ export const en = {
     historyTitle: "Mileage history",
     historySub:
       "Every logged run by calendar week — including runs from before this plan and from your other plans.",
+    splitPaces: "Split paces",
+    splitPacesSub:
+      "{{title}} · {{date}} — fastest {{fastest}}, slowest {{slowest}} per km.",
     longRunProgression: "Long-run progression",
     longRunHint: "Building toward your peak, then tapering for race day.",
     planned: "Planned",
@@ -205,11 +208,11 @@ The plan has an "offDays" list (vacations/trips with a note on whether I can tra
 
 You MAY freely reschedule, add, remove or modify any PLANNED (not-yet-completed) future workout to make this work.
 
-Each workout has PLANNED targets ("plannedDistanceKm", "plannedPace") and, once I've done it, LOGGED actuals ("actualDistanceKm", "actualPace", "durationMin" in minutes, optional "startTime" as "HH:mm", and optional "weather" = {tempC, condition, ...}). Compare planned vs actual to judge how the training is actually going (e.g. consistently slower/shorter than planned, or hard sessions done in heat) and adapt upcoming workouts accordingly.
+Each workout has PLANNED targets ("plannedDistanceKm", "plannedPace") and, once I've done it, LOGGED actuals ("actualDistanceKm", "actualPace", "durationMin" in minutes, optional "startTime" as "HH:mm", optional "weather" = {tempC, condition, ...}, and optional "splits" = per-kilometre pacing [{km, pace "mm:ss", elevM}]). Use "splits" to see how the run was paced (even splits, positive/negative split, a blow-up late on, hills via elevM). Compare planned vs actual to judge how the training is actually going (e.g. consistently slower/shorter than planned, or hard sessions done in heat) and adapt upcoming workouts accordingly.
 
 You MUST follow these rules:
 - NEVER change the race date. Keep "raceDate" exactly the same and keep the marathon / race-day workout on its date — the marathon date is fixed.
-- NEVER alter a completed workout: any workout with "completed": true must stay exactly as-is, including its "id", "completed", "actualDistanceKm", "actualPace", "durationMin", "startTime" and "weather" (don't lose my logged progress).
+- NEVER alter a completed workout: any workout with "completed": true must stay exactly as-is, including its "id", "completed", "actualDistanceKm", "actualPace", "durationMin", "startTime", "weather" and "splits" (don't lose my logged progress).
 - Keep the JSON structure valid (plans, weeks, workouts). If you move a workout to a different week, also move its id into that week's "workoutIds", and keep each workout's "date" inside its week's start/end range.
 - Return the complete updated JSON only, nothing else.
 - IMPORTANT — give me the result as a downloadable .json FILE so I can attach it directly. If you can't create a file, put the ENTIRE JSON in a single \`\`\`json code block, including the very first { and the very last } — never split it or leave characters out.
@@ -270,6 +273,25 @@ JSON (paste below, or attach the exported .json file):
     locationDenied:
       "Location access was denied — allow it in your browser to use weather.",
     locationUnavailable: "Couldn't get your location. Try again.",
+  },
+  features: {
+    title: "Features",
+    subtitle: "Optional extras you can switch on.",
+  },
+  splitScanner: {
+    title: "Split scanner",
+    enable: "Scan splits from a screenshot",
+    enableBody:
+      "When logging a run, upload your Strava splits screenshot and the per-kilometre paces are read from it automatically. Runs on your device — the image is never uploaded and is discarded after scanning.",
+    scanButton: "Scan screenshot",
+    scanning: "Scanning…",
+    scanned_one: "Scanned {{count}} split",
+    scanned_other: "Scanned {{count}} splits",
+    scanFailed:
+      "Couldn't read splits from that image. Make sure the Splits table is visible in the screenshot.",
+    splitsTitle: "Splits",
+    clear: "Clear splits",
+    km: "km",
   },
   wizard: {
     title: "Create a plan",
@@ -376,7 +398,8 @@ Output schema (return exactly this shape, nothing else):
           // For flexible scheduling also add: "flexible": true, "windowStart": "YYYY-MM-DD", "windowEnd": "YYYY-MM-DD"
           // New plans set "completed": false. Once I log a run the app fills in actuals:
           // "actualDistanceKm", "actualPace" ("mm:ss"), "durationMin" (number), optional
-          // "startTime" ("HH:mm") and optional "weather" {tempC, condition, ...} — leave these out for new plans.
+          // "startTime" ("HH:mm"), optional "weather" {tempC, condition, ...} and optional
+          // "splits" [{km, pace, elevM}] — leave these out for new plans.
         }
       }
     }

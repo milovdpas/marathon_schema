@@ -418,8 +418,10 @@ export const useTrainingStore = create<TrainingState>()(
       name: STORAGE_KEY,
       // v5: additive — Workout.startTime/weather + Preferences weather flags.
       // v6: rename Workout.finishTime -> startTime (derive start via duration).
+      // v7: additive — Workout.splits + Preferences.splitScannerEnabled
+      //     (absent = correct default, so no transform needed).
       // The migrate below is idempotent and runs for all prior versions.
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,

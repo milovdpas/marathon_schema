@@ -1,7 +1,7 @@
 import { isWithinInterval, parseISO, startOfWeek } from "date-fns";
 import { toISO } from "./date";
-import { averagePace } from "./pace";
-import type { TrainingPlan, Workout } from "./types";
+import { averagePace, paceToSeconds, secondsToPace } from "./pace";
+import type { TrainingPlan, Workout, WorkoutSplit } from "./types";
 
 /** All workouts as a flat array, sorted by date. */
 export function allWorkouts(plan: TrainingPlan): Workout[] {
@@ -184,6 +184,48 @@ export function weeklyHistory(workouts: Workout[]): WeekHistoryPoint[] {
       plannedKm: round1(planned.get(weekStart) ?? 0),
       actualKm: round1(actual.get(weekStart) ?? 0),
     }));
+}
+
+export interface SplitRun {
+  workoutId: string;
+  date: string;
+  title: string;
+  splits: WorkoutSplit[];
+  fastestPace: string;
+  slowestPace: string;
+  /** Seconds between the fastest and slowest full km — lower = more even. */
+  spreadSec: number;
+}
+
+/**
+ * The most recent completed workout that has scanned splits, with its pace
+ * spread (fastest vs slowest full km) — a simple pacing-consistency read.
+ */
+export function latestSplitRun(plan: TrainingPlan): SplitRun | null {
+  const withSplits = allWorkouts(plan).filter(
+    (w) => w.splits && w.splits.length > 0,
+  );
+  const w = withSplits[withSplits.length - 1];
+  if (!w?.splits) return null;
+
+  // Only full kilometres are comparable; a partial km is always "faster".
+  const full = w.splits.filter((s) => s.km >= 1);
+  const secs = (full.length > 0 ? full : w.splits)
+    .map((s) => paceToSeconds(s.pace))
+    .filter((n): n is number => n != null);
+  if (secs.length === 0) return null;
+  const fastest = Math.min(...secs);
+  const slowest = Math.max(...secs);
+
+  return {
+    workoutId: w.id,
+    date: w.date,
+    title: w.title,
+    splits: w.splits,
+    fastestPace: secondsToPace(fastest),
+    slowestPace: secondsToPace(slowest),
+    spreadSec: Math.round(slowest - fastest),
+  };
 }
 
 /** Next `count` upcoming (not-completed) workouts on/after fromISO. */
