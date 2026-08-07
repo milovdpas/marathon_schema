@@ -43,6 +43,7 @@ yarn-error.log*
 next-env.d.ts
 client_secret*
 WhatsApp*
+split-screenshots/
 *.traineddata
 
 # Raw plan exports. These carry the exporter's home coordinates in every

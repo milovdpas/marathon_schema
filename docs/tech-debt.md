@@ -13,8 +13,9 @@ isn't re-covered.
 ## 1. No component-level test coverage
 
 **Status:** partially addressed. `npm test` runs vitest over `lib/**/*.test.ts`
-— 53 tests covering the import-merge logic, calendar layout/range, the
-workout predicates and the plan-request wire format.
+— 94 tests covering the import-merge logic, calendar layout/range, the workout
+predicates, the plan-request wire format, the pace resolver, the OCR repair
+rules, the OAuth refresh path and the redirect guard.
 
 **What's still uncovered:** anything rendered. There are no component tests,
 because they'd need i18n + Zustand + Base UI portals stood up, which costs more
@@ -25,43 +26,45 @@ stand-ins: both drive the real app and fail loudly if a page renders empty.
 If a UI regression ever does slip through twice in the same place, that's the
 signal to add jsdom + Testing Library for that one component — not before.
 
-**Also uncovered:** `lib/split-scanner.ts` (`resolveElevations`,
-`findPaceColumn`). Pure and subtle, but its inputs are OCR word-boxes, so a
-meaningful test needs a realistic fixture captured from a real screenshot.
-Worth doing next time that code is touched.
+**Also uncovered:** `findPaceColumn` / `parseSplitsFromWords` in
+`lib/split-scanner.ts`. Their inputs are OCR word-boxes, so a meaningful test
+needs a fixture captured from a real screenshot. The two helpers that encode
+the fiddly repair rules — `parsePartialKm` and `resolveElevations` — take plain
+values and are now covered.
 
 ---
 
 ## 2. `lib/split-scanner.ts` is a 493-line grab bag
 
-**Status:** not started. The largest hand-written file left.
+**Status:** surface trimmed, split not attempted. Still the largest
+hand-written file.
 
 It does canvas preprocessing, column detection, split parsing and elevation
-resolution in one module, and exports nine internals (`OcrWord`, `ElevEntry`,
-`findPaceColumn`, `parseSplitsFromWords`, `parsePartialKm`,
-`resolveElevations`, …) that nothing outside the file imports.
+resolution in one module.
 
-**Why it was skipped:** it works, it's cohesive in the sense that every part is
-about one screenshot, and it was tuned against real Strava output over many
-iterations. Splitting it risks re-introducing OCR bugs that were expensive to
-find, for no user-visible gain. Do it alongside item 1's fixtures, so the
-behaviour is pinned before it moves.
+**Done since:** nine exports down to four — `scanSplits` / `ScanResult`, plus
+`parsePartialKm` / `resolveElevations` kept public deliberately because they're
+tested. Verified behaviour-preserving by running 15 real Strava screenshots
+through the scan UI before and after the change: 137 splits, byte-identical.
 
-**Cheap win in the meantime:** drop `export` from the nine internals so the
-module's real surface (`scanSplits`, `ScanResult`) is obvious.
+**Why the split itself was skipped:** it works, every part is about one
+screenshot, and it was tuned against real Strava output over many iterations.
+Splitting it risks re-introducing OCR bugs that were expensive to find, for no
+user-visible gain. Do it alongside item 1's word-box fixtures, so the behaviour
+is pinned before it moves. The screenshots to generate those fixtures from live
+outside the repo (gitignored `split-screenshots/`).
 
 ---
 
 ## 3. Miscellaneous
 
-- **`components/common/onboarding-gate.tsx`** hand-rolls a phase machine across
-  four near-identical dialogs (`if (phase === … && applicable)`). An
-  `<OnboardingStep>` plus a declarative `steps` array would roughly halve it and
-  make the "returning users only see new prompts" rule explicit rather than
-  emergent.
-- **`app/api/**` route handlers** have no tests. They're thin, but
-  `lib/server/google-oauth.ts`'s refresh-token path is the kind of thing that
-  fails silently at 3am.
+- **`store/use-sync-store.ts` (215 lines)** owns the Drive auto-push debounce
+  and conflict resolution, untested. The same class of risk as the import
+  merge, but harder to isolate because it reaches the network.
+- **The route handlers themselves** are still untested end to end; only the
+  logic behind them (`lib/server/google-oauth.ts`, `lib/server/api.ts`) is.
+  Covering the handlers means stubbing `next/headers`, which is more
+  scaffolding than their thin bodies justify today.
 
 ---
 
@@ -113,3 +116,16 @@ Kept short, as a record of decisions rather than a changelog.
 - **The backyard rules** were smeared across `lib/types.ts` (constant) and
   `lib/plan-context.ts` (predicates); they now live in `lib/backyard.ts`.
   `lib/types.ts` is the domain model and shouldn't carry behaviour.
+- **`components/common/onboarding-gate.tsx`** hand-rolled a phase machine over
+  four near-identical dialogs. Now a declarative `steps` array plus a shared
+  `<OnboardingStep>`: each step states when it *applies* and the gate renders
+  the first applicable one from a cursor. That makes the "returning users only
+  see genuinely new prompts" rule something you can read, rather than something
+  that falls out of `phase !== "splits" && phase !== "plan"`.
+- **An open redirect on the OAuth callback.** The `returnTo` guard checked
+  `startsWith("/") && !startsWith("//")`, which `/\evil.com` passes — but the
+  URL parser reads the backslash as a slash, so `new URL()` resolved it to
+  `https://evil.com/`. A user who had just completed a real Google login was
+  handed to the attacker's domain. Replaced with a resolve-then-compare-origin
+  check in `lib/server/api.ts` (shared by both routes, which each had their own
+  copy), covered by 11 vectors.

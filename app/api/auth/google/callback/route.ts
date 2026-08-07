@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { safeReturnTo } from "@/lib/server/api";
 import {
   exchangeCode,
   fetchUserInfo,
@@ -9,11 +10,6 @@ import { getSession } from "@/lib/server/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function safePath(value: string | undefined): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
-  return value;
-}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -35,7 +31,9 @@ export async function GET(request: Request) {
   let returnTo = "/";
   try {
     const parsed = JSON.parse(stateCookie) as { state: string; returnTo: string };
-    returnTo = safePath(parsed.returnTo);
+    // Re-validated even though the login route already did: the cookie is
+    // ours, but this is the hop that actually performs the redirect.
+    returnTo = safeReturnTo(parsed.returnTo, url.origin);
     if (parsed.state !== stateParam) return settingsError;
 
     const tokens = await exchangeCode(code);

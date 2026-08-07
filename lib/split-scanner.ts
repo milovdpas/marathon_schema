@@ -4,6 +4,11 @@
 
 import type { WorkoutSplit } from "@/lib/types";
 
+// Everything here is internal except `scanSplits`/`ScanResult`. Two helpers
+// (`parsePartialKm`, `resolveElevations`) stay exported on purpose: they are
+// pure, they encode the fiddliest OCR-repair rules, and they are covered by
+// split-scanner.test.ts. Nothing else should be exported without a reason.
+
 /** Cap the long edge before OCR — phone screenshots are far bigger than needed. */
 const MAX_EDGE = 1600;
 /** Upscale factor after downscaling, so small table text has enough pixels. */
@@ -67,7 +72,7 @@ async function preprocess(file: File): Promise<HTMLCanvasElement> {
 }
 
 /** A recognized word plus where it sits on the page. */
-export interface OcrWord {
+interface OcrWord {
   text: string;
   x0: number;
   y0: number;
@@ -115,7 +120,7 @@ function looksLikeAxis(column: OcrWord[]): boolean {
 }
 
 /** The vertically-stacked column of `m:ss` words = the Pace column. */
-export function findPaceColumn(
+function findPaceColumn(
   words: OcrWord[],
   imageWidth: number,
 ): OcrWord[] {
@@ -199,7 +204,7 @@ export function parsePartialKm(raw: string): number | null {
   return null;
 }
 
-export function parseSplitsFromWords(
+function parseSplitsFromWords(
   words: OcrWord[],
   imageWidth: number,
   /** Elevation per row index, from the dedicated high-resolution pass. */

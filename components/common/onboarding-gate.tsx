@@ -4,45 +4,51 @@ import { Cloud, CloudSun, ScanText, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { OnboardingStep } from "@/components/common/onboarding-step";
 import { SplitsExample } from "@/components/common/splits-example";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { enableWeather } from "@/lib/weather-sync";
 import { useSyncStore } from "@/store/use-sync-store";
 import { useTrainingStore } from "@/store/use-training-store";
 import { useWeatherStore } from "@/store/use-weather-store";
 
+/**
+ * First-run prompts, shown one at a time in order: Drive, weather, split
+ * scanning, then create-a-plan.
+ *
+ * Each step declares when it *applies*; the gate renders the first applicable
+ * one from the cursor onward, and both buttons advance past it. That makes the
+ * returning-user rule explicit rather than emergent: a user who finished
+ * onboarding long ago has every first-run step marked inapplicable, so only
+ * genuinely new prompts (currently: split scanning) reach them, once each.
+ */
 export function OnboardingGate() {
   const { t } = useTranslation();
   const router = useRouter();
+
   const hydrated = useTrainingStore((s) => s.hydrated);
   const onboardingSeen = useTrainingStore((s) => s.preferences.onboardingSeen);
-  const setPreferences = useTrainingStore((s) => s.setPreferences);
-  const initializePlan = useTrainingStore((s) => s.initializePlan);
-  const connect = useSyncStore((s) => s.connect);
-  const configured = useSyncStore((s) => s.configured);
-  const connected = useSyncStore((s) => s.connected);
-  const ready = useSyncStore((s) => s.ready);
-  const weatherConfigured = useWeatherStore((s) => s.configured);
-  const weatherReady = useWeatherStore((s) => s.ready);
   const weatherEnabled = useTrainingStore((s) => s.preferences.weatherEnabled);
   const splitsSeen = useTrainingStore(
     (s) => s.preferences.splitScannerOnboardingSeen,
   );
+  const setPreferences = useTrainingStore((s) => s.setPreferences);
+  const initializePlan = useTrainingStore((s) => s.initializePlan);
 
-  // Ask about Drive, then Weather, then split scanning, then creating a plan.
-  const [phase, setPhase] = useState<"drive" | "weather" | "splits" | "plan">(
-    "drive",
-  );
+  const connect = useSyncStore((s) => s.connect);
+  const driveConfigured = useSyncStore((s) => s.configured);
+  const connected = useSyncStore((s) => s.connected);
+  const driveReady = useSyncStore((s) => s.ready);
+  const weatherConfigured = useWeatherStore((s) => s.configured);
+  const weatherReady = useWeatherStore((s) => s.ready);
 
-  if (!hydrated || !ready || !weatherReady) return null;
+  const [cursor, setCursor] = useState(0);
+  const advance = (from: number) => setCursor(from + 1);
+
+  // Wait until we know whether Drive and weather are even available, or the
+  // first render would decide a step doesn't apply and skip it for good.
+  if (!hydrated || !driveReady || !weatherReady) return null;
+
+  const firstRun = !onboardingSeen;
 
   const markSplitsSeen = (enable: boolean) =>
     setPreferences({
@@ -50,144 +56,109 @@ export function OnboardingGate() {
       ...(enable ? { splitScannerEnabled: true } : {}),
     });
 
-  const splitsPrompt = (onDone: () => void) => {
-    const dismiss = () => {
-      markSplitsSeen(false);
-      onDone();
-    };
-    return (
-      <Dialog open onOpenChange={dismiss}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ScanText className="size-5 text-primary" />{" "}
-              {t("onboarding.splitsTitle")}
-            </DialogTitle>
-            <DialogDescription>{t("onboarding.splitsBody")}</DialogDescription>
-          </DialogHeader>
+  const finishOnboarding = () => setPreferences({ onboardingSeen: true });
+
+  const steps: {
+    key: string;
+    applies: boolean;
+    render: (next: () => void) => React.ReactNode;
+  }[] = [
+    {
+      key: "drive",
+      applies: firstRun && driveConfigured && !connected,
+      render: (next) => (
+        <OnboardingStep
+          icon={Cloud}
+          title={t("onboarding.driveTitle")}
+          body={t("onboarding.driveBody")}
+          skipLabel={t("onboarding.notNow")}
+          confirmLabel={t("onboarding.connect")}
+          onSkip={next}
+          onConfirm={() => {
+            void connect();
+            next();
+          }}
+        />
+      ),
+    },
+    {
+      key: "weather",
+      applies: firstRun && weatherConfigured && !weatherEnabled,
+      render: (next) => (
+        <OnboardingStep
+          icon={CloudSun}
+          title={t("onboarding.weatherTitle")}
+          body={t("onboarding.weatherBody")}
+          skipLabel={t("onboarding.notNow")}
+          confirmLabel={t("onboarding.enableWeather")}
+          onSkip={next}
+          onConfirm={() => {
+            void (async () => {
+              const result = await enableWeather();
+              // Default the calendar display on for a good first impression.
+              setPreferences(
+                result === "ok"
+                  ? { weatherOnboardingSeen: true, weatherCalendar: true }
+                  : { weatherOnboardingSeen: true },
+              );
+            })();
+            next();
+          }}
+        />
+      ),
+    },
+    {
+      // The only step that also reaches returning users — it postdates their
+      // onboarding, so it's shown standalone, once.
+      key: "splits",
+      applies: !splitsSeen,
+      render: (next) => (
+        <OnboardingStep
+          icon={ScanText}
+          title={t("onboarding.splitsTitle")}
+          body={t("onboarding.splitsBody")}
+          skipLabel={t("onboarding.notNow")}
+          confirmLabel={t("onboarding.enableSplits")}
+          className="max-h-[90dvh] overflow-y-auto"
+          onSkip={() => {
+            markSplitsSeen(false);
+            next();
+          }}
+          onConfirm={() => {
+            markSplitsSeen(true);
+            next();
+          }}
+        >
           <SplitsExample />
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button variant="outline" onClick={dismiss}>
-              {t("onboarding.notNow")}
-            </Button>
-            <Button
-              onClick={() => {
-                markSplitsSeen(true);
-                onDone();
-              }}
-            >
-              <ScanText className="size-4" /> {t("onboarding.enableSplits")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  };
+        </OnboardingStep>
+      ),
+    },
+    {
+      key: "plan",
+      applies: firstRun,
+      render: (next) => (
+        <OnboardingStep
+          icon={Sparkles}
+          title={t("onboarding.planTitle")}
+          body={t("onboarding.planBody")}
+          skipLabel={t("onboarding.lookAround")}
+          confirmLabel={t("onboarding.createPlan")}
+          onSkip={() => {
+            finishOnboarding();
+            void initializePlan(); // seeds the example plan
+            next();
+          }}
+          onConfirm={() => {
+            finishOnboarding();
+            router.push("/plan/new");
+            next();
+          }}
+        />
+      ),
+    },
+  ];
 
-  // Returning users finished onboarding long ago, so newer feature prompts are
-  // shown standalone — once each — rather than being lost with the first run.
-  if (onboardingSeen) {
-    return splitsSeen ? null : splitsPrompt(() => {});
-  }
-
-  const driveApplicable = configured && !connected;
-  const weatherApplicable = weatherConfigured && !weatherEnabled;
-
-  const handleEnableWeather = async () => {
-    const result = await enableWeather();
-    // Default the calendar display on for a good first impression.
-    setPreferences(
-      result === "ok"
-        ? { weatherOnboardingSeen: true, weatherCalendar: true }
-        : { weatherOnboardingSeen: true },
-    );
-    setPhase("splits");
-  };
-
-  const lookAround = () => {
-    setPreferences({ onboardingSeen: true });
-    void initializePlan(); // seeds the example plan now that onboarding is done
-  };
-
-  const createPlan = () => {
-    setPreferences({ onboardingSeen: true });
-    router.push("/plan/new");
-  };
-
-  if (phase === "drive" && driveApplicable) {
-    return (
-      <Dialog open onOpenChange={() => setPhase("weather")}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Cloud className="size-5 text-primary" /> {t("onboarding.driveTitle")}
-            </DialogTitle>
-            <DialogDescription>{t("onboarding.driveBody")}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button variant="outline" onClick={() => setPhase("weather")}>
-              {t("onboarding.notNow")}
-            </Button>
-            <Button
-              onClick={() => {
-                void connect();
-                setPhase("weather");
-              }}
-            >
-              <Cloud className="size-4" /> {t("onboarding.connect")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  if (phase !== "splits" && phase !== "plan" && weatherApplicable) {
-    return (
-      <Dialog open onOpenChange={() => setPhase("splits")}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CloudSun className="size-5 text-primary" />{" "}
-              {t("onboarding.weatherTitle")}
-            </DialogTitle>
-            <DialogDescription>{t("onboarding.weatherBody")}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:justify-end">
-            <Button variant="outline" onClick={() => setPhase("splits")}>
-              {t("onboarding.notNow")}
-            </Button>
-            <Button onClick={() => void handleEnableWeather()}>
-              <CloudSun className="size-4" /> {t("onboarding.enableWeather")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  if (phase !== "plan" && !splitsSeen) {
-    return splitsPrompt(() => setPhase("plan"));
-  }
-
-  return (
-    <Dialog open onOpenChange={(open) => !open && lookAround()}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="size-5 text-primary" /> {t("onboarding.planTitle")}
-          </DialogTitle>
-          <DialogDescription>{t("onboarding.planBody")}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:justify-end">
-          <Button variant="outline" onClick={lookAround}>
-            {t("onboarding.lookAround")}
-          </Button>
-          <Button onClick={createPlan}>
-            <Sparkles className="size-4" /> {t("onboarding.createPlan")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+  const i = steps.findIndex((s, idx) => idx >= cursor && s.applies);
+  if (i === -1) return null;
+  return steps[i].render(() => advance(i));
 }
