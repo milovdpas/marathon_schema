@@ -1,16 +1,13 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { deriveStartTime, paceFromDistanceDuration } from "@/lib/pace";
+import { loadExamplePlan } from "@/lib/example-plan";
 import {
-  DEFAULT_OFF_DAYS,
-  DEFAULT_PLAN_ID,
   DEFAULT_PLAN_META,
   DEFAULT_TRAINING_PREFS,
-  generateDefaultPlan,
-  MILO_SEED_RUNS,
-  type GeneratePlanOptions,
-} from "@/lib/plan-generator";
+} from "@/lib/plan-defaults";
 import { parseImport, serializeExport, STORAGE_KEY } from "@/lib/storage";
+import { isLogged } from "@/lib/workout";
 import type {
   OffDay,
   PlanMeta,
@@ -22,6 +19,13 @@ import type {
 
 const DEFAULT_PREFERENCES: Preferences = { theme: "system" };
 const nowISO = () => new Date().toISOString();
+
+/**
+ * Seeding is async (the example plan lives in its own chunk), and two entry
+ * points race for it: `onRehydrateStorage` and the `useHydrated` safety net.
+ * Without this both pass the "no plans yet" check before either resolves.
+ */
+let seedInFlight: Promise<void> | null = null;
 
 function newId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -38,10 +42,9 @@ interface TrainingState {
   lastModified: string;
 
   setHydrated: (v: boolean) => void;
-  initializePlan: () => void;
+  initializePlan: () => Promise<void>;
 
   // Plan management
-  addPlan: (opts?: GeneratePlanOptions) => string;
   /** Add an AI-built plan from imported JSON (does not replace existing plans). */
   addPlanFromImport: (
     json: string,
@@ -84,11 +87,6 @@ interface TrainingState {
 /** Find the week (by date range) that a given ISO date belongs to. */
 function weekIndexForDate(plan: TrainingPlan, date: string): number {
   return plan.weeks.findIndex((w) => date >= w.startDate && date <= w.endDate);
-}
-
-/** A workout the user has actually run/logged (worth preserving across re-import). */
-function isLogged(w: Workout): boolean {
-  return w.completed || w.actualDistanceKm != null;
 }
 
 /**
@@ -225,30 +223,25 @@ export const useTrainingStore = create<TrainingState>()(
       setHydrated: (v) => set({ hydrated: v }),
 
       initializePlan: () => {
-        if (Object.keys(get().plans).length > 0) return;
+        if (seedInFlight) return seedInFlight;
+        if (Object.keys(get().plans).length > 0) return Promise.resolve();
         // Fresh installs wait for onboarding to decide (create vs. example).
-        if (!get().preferences.onboardingSeen) return;
-        const plan = generateDefaultPlan({
-          id: DEFAULT_PLAN_ID,
-          seedRuns: MILO_SEED_RUNS,
-          offDays: DEFAULT_OFF_DAYS,
-          isExample: true,
-        });
-        set({
-          plans: { [plan.id]: plan },
-          activePlanId: plan.id,
-          lastModified: nowISO(),
-        });
-      },
+        if (!get().preferences.onboardingSeen) return Promise.resolve();
 
-      addPlan: (opts) => {
-        const plan = generateDefaultPlan(opts);
-        set((s) => ({
-          plans: { ...s.plans, [plan.id]: plan },
-          activePlanId: plan.id,
-          lastModified: nowISO(),
-        }));
-        return plan.id;
+        seedInFlight = (async () => {
+          const plan = await loadExamplePlan();
+          // A Drive sync or an import can land while the chunk is loading.
+          if (Object.keys(get().plans).length > 0) return;
+          set({
+            plans: { [plan.id]: plan },
+            activePlanId: plan.id,
+            lastModified: nowISO(),
+          });
+        })().finally(() => {
+          seedInFlight = null;
+        });
+
+        return seedInFlight;
       },
 
       addPlanFromImport: (json, opts) => {
@@ -296,21 +289,19 @@ export const useTrainingStore = create<TrainingState>()(
         set({ activePlanId: id, lastModified: nowISO() });
       },
 
-      deletePlan: (id) =>
+      deletePlan: (id) => {
         set((s) => {
           const plans = { ...s.plans };
           delete plans[id];
           let activePlanId = s.activePlanId;
           if (activePlanId === id) activePlanId = Object.keys(plans)[0] ?? null;
-          if (Object.keys(plans).length === 0) {
-            // Placeholder so the app is never planless — not the user's own
-            // training, so keep it out of previous-plan context too.
-            const def = generateDefaultPlan({ isExample: true });
-            plans[def.id] = def;
-            activePlanId = def.id;
-          }
           return { plans, activePlanId, lastModified: nowISO() };
-        }),
+        });
+        // Never leave the app planless. Re-seeding through initializePlan means
+        // the fallback is the same full example a first run gets, rather than
+        // the stripped-down one this used to build inline.
+        if (Object.keys(get().plans).length === 0) void get().initializePlan();
+      },
 
       updatePlanMeta: (patch) =>
         set((s) => mutateActive(s, (p) => ({ ...p, ...patch }))),
@@ -521,17 +512,15 @@ export const useTrainingStore = create<TrainingState>()(
         }
 
         // Ensure newer per-plan fields exist, without touching workouts:
-        //  - v2: `offDays` (primary plan seeds the defaults)
+        //  - v2: `offDays` (only pre-v2 state can be missing it; every other
+        //        path goes through normalizePlan, which guarantees `[]`)
         //  - v3: `raceDistanceKm`
         if (state && state.plans) {
           const plans = { ...(state.plans as Record<string, TrainingPlan>) };
           for (const [key, plan] of Object.entries(plans)) {
             let next = plan;
             if (!Array.isArray(plan.offDays)) {
-              const isPrimary =
-                plan.id === DEFAULT_PLAN_ID ||
-                plan.name === DEFAULT_PLAN_META.name;
-              next = { ...next, offDays: isPrimary ? DEFAULT_OFF_DAYS : [] };
+              next = { ...next, offDays: [] };
             }
             if (typeof plan.raceDistanceKm !== "number") {
               next = { ...next, raceDistanceKm: DEFAULT_PLAN_META.raceDistanceKm };
@@ -580,7 +569,7 @@ export const useTrainingStore = create<TrainingState>()(
       },
       onRehydrateStorage: () => (state) => {
         state?.setHydrated(true);
-        state?.initializePlan();
+        void state?.initializePlan();
       },
     },
   ),

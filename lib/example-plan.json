@@ -1,0 +1,1866 @@
+{
+  "app": "marathon-tracker",
+  "version": 1,
+  "exportedAt": "2026-08-07T20:51:54.616Z",
+  "plans": {
+    "652da229-f820-4293-8ec1-2055ffcb2303": {
+      "name": "Milo's Marathon",
+      "raceName": "Marathon",
+      "raceDistanceKm": 42.2,
+      "raceDate": "2026-10-11",
+      "goalPace": "4:58",
+      "goalLabel": "Sub-3:30",
+      "id": "652da229-f820-4293-8ec1-2055ffcb2303",
+      "startDate": "2026-06-21",
+      "version": 1,
+      "createdAt": "2026-06-21T22:28:51.673Z",
+      "weeks": [
+        {
+          "weekNumber": 1,
+          "startDate": "2026-06-15",
+          "endDate": "2026-06-21",
+          "phase": "reduced",
+          "label": "Triathlon recovery",
+          "workoutIds": [
+            "2026-06-18-easy-seed",
+            "2026-06-21-recovery-seed"
+          ]
+        },
+        {
+          "weekNumber": 2,
+          "startDate": "2026-06-22",
+          "endDate": "2026-06-28",
+          "phase": "base",
+          "workoutIds": [
+            "2026-06-22-easy",
+            "2026-06-24-recovery",
+            "2026-06-25-interval"
+          ]
+        },
+        {
+          "weekNumber": 3,
+          "startDate": "2026-06-29",
+          "endDate": "2026-07-05",
+          "phase": "reduced",
+          "label": "Vacation",
+          "workoutIds": [
+            "2026-06-28-long",
+            "2026-06-29-easy",
+            "2026-07-01-tempo",
+            "2026-07-02-recovery"
+          ]
+        },
+        {
+          "weekNumber": 4,
+          "startDate": "2026-07-06",
+          "endDate": "2026-07-12",
+          "phase": "base",
+          "workoutIds": [
+            "2026-07-06-easy",
+            "2026-07-08-interval",
+            "2026-07-09-recovery",
+            "2026-07-12-long"
+          ]
+        },
+        {
+          "weekNumber": 5,
+          "startDate": "2026-07-13",
+          "endDate": "2026-07-19",
+          "phase": "reduced",
+          "workoutIds": [],
+          "label": "Sick — wondroos (erysipelas)"
+        },
+        {
+          "weekNumber": 6,
+          "startDate": "2026-07-20",
+          "endDate": "2026-07-26",
+          "phase": "reduced",
+          "label": "Surf trip",
+          "workoutIds": [
+            "2026-07-24-easy"
+          ]
+        },
+        {
+          "weekNumber": 7,
+          "startDate": "2026-07-27",
+          "endDate": "2026-08-02",
+          "phase": "reduced",
+          "label": "Surf trip (surfing + hiking, no runs)",
+          "workoutIds": []
+        },
+        {
+          "weekNumber": 8,
+          "startDate": "2026-08-03",
+          "endDate": "2026-08-09",
+          "phase": "base",
+          "workoutIds": [
+            "2026-08-03-easy",
+            "2026-08-05-interval",
+            "2026-08-06-recovery",
+            "2026-08-09-long"
+          ]
+        },
+        {
+          "weekNumber": 9,
+          "startDate": "2026-08-10",
+          "endDate": "2026-08-16",
+          "phase": "build",
+          "workoutIds": [
+            "2026-08-10-easy",
+            "2026-08-12-tempo",
+            "2026-08-13-recovery",
+            "2026-08-14-recovery",
+            "2026-08-16-long"
+          ]
+        },
+        {
+          "weekNumber": 10,
+          "startDate": "2026-08-17",
+          "endDate": "2026-08-23",
+          "phase": "build",
+          "workoutIds": [
+            "2026-08-17-easy",
+            "2026-08-19-interval",
+            "2026-08-20-recovery",
+            "2026-08-21-recovery",
+            "2026-08-23-long"
+          ]
+        },
+        {
+          "weekNumber": 11,
+          "startDate": "2026-08-24",
+          "endDate": "2026-08-30",
+          "phase": "build",
+          "workoutIds": [
+            "2026-08-24-easy",
+            "2026-08-26-tempo",
+            "2026-08-27-recovery",
+            "2026-08-28-recovery",
+            "2026-08-30-long"
+          ]
+        },
+        {
+          "weekNumber": 12,
+          "startDate": "2026-08-31",
+          "endDate": "2026-09-06",
+          "phase": "build",
+          "workoutIds": [
+            "2026-08-31-easy",
+            "2026-09-02-interval",
+            "2026-09-03-recovery",
+            "2026-09-04-recovery",
+            "2026-09-06-long"
+          ]
+        },
+        {
+          "weekNumber": 13,
+          "startDate": "2026-09-07",
+          "endDate": "2026-09-13",
+          "phase": "build",
+          "workoutIds": [
+            "2026-09-07-easy",
+            "2026-09-09-tempo",
+            "2026-09-10-recovery",
+            "2026-09-11-recovery",
+            "2026-09-13-long"
+          ]
+        },
+        {
+          "weekNumber": 14,
+          "startDate": "2026-09-14",
+          "endDate": "2026-09-20",
+          "phase": "reduced",
+          "label": "Vacation",
+          "workoutIds": [
+            "2026-09-14-easy",
+            "2026-09-16-interval",
+            "2026-09-17-recovery",
+            "2026-09-20-easy"
+          ]
+        },
+        {
+          "weekNumber": 15,
+          "startDate": "2026-09-21",
+          "endDate": "2026-09-27",
+          "phase": "peak",
+          "label": "Vacation",
+          "workoutIds": [
+            "2026-09-21-easy",
+            "2026-09-23-tempo",
+            "2026-09-24-recovery",
+            "2026-09-27-long"
+          ]
+        },
+        {
+          "weekNumber": 16,
+          "startDate": "2026-09-28",
+          "endDate": "2026-10-04",
+          "phase": "taper",
+          "workoutIds": [
+            "2026-09-28-easy",
+            "2026-09-30-tempo",
+            "2026-10-01-recovery",
+            "2026-10-04-long"
+          ]
+        },
+        {
+          "weekNumber": 17,
+          "startDate": "2026-10-05",
+          "endDate": "2026-10-11",
+          "phase": "race",
+          "workoutIds": [
+            "2026-10-05-easy",
+            "2026-10-07-easy",
+            "2026-10-08-recovery",
+            "2026-10-11-long"
+          ]
+        }
+      ],
+      "workouts": {
+        "2026-06-22-easy": {
+          "id": "2026-06-22-easy",
+          "date": "2026-06-22",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 2,
+          "plannedDistanceKm": 5.75,
+          "plannedPace": "5:01",
+          "completed": true,
+          "weather": {
+            "tempC": 26.1,
+            "conditionId": 804,
+            "condition": "Clouds",
+            "icon": "04d",
+            "source": "historical",
+            "observedAt": "2026-06-22T00:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:33",
+              "elevM": 2
+            },
+            {
+              "km": 2,
+              "pace": "4:50",
+              "elevM": -1
+            },
+            {
+              "km": 3,
+              "pace": "4:59",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "5:16",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "5:21",
+              "elevM": 1
+            },
+            {
+              "km": 0.7,
+              "pace": "5:10",
+              "elevM": -1
+            }
+          ]
+        },
+        "2026-06-24-recovery": {
+          "id": "2026-06-24-recovery",
+          "date": "2026-06-24",
+          "type": "recovery",
+          "title": "Short run (bouldering day)",
+          "weekNumber": 2,
+          "plannedDistanceKm": 5,
+          "plannedPace": "5:30",
+          "completed": true,
+          "actualDistanceKm": 5.74,
+          "durationMin": 28.416666666666668,
+          "actualPace": "4:57",
+          "weather": {
+            "tempC": 32.2,
+            "conditionId": 800,
+            "condition": "Clear",
+            "icon": "01d",
+            "source": "historical",
+            "observedAt": "2026-06-24T00:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:35",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:55",
+              "elevM": -1
+            },
+            {
+              "km": 3,
+              "pace": "5:06",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "5:07",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "5:01",
+              "elevM": 1
+            },
+            {
+              "km": 0.7,
+              "pace": "4:59",
+              "elevM": -1
+            }
+          ]
+        },
+        "2026-06-25-interval": {
+          "id": "2026-06-25-interval",
+          "date": "2026-06-25",
+          "type": "interval",
+          "title": "4×800m @ 4:10",
+          "weekNumber": 2,
+          "plannedDistanceKm": 10,
+          "plannedPace": "4:10",
+          "completed": true,
+          "actualDistanceKm": 10.18,
+          "durationMin": 55.483333333333334,
+          "actualPace": "5:27",
+          "weather": {
+            "tempC": 30.6,
+            "conditionId": 800,
+            "condition": "Clear",
+            "icon": "01d",
+            "source": "historical",
+            "observedAt": "2026-06-25T00:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:53",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "5:21",
+              "elevM": 1
+            },
+            {
+              "km": 3,
+              "pace": "5:33",
+              "elevM": -2
+            },
+            {
+              "km": 4,
+              "pace": "5:25",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "5:27",
+              "elevM": -1
+            },
+            {
+              "km": 6,
+              "pace": "6:01",
+              "elevM": 1
+            },
+            {
+              "km": 7,
+              "pace": "5:19",
+              "elevM": 0
+            },
+            {
+              "km": 8,
+              "pace": "5:29",
+              "elevM": 0
+            },
+            {
+              "km": 9,
+              "pace": "5:41",
+              "elevM": 1
+            },
+            {
+              "km": 10,
+              "pace": "5:31",
+              "elevM": 1
+            },
+            {
+              "km": 0.1,
+              "pace": "5:02",
+              "elevM": 0
+            }
+          ]
+        },
+        "2026-06-28-long": {
+          "id": "2026-06-28-long",
+          "date": "2026-06-29",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 3,
+          "plannedDistanceKm": 12,
+          "plannedPace": "5:25",
+          "completed": true,
+          "actualDistanceKm": 12.3,
+          "durationMin": 61.7,
+          "actualPace": "5:01",
+          "weather": {
+            "tempC": 19.1,
+            "conditionId": 800,
+            "condition": "Clear",
+            "icon": "01d",
+            "source": "historical",
+            "observedAt": "2026-06-29T20:00:00.000Z"
+          },
+          "startTime": "21:28",
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:23",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:42",
+              "elevM": 1
+            },
+            {
+              "km": 3,
+              "pace": "4:45",
+              "elevM": -2
+            },
+            {
+              "km": 4,
+              "pace": "5:03",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "6:00",
+              "elevM": -1
+            },
+            {
+              "km": 6,
+              "pace": "5:40",
+              "elevM": 0
+            },
+            {
+              "km": 7,
+              "pace": "5:17",
+              "elevM": 0
+            },
+            {
+              "km": 8,
+              "pace": "5:06",
+              "elevM": 0
+            },
+            {
+              "km": 9,
+              "pace": "5:10",
+              "elevM": -2
+            },
+            {
+              "km": 10,
+              "pace": "5:17",
+              "elevM": 1
+            },
+            {
+              "km": 11,
+              "pace": "4:39",
+              "elevM": 2
+            },
+            {
+              "km": 12,
+              "pace": "4:14",
+              "elevM": 0
+            },
+            {
+              "km": 0.3,
+              "pace": "4:30",
+              "elevM": -1
+            }
+          ]
+        },
+        "2026-06-29-easy": {
+          "id": "2026-06-29-easy",
+          "date": "2026-07-02",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 3,
+          "plannedDistanceKm": 6,
+          "plannedPace": "5:15",
+          "completed": true,
+          "actualDistanceKm": 6.48,
+          "durationMin": 31.316666666666666,
+          "actualPace": "4:50",
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:20",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:47",
+              "elevM": 1
+            },
+            {
+              "km": 3,
+              "pace": "5:04",
+              "elevM": -2
+            },
+            {
+              "km": 4,
+              "pace": "5:06",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "4:58",
+              "elevM": 1
+            },
+            {
+              "km": 6,
+              "pace": "5:05",
+              "elevM": 1
+            },
+            {
+              "km": 0.4,
+              "pace": "4:11",
+              "elevM": 0
+            }
+          ],
+          "weather": {
+            "tempC": 19.6,
+            "conditionId": 801,
+            "condition": "Clouds",
+            "icon": "02d",
+            "source": "historical",
+            "observedAt": "2026-07-02T00:00:00.000Z"
+          }
+        },
+        "2026-07-01-tempo": {
+          "id": "2026-07-01-tempo",
+          "date": "2026-07-01",
+          "type": "tempo",
+          "title": "Tempo 6 km @ 4:30",
+          "weekNumber": 3,
+          "plannedDistanceKm": 9,
+          "plannedPace": "4:30",
+          "completed": true,
+          "actualDistanceKm": 10.06,
+          "durationMin": 46.95,
+          "actualPace": "4:40",
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:42",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:43",
+              "elevM": -1
+            },
+            {
+              "km": 3,
+              "pace": "4:51",
+              "elevM": -1
+            },
+            {
+              "km": 4,
+              "pace": "4:32",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "4:34",
+              "elevM": -1
+            },
+            {
+              "km": 6,
+              "pace": "4:39",
+              "elevM": 1
+            },
+            {
+              "km": 7,
+              "pace": "4:36",
+              "elevM": 0
+            },
+            {
+              "km": 8,
+              "pace": "4:41",
+              "elevM": 0
+            },
+            {
+              "km": 9,
+              "pace": "4:39",
+              "elevM": 0
+            },
+            {
+              "km": 10,
+              "pace": "4:38",
+              "elevM": 0
+            }
+          ],
+          "weather": {
+            "tempC": 23.3,
+            "conditionId": 800,
+            "condition": "Clear",
+            "icon": "01d",
+            "source": "historical",
+            "observedAt": "2026-07-01T00:00:00.000Z"
+          }
+        },
+        "2026-07-02-recovery": {
+          "id": "2026-07-02-recovery",
+          "date": "2026-06-30",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 3,
+          "plannedDistanceKm": 4,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-07-06-easy": {
+          "id": "2026-07-06-easy",
+          "date": "2026-07-06",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 4,
+          "plannedDistanceKm": 6,
+          "plannedPace": "5:05",
+          "completed": true,
+          "actualDistanceKm": 7.61,
+          "durationMin": 43.5,
+          "actualPace": "5:43",
+          "startTime": "21:35",
+          "weather": {
+            "tempC": 24.5,
+            "conditionId": 802,
+            "condition": "Clouds",
+            "icon": "03n",
+            "source": "historical",
+            "observedAt": "2026-07-06T20:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "5:44",
+              "elevM": 0
+            },
+            {
+              "km": 2,
+              "pace": "5:47",
+              "elevM": -1
+            },
+            {
+              "km": 3,
+              "pace": "6:04",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "6:05",
+              "elevM": 1
+            },
+            {
+              "km": 5,
+              "pace": "5:53",
+              "elevM": 0
+            },
+            {
+              "km": 6,
+              "pace": "5:26",
+              "elevM": 1
+            },
+            {
+              "km": 7,
+              "pace": "5:50",
+              "elevM": 0
+            },
+            {
+              "km": 0.6,
+              "pace": "4:26",
+              "elevM": -1
+            }
+          ]
+        },
+        "2026-07-08-interval": {
+          "id": "2026-07-08-interval",
+          "date": "2026-07-08",
+          "type": "interval",
+          "title": "4×800m @ 4:10",
+          "weekNumber": 4,
+          "plannedDistanceKm": 7,
+          "plannedPace": "4:10",
+          "completed": true,
+          "actualDistanceKm": 6.51,
+          "durationMin": 32.55,
+          "actualPace": "5:00",
+          "startTime": "23:11",
+          "weather": {
+            "tempC": 16.7,
+            "conditionId": 802,
+            "condition": "Clouds",
+            "icon": "03n",
+            "source": "historical",
+            "observedAt": "2026-07-08T22:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:52",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:48",
+              "elevM": -1
+            },
+            {
+              "km": 3,
+              "pace": "4:52",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "4:56",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "5:18",
+              "elevM": 0
+            },
+            {
+              "km": 6,
+              "pace": "5:04",
+              "elevM": 1
+            }
+          ]
+        },
+        "2026-07-09-recovery": {
+          "id": "2026-07-09-recovery",
+          "date": "2026-07-09",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 4,
+          "plannedDistanceKm": 5,
+          "plannedPace": "5:30",
+          "completed": true,
+          "actualDistanceKm": 5.05,
+          "durationMin": 24.916666666666668,
+          "actualPace": "4:56",
+          "startTime": "21:33",
+          "weather": {
+            "tempC": 21.7,
+            "conditionId": 802,
+            "condition": "Clouds",
+            "icon": "03n",
+            "source": "historical",
+            "observedAt": "2026-07-09T20:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:38",
+              "elevM": 2
+            },
+            {
+              "km": 2,
+              "pace": "4:54",
+              "elevM": -1
+            },
+            {
+              "km": 3,
+              "pace": "5:07",
+              "elevM": -1
+            },
+            {
+              "km": 4,
+              "pace": "5:03",
+              "elevM": 1
+            },
+            {
+              "km": 5,
+              "pace": "4:59",
+              "elevM": 0
+            }
+          ]
+        },
+        "2026-07-12-long": {
+          "id": "2026-07-12-long",
+          "date": "2026-07-11",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 4,
+          "plannedDistanceKm": 16,
+          "plannedPace": "5:15",
+          "completed": true,
+          "actualDistanceKm": 16.43,
+          "durationMin": 92.28333333333333,
+          "actualPace": "5:37",
+          "startTime": "18:01",
+          "weather": {
+            "tempC": 28.8,
+            "conditionId": 800,
+            "condition": "Clear",
+            "icon": "01d",
+            "source": "historical",
+            "observedAt": "2026-07-11T17:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:50",
+              "elevM": 2
+            },
+            {
+              "km": 2,
+              "pace": "4:58",
+              "elevM": 1
+            },
+            {
+              "km": 3,
+              "pace": "5:12",
+              "elevM": -2
+            },
+            {
+              "km": 4,
+              "pace": "5:18",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "5:22",
+              "elevM": -1
+            },
+            {
+              "km": 6,
+              "pace": "5:36",
+              "elevM": 0
+            },
+            {
+              "km": 7,
+              "pace": "5:44",
+              "elevM": 0
+            },
+            {
+              "km": 8,
+              "pace": "5:42",
+              "elevM": 0
+            },
+            {
+              "km": 9,
+              "pace": "5:57",
+              "elevM": -2
+            },
+            {
+              "km": 10,
+              "pace": "6:02",
+              "elevM": 1
+            },
+            {
+              "km": 11,
+              "pace": "5:45",
+              "elevM": 1
+            },
+            {
+              "km": 12,
+              "pace": "6:05",
+              "elevM": 0
+            },
+            {
+              "km": 13,
+              "pace": "5:44",
+              "elevM": 2
+            },
+            {
+              "km": 14,
+              "pace": "5:55",
+              "elevM": 0
+            },
+            {
+              "km": 15,
+              "pace": "5:52",
+              "elevM": 1
+            },
+            {
+              "km": 16,
+              "pace": "5:53",
+              "elevM": -1
+            },
+            {
+              "km": 0.4,
+              "pace": "5:42",
+              "elevM": -1
+            }
+          ]
+        },
+        "2026-08-03-easy": {
+          "id": "2026-08-03-easy",
+          "date": "2026-08-03",
+          "type": "easy",
+          "title": "Easy run — restart after surf trip",
+          "weekNumber": 8,
+          "plannedDistanceKm": 10,
+          "plannedPace": "5:15",
+          "completed": true,
+          "actualDistanceKm": 10.31,
+          "durationMin": 56.7,
+          "actualPace": "5:30",
+          "startTime": "21:25",
+          "weather": {
+            "tempC": 27.2,
+            "conditionId": 804,
+            "condition": "Clouds",
+            "icon": "04n",
+            "source": "historical",
+            "observedAt": "2026-08-03T20:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:50",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "5:09",
+              "elevM": 0
+            },
+            {
+              "km": 3,
+              "pace": "5:24",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "5:42",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "5:34",
+              "elevM": -1
+            },
+            {
+              "km": 6,
+              "pace": "5:36",
+              "elevM": 1
+            },
+            {
+              "km": 7,
+              "pace": "5:28",
+              "elevM": 0
+            },
+            {
+              "km": 8,
+              "pace": "5:55",
+              "elevM": -1
+            },
+            {
+              "km": 9,
+              "pace": "5:51",
+              "elevM": 1
+            },
+            {
+              "km": 10,
+              "pace": "5:27",
+              "elevM": 1
+            },
+            {
+              "km": 0.3,
+              "pace": "5:34",
+              "elevM": -1
+            }
+          ]
+        },
+        "2026-08-06-recovery": {
+          "id": "2026-08-06-recovery",
+          "date": "2026-08-06",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 8,
+          "plannedDistanceKm": 5,
+          "plannedPace": "5:30",
+          "completed": true,
+          "actualDistanceKm": 10.17,
+          "durationMin": 49.494,
+          "actualPace": "4:52",
+          "startTime": "23:14",
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:30",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:41",
+              "elevM": 0
+            },
+            {
+              "km": 3,
+              "pace": "4:58",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "5:02",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "4:50",
+              "elevM": -1
+            },
+            {
+              "km": 6,
+              "pace": "4:50",
+              "elevM": 1
+            },
+            {
+              "km": 7,
+              "pace": "4:57",
+              "elevM": 0
+            },
+            {
+              "km": 8,
+              "pace": "4:59",
+              "elevM": -1
+            },
+            {
+              "km": 9,
+              "pace": "4:52",
+              "elevM": 1
+            },
+            {
+              "km": 10,
+              "pace": "5:02",
+              "elevM": 1
+            },
+            {
+              "km": 0.1,
+              "pace": "4:39",
+              "elevM": 0
+            }
+          ],
+          "weather": {
+            "tempC": 14.1,
+            "conditionId": 800,
+            "condition": "Clear",
+            "icon": "01n",
+            "source": "historical",
+            "observedAt": "2026-08-06T22:00:00.000Z"
+          }
+        },
+        "2026-08-09-long": {
+          "id": "2026-08-09-long",
+          "date": "2026-08-09",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 8,
+          "plannedDistanceKm": 16,
+          "plannedPace": "5:15",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-08-08",
+          "windowEnd": "2026-08-09"
+        },
+        "2026-08-10-easy": {
+          "id": "2026-08-10-easy",
+          "date": "2026-08-10",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 9,
+          "plannedDistanceKm": 9,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-08-12-tempo": {
+          "id": "2026-08-12-tempo",
+          "date": "2026-08-12",
+          "type": "tempo",
+          "title": "Tempo 9 km @ 4:30",
+          "weekNumber": 9,
+          "plannedDistanceKm": 12,
+          "plannedPace": "4:30",
+          "completed": false
+        },
+        "2026-08-13-recovery": {
+          "id": "2026-08-13-recovery",
+          "date": "2026-08-13",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 9,
+          "plannedDistanceKm": 7,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-08-16-long": {
+          "id": "2026-08-16-long",
+          "date": "2026-08-16",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 9,
+          "plannedDistanceKm": 20,
+          "plannedPace": "5:15",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-08-15",
+          "windowEnd": "2026-08-16"
+        },
+        "2026-08-17-easy": {
+          "id": "2026-08-17-easy",
+          "date": "2026-08-17",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 10,
+          "plannedDistanceKm": 10,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-08-19-interval": {
+          "id": "2026-08-19-interval",
+          "date": "2026-08-19",
+          "type": "interval",
+          "title": "6×800m @ 4:10",
+          "weekNumber": 10,
+          "plannedDistanceKm": 9,
+          "plannedPace": "4:10",
+          "completed": false
+        },
+        "2026-08-20-recovery": {
+          "id": "2026-08-20-recovery",
+          "date": "2026-08-20",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 10,
+          "plannedDistanceKm": 7,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-08-23-long": {
+          "id": "2026-08-23-long",
+          "date": "2026-08-23",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 10,
+          "plannedDistanceKm": 22,
+          "plannedPace": "5:15",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-08-22",
+          "windowEnd": "2026-08-23"
+        },
+        "2026-08-24-easy": {
+          "id": "2026-08-24-easy",
+          "date": "2026-08-24",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 11,
+          "plannedDistanceKm": 8,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-08-26-tempo": {
+          "id": "2026-08-26-tempo",
+          "date": "2026-08-26",
+          "type": "tempo",
+          "title": "Tempo 8 km @ 4:30",
+          "weekNumber": 11,
+          "plannedDistanceKm": 11,
+          "plannedPace": "4:30",
+          "completed": false
+        },
+        "2026-08-27-recovery": {
+          "id": "2026-08-27-recovery",
+          "date": "2026-08-27",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 11,
+          "plannedDistanceKm": 6,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-08-30-long": {
+          "id": "2026-08-30-long",
+          "date": "2026-08-30",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 11,
+          "plannedDistanceKm": 24,
+          "plannedPace": "5:15",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-08-29",
+          "windowEnd": "2026-08-30"
+        },
+        "2026-08-31-easy": {
+          "id": "2026-08-31-easy",
+          "date": "2026-08-31",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 12,
+          "plannedDistanceKm": 10,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-09-02-interval": {
+          "id": "2026-09-02-interval",
+          "date": "2026-09-02",
+          "type": "interval",
+          "title": "7×800m @ 4:10",
+          "weekNumber": 12,
+          "plannedDistanceKm": 10,
+          "plannedPace": "4:10",
+          "completed": false
+        },
+        "2026-09-03-recovery": {
+          "id": "2026-09-03-recovery",
+          "date": "2026-09-03",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 12,
+          "plannedDistanceKm": 8,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-09-06-long": {
+          "id": "2026-09-06-long",
+          "date": "2026-09-06",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 12,
+          "plannedDistanceKm": 26,
+          "plannedPace": "5:15",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-09-05",
+          "windowEnd": "2026-09-06"
+        },
+        "2026-09-07-easy": {
+          "id": "2026-09-07-easy",
+          "date": "2026-09-07",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 13,
+          "plannedDistanceKm": 11,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-09-09-tempo": {
+          "id": "2026-09-09-tempo",
+          "date": "2026-09-09",
+          "type": "tempo",
+          "title": "Tempo 10 km @ 4:30",
+          "weekNumber": 13,
+          "plannedDistanceKm": 13,
+          "plannedPace": "4:30",
+          "completed": false
+        },
+        "2026-09-10-recovery": {
+          "id": "2026-09-10-recovery",
+          "date": "2026-09-10",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 13,
+          "plannedDistanceKm": 8,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-09-13-long": {
+          "id": "2026-09-13-long",
+          "date": "2026-09-13",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 13,
+          "plannedDistanceKm": 28,
+          "plannedPace": "5:15",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-09-12",
+          "windowEnd": "2026-09-13"
+        },
+        "2026-09-14-easy": {
+          "id": "2026-09-14-easy",
+          "date": "2026-09-14",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 14,
+          "plannedDistanceKm": 10,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-09-16-interval": {
+          "id": "2026-09-16-interval",
+          "date": "2026-09-16",
+          "type": "interval",
+          "title": "6×800m @ 4:10 (reduced — Vacation)",
+          "weekNumber": 14,
+          "plannedDistanceKm": 5,
+          "plannedPace": "4:20",
+          "completed": false
+        },
+        "2026-09-17-recovery": {
+          "id": "2026-09-17-recovery",
+          "date": "2026-09-17",
+          "type": "recovery",
+          "title": "Recovery run (reduced — Vacation)",
+          "weekNumber": 14,
+          "plannedDistanceKm": 4,
+          "plannedPace": "5:40",
+          "completed": false
+        },
+        "2026-09-20-easy": {
+          "id": "2026-09-20-easy",
+          "date": "2026-09-20",
+          "type": "easy",
+          "title": "Long run (reduced — Vacation)",
+          "weekNumber": 14,
+          "plannedDistanceKm": 14,
+          "plannedPace": "5:25",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-09-19",
+          "windowEnd": "2026-09-20"
+        },
+        "2026-09-21-easy": {
+          "id": "2026-09-21-easy",
+          "date": "2026-09-21",
+          "type": "easy",
+          "title": "Easy run (reduced — Vacation)",
+          "weekNumber": 15,
+          "plannedDistanceKm": 7,
+          "plannedPace": "5:15",
+          "completed": false
+        },
+        "2026-09-23-tempo": {
+          "id": "2026-09-23-tempo",
+          "date": "2026-09-23",
+          "type": "tempo",
+          "title": "Tempo 10 km @ 4:30 (reduced — Vacation)",
+          "weekNumber": 15,
+          "plannedDistanceKm": 8,
+          "plannedPace": "4:40",
+          "completed": false
+        },
+        "2026-09-24-recovery": {
+          "id": "2026-09-24-recovery",
+          "date": "2026-09-24",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 15,
+          "plannedDistanceKm": 8,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-09-27-long": {
+          "id": "2026-09-27-long",
+          "date": "2026-09-27",
+          "type": "long",
+          "title": "Long run — peak 🏔️",
+          "weekNumber": 15,
+          "plannedDistanceKm": 30,
+          "plannedPace": "5:15",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-09-26",
+          "windowEnd": "2026-09-27"
+        },
+        "2026-09-28-easy": {
+          "id": "2026-09-28-easy",
+          "date": "2026-09-28",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 16,
+          "plannedDistanceKm": 8,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-09-30-tempo": {
+          "id": "2026-09-30-tempo",
+          "date": "2026-09-30",
+          "type": "tempo",
+          "title": "Race-pace 6 km @ 4:58",
+          "weekNumber": 16,
+          "plannedDistanceKm": 9,
+          "plannedPace": "4:58",
+          "completed": false
+        },
+        "2026-10-01-recovery": {
+          "id": "2026-10-01-recovery",
+          "date": "2026-10-01",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 16,
+          "plannedDistanceKm": 6,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-10-04-long": {
+          "id": "2026-10-04-long",
+          "date": "2026-10-04",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 16,
+          "plannedDistanceKm": 20,
+          "plannedPace": "5:15",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-10-03",
+          "windowEnd": "2026-10-04"
+        },
+        "2026-10-05-easy": {
+          "id": "2026-10-05-easy",
+          "date": "2026-10-05",
+          "type": "easy",
+          "title": "Easy shakeout",
+          "weekNumber": 17,
+          "plannedDistanceKm": 6,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-10-07-easy": {
+          "id": "2026-10-07-easy",
+          "date": "2026-10-07",
+          "type": "easy",
+          "title": "Easy + strides",
+          "weekNumber": 17,
+          "plannedDistanceKm": 5,
+          "plannedPace": "5:05",
+          "completed": false
+        },
+        "2026-10-08-recovery": {
+          "id": "2026-10-08-recovery",
+          "date": "2026-10-08",
+          "type": "recovery",
+          "title": "Pre-race jog",
+          "weekNumber": 17,
+          "plannedDistanceKm": 4,
+          "plannedPace": "5:30",
+          "completed": false
+        },
+        "2026-10-11-long": {
+          "id": "2026-10-11-long",
+          "date": "2026-10-11",
+          "type": "long",
+          "title": "Marathon — race day 🏁",
+          "weekNumber": 17,
+          "plannedDistanceKm": 42.2,
+          "plannedPace": "4:58",
+          "completed": false
+        },
+        "2026-06-09-long-seed": {
+          "id": "2026-06-09-long-seed",
+          "date": "2026-06-09",
+          "type": "long",
+          "title": "Long run",
+          "weekNumber": 0,
+          "plannedDistanceKm": 12.16,
+          "plannedPace": "4:49",
+          "actualDistanceKm": 12.16,
+          "actualPace": "4:49",
+          "durationMin": 58.55,
+          "completed": true,
+          "isCustom": true,
+          "weather": {
+            "tempC": 15.7,
+            "conditionId": 501,
+            "condition": "Rain",
+            "icon": "10d",
+            "source": "historical",
+            "observedAt": "2026-06-09T00:00:00.000Z"
+          }
+        },
+        "2026-06-18-easy-seed": {
+          "id": "2026-06-18-easy-seed",
+          "date": "2026-06-18",
+          "type": "easy",
+          "title": "Easy run",
+          "weekNumber": 1,
+          "plannedDistanceKm": 10.04,
+          "plannedPace": "5:16",
+          "actualDistanceKm": 10.04,
+          "actualPace": "5:16",
+          "durationMin": 52.86666666666667,
+          "completed": true,
+          "isCustom": true,
+          "weather": {
+            "tempC": 26.6,
+            "conditionId": 804,
+            "condition": "Clouds",
+            "icon": "04d",
+            "source": "historical",
+            "observedAt": "2026-06-18T00:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:28",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:48",
+              "elevM": 1
+            },
+            {
+              "km": 3,
+              "pace": "5:08",
+              "elevM": -2
+            },
+            {
+              "km": 4,
+              "pace": "5:19",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "5:15",
+              "elevM": 0
+            },
+            {
+              "km": 6,
+              "pace": "5:25",
+              "elevM": 0
+            },
+            {
+              "km": 7,
+              "pace": "5:27",
+              "elevM": 0
+            },
+            {
+              "km": 8,
+              "pace": "5:21",
+              "elevM": 0
+            },
+            {
+              "km": 9,
+              "pace": "5:37",
+              "elevM": 0
+            },
+            {
+              "km": 10,
+              "pace": "5:47",
+              "elevM": 0
+            }
+          ]
+        },
+        "2026-06-21-recovery-seed": {
+          "id": "2026-06-21-recovery-seed",
+          "date": "2026-06-21",
+          "type": "recovery",
+          "title": "Recovery run",
+          "weekNumber": 1,
+          "plannedDistanceKm": 5.66,
+          "plannedPace": "4:53",
+          "actualDistanceKm": 5.66,
+          "actualPace": "4:53",
+          "durationMin": 27.65,
+          "completed": true,
+          "isCustom": true,
+          "weather": {
+            "tempC": 24.6,
+            "conditionId": 501,
+            "condition": "Rain",
+            "icon": "10d",
+            "source": "historical",
+            "observedAt": "2026-06-21T00:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:35",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:37",
+              "elevM": -1
+            },
+            {
+              "km": 3,
+              "pace": "4:42",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "4:57",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "5:14",
+              "elevM": 1
+            },
+            {
+              "km": 0.6,
+              "pace": "5:23",
+              "elevM": -1
+            }
+          ]
+        },
+        "2026-07-24-easy": {
+          "id": "2026-07-24-easy",
+          "date": "2026-07-24",
+          "type": "easy",
+          "title": "Return-to-run — first run after wondroos",
+          "weekNumber": 6,
+          "plannedDistanceKm": 10.09,
+          "plannedPace": "4:46",
+          "completed": true,
+          "actualDistanceKm": 10.09,
+          "durationMin": 48.13333333333333,
+          "actualPace": "4:46",
+          "isCustom": true,
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:20",
+              "elevM": 1
+            },
+            {
+              "km": 2,
+              "pace": "4:32",
+              "elevM": 0
+            },
+            {
+              "km": 3,
+              "pace": "4:46",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "4:56",
+              "elevM": -1
+            },
+            {
+              "km": 5,
+              "pace": "4:57",
+              "elevM": -1
+            },
+            {
+              "km": 6,
+              "pace": "5:03",
+              "elevM": 1
+            },
+            {
+              "km": 7,
+              "pace": "4:42",
+              "elevM": 0
+            },
+            {
+              "km": 8,
+              "pace": "4:37",
+              "elevM": 0
+            },
+            {
+              "km": 9,
+              "pace": "4:50",
+              "elevM": 1
+            },
+            {
+              "km": 10,
+              "pace": "4:56",
+              "elevM": 1
+            }
+          ],
+          "weather": {
+            "tempC": 20,
+            "conditionId": 802,
+            "condition": "Clouds",
+            "icon": "03d",
+            "source": "historical",
+            "observedAt": "2026-07-24T00:00:00.000Z"
+          }
+        },
+        "2026-08-05-interval": {
+          "id": "2026-08-05-interval",
+          "date": "2026-08-05",
+          "type": "interval",
+          "title": "4×800m @ 4:10",
+          "weekNumber": 8,
+          "plannedDistanceKm": 7,
+          "plannedPace": "4:10",
+          "completed": true,
+          "actualDistanceKm": 6.49,
+          "durationMin": 28.766666666666666,
+          "actualPace": "4:26",
+          "startTime": "22:15",
+          "weather": {
+            "tempC": 20.6,
+            "conditionId": 800,
+            "condition": "Clear",
+            "icon": "01n",
+            "source": "historical",
+            "observedAt": "2026-08-05T21:00:00.000Z"
+          },
+          "splits": [
+            {
+              "km": 1,
+              "pace": "4:06",
+              "elevM": 2
+            },
+            {
+              "km": 2,
+              "pace": "4:52",
+              "elevM": -1
+            },
+            {
+              "km": 3,
+              "pace": "4:13",
+              "elevM": 0
+            },
+            {
+              "km": 4,
+              "pace": "5:01",
+              "elevM": -2
+            },
+            {
+              "km": 5,
+              "pace": "3:59",
+              "elevM": 0
+            },
+            {
+              "km": 6,
+              "pace": "4:22",
+              "elevM": 1
+            },
+            {
+              "km": 0.4,
+              "pace": "4:35",
+              "elevM": 0
+            }
+          ]
+        },
+        "2026-08-14-recovery": {
+          "id": "2026-08-14-recovery",
+          "date": "2026-08-14",
+          "type": "recovery",
+          "title": "Extra easy run (5th day) — skip if long run lands on Saturday",
+          "weekNumber": 9,
+          "plannedDistanceKm": 5,
+          "plannedPace": "5:35",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-08-14",
+          "windowEnd": "2026-08-15"
+        },
+        "2026-08-21-recovery": {
+          "id": "2026-08-21-recovery",
+          "date": "2026-08-21",
+          "type": "recovery",
+          "title": "Extra easy run (5th day) — skip if long run lands on Saturday",
+          "weekNumber": 10,
+          "plannedDistanceKm": 5,
+          "plannedPace": "5:35",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-08-21",
+          "windowEnd": "2026-08-22"
+        },
+        "2026-08-28-recovery": {
+          "id": "2026-08-28-recovery",
+          "date": "2026-08-28",
+          "type": "recovery",
+          "title": "Extra easy run (5th day) — skip if long run lands on Saturday",
+          "weekNumber": 11,
+          "plannedDistanceKm": 6,
+          "plannedPace": "5:35",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-08-28",
+          "windowEnd": "2026-08-29"
+        },
+        "2026-09-04-recovery": {
+          "id": "2026-09-04-recovery",
+          "date": "2026-09-04",
+          "type": "recovery",
+          "title": "Extra easy run (5th day) — skip if long run lands on Saturday",
+          "weekNumber": 12,
+          "plannedDistanceKm": 6,
+          "plannedPace": "5:35",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-09-04",
+          "windowEnd": "2026-09-05"
+        },
+        "2026-09-11-recovery": {
+          "id": "2026-09-11-recovery",
+          "date": "2026-09-11",
+          "type": "recovery",
+          "title": "Extra easy run (5th day) — skip if long run lands on Saturday",
+          "weekNumber": 13,
+          "plannedDistanceKm": 6,
+          "plannedPace": "5:35",
+          "completed": false,
+          "flexible": true,
+          "windowStart": "2026-09-11",
+          "windowEnd": "2026-09-12"
+        }
+      },
+      "offDays": [
+        {
+          "id": "off-bouldering",
+          "start": "2026-06-24",
+          "end": "2026-06-24",
+          "title": "Bouldering",
+          "note": "Short run only — quality session moved to Thursday"
+        },
+        {
+          "id": "off-ghent",
+          "start": "2026-07-03",
+          "end": "2026-07-05",
+          "title": "Vacation to Ghent",
+          "note": "Likely no training"
+        },
+        {
+          "id": "off-surf-spain",
+          "start": "2026-07-24",
+          "end": "2026-08-02",
+          "title": "Surf trip to Spain",
+          "note": "Very limited running"
+        },
+        {
+          "id": "off-sick-wondroos",
+          "start": "2026-07-12",
+          "end": "2026-07-23",
+          "title": "Sick — wondroos (erysipelas)",
+          "note": "Antibiotics + full rest; no training"
+        },
+        {
+          "id": "off-gran-canaria",
+          "start": "2026-09-16",
+          "end": "2026-09-23",
+          "title": "Vacation to Gran Canaria",
+          "note": "Reduced training possible"
+        }
+      ],
+      "trainingPrefs": {
+        "daysPerWeek": 4,
+        "flexibleDays": false,
+        "trainingDays": [
+          true,
+          false,
+          true,
+          true,
+          false,
+          false,
+          true
+        ],
+        "planningMode": "exact",
+        "targetDistanceKm": 30
+      }
+    }
+  },
+  "activePlanId": "652da229-f820-4293-8ec1-2055ffcb2303"
+}

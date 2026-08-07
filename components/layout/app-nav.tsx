@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { AppLogo } from "@/components/layout/app-logo";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -36,9 +37,7 @@ export function AppNav() {
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card/40 px-4 py-6 md:flex">
         <div className="mb-8 flex items-center gap-2 px-2">
-          <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-            🏃
-          </span>
+          <AppLogo />
           <div className="leading-tight">
             <p className="text-sm font-semibold">{t("common.appName")}</p>
             <p className="text-xs text-muted-foreground">
@@ -73,7 +72,7 @@ export function AppNav() {
       </aside>
 
       {/* Mobile bottom bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-card/90 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-(--z-nav) flex border-t bg-card/90 backdrop-blur md:hidden">
         {NAV.map(({ href, labelKey, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (

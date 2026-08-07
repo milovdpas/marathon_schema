@@ -1,8 +1,10 @@
 # Roadmap & planned features
 
-Planned / deferred work, with enough context for an agent to pick it up. Update
-this when shipping an item (move it out) or when scoping a new one. See
-[`architecture.md`](architecture.md) for how the app is built.
+Planned / deferred **features**, with enough context for an agent to pick them
+up. Update this when shipping an item (move it out) or when scoping a new one.
+See [`architecture.md`](architecture.md) for how the app is built, and
+[`tech-debt.md`](tech-debt.md) for known refactors that were deliberately
+deferred (tests, duplication, oversized views).
 
 ---
 

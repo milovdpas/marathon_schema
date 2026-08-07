@@ -36,13 +36,22 @@ sync (refresh token in an encrypted session cookie; no DB). Deploys to Vercel
 The single source of truth. Shape: `{ plans: Record<id,TrainingPlan>, activePlanId, preferences, hydrated, lastModified }`.
 
 - **Active plan** is read via the `useActivePlan()` hook (`hooks/use-active-plan.ts`) — components select it, not `s.plan` (there is no `s.plan`).
-- **Actions:** plan mgmt (`addPlan`, `addPlanFromImport`, `selectPlan`, `deletePlan`, `updatePlanMeta`, `updateTrainingPrefs`, `initializePlan`), off days (`add/update/deleteOffDay`), workouts (`toggleComplete`, `updateWorkout`, `addWorkout`, `deleteWorkout`), data (`exportData`, `importData`, `applyRemote`), and `setPreferences`. Mutations bump `lastModified` (used for sync conflict resolution).
-- **persist**: key `marathon-training-v1`, **`version: 4`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan`.
+- **Actions:** plan mgmt (`addPlanFromImport`, `selectPlan`, `deletePlan`, `updatePlanMeta`, `updateTrainingPrefs`, `initializePlan`), off days (`add/update/deleteOffDay`), workouts (`toggleComplete`, `updateWorkout`, `addWorkout`, `deleteWorkout`), data (`exportData`, `importData`, `applyRemote`), and `setPreferences`. Mutations bump `lastModified` (used for sync conflict resolution).
+- **persist**: key `marathon-training-v1`, **`version: 11`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan` (async — it dynamic-imports the example plan, and a module-level `seedInFlight` guard stops it racing the `useHydrated` safety net).
 - **Hydration**: `<HydrationGate>` (`hooks/use-hydrated.ts`) renders a skeleton until rehydrated, avoiding SSR/client mismatch. `useMounted()` is used where a value differs server vs client.
 
-## Plan generation — `lib/plan-generator.ts`
+## The example plan — `lib/example-plan.ts`
 
-`generateDefaultPlan(opts)` builds the **seeded "Milo's Marathon" example** plan (Mon/Wed/Thu/Sun schedule, sub-3:30 paces, 30 km peak then taper). Honors `planStart`/`createdAt` (rebuild reproduces elapsed weeks), `seedRuns` (logged history), `offDays`, `trainingPrefs`. `DEFAULT_PLAN_ID = "milo-marathon"`; `SPECIAL_PERIODS` in `lib/date.ts` shape the seeded plan. This generator is for the **example/default plan only** — real user plans come from the AI wizard import.
+The demo plan is **data, not a generator**: `lib/example-plan.json` is a real 17-week export (17 logged runs with splits, weather and off days), produced by `scripts/scrub-example-plan.mjs`. `loadExamplePlan()` dynamic-imports it (so the ~26 KB isn't in every route's chunk), runs it through `normalizeBundle` from `lib/storage.ts` — the same path a user's import takes — rebases every date by a whole number of weeks onto the current week, and stamps `id: DEFAULT_PLAN_ID` + `isExample: true`.
+
+Two rules the loader enforces, both load-bearing:
+
+- **It returns only the plan.** The export's `preferences` block would mark onboarding seen and switch weather + the split scanner on for a brand-new user.
+- **`isExample` is applied at load time, not baked into the JSON.** The flag describes the plan's role in *this* installation: the identical bytes imported by a user via Settings are *their* plan and must stay eligible as AI context (`lib/plan-context.ts` reads the flag).
+
+Raw exports carry the exporter's home coordinates in every weather snapshot. `marathon-plans-*.json` is gitignored and the scrub script strips `lat`/`lon`; the loader strips them again on the way in. **This repo is public — don't weaken any of those three.**
+
+`lib/plan-defaults.ts` keeps what survived the old generator: `DEFAULT_PLAN_META` (fallback metadata for partial imports and migrations), `DEFAULT_PLAN_ID`, `DEFAULT_TRAINING_PREFS`, `PLAN_VERSION`.
 
 ## Key flows
 
@@ -66,8 +75,9 @@ react-i18next, locales `en`/`nl` in `lib/i18n/locales/`. `lib/i18n/locales/en.ts
 app/                      routes (dashboard /, plan, plan/new, calendar, off-days, stats, settings)
 components/ui/            shadcn (Base UI) primitives — generally don't edit
 components/{layout,common,dashboard,plan,calendar,off-days,stats,settings,wizard}/  feature UI
-hooks/                    useActivePlan, useStats, useHydrated, useMounted
-lib/                      types, plan-generator, stats (derived), pace, date(+date-locale), storage(export/import+migrate), google-drive (thin sync client), drive-types, i18n, utils
+hooks/                    cross-feature hooks only: useActivePlan, useStats, useHydrated, useMounted, useWeekdayLabels
+                          (feature-specific hooks live beside their components, e.g. components/calendar/use-calendar-nav.ts)
+lib/                      types, plan-defaults, example-plan(+.json), calendar-layout, calendar-range, workout, stats (derived), pace, date(+date-locale), storage(export/import+migrate), google-drive (thin sync client), drive-types, i18n, utils
 lib/server/               server-only Drive OAuth: session (iron-session), google-oauth, drive, api (error helper)
 app/api/                  Route Handlers: auth/google/{login,callback}, auth/{session,logout}, drive/{meta,content}
 store/                    use-training-store, use-sync-store
@@ -78,7 +88,8 @@ docs/                     this guide, roadmap.md (planned features), ai-plan-coa
 
 - `npm install` then `npm run dev`. `npm run build` (Vercel-ready), `npm run lint` — **keep both green** (lint runs `react-hooks` rules stricter than build; avoid `setState`-in-effect — use the render-time reset or `useMounted`).
 - Optional Drive sync: copy `.env.local.example` → `.env.local`, set `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI`/`SESSION_SECRET`, and register the redirect URI + publish the consent screen (see README "Cloud sync setup").
-- **Test the generator** without a browser: `npx tsx` a small script importing `generateDefaultPlan` from `lib/plan-generator.ts`.
+- `npm run typecheck` (`tsc --noEmit`) is faster than a full build for a pre-commit loop.
+- **Check the example plan** without a browser: `npx tsx` a script calling `loadExamplePlan()` from `lib/example-plan.ts` — assert a future `raceDate`, `isExample: true`, and that `JSON.stringify(plan)` contains no `"lat"`.
 - **Browser smoke** (no extra deps committed): `npm i -D playwright-core`, launch with `chromium.launch({ channel: "chrome" })` (uses system Chrome — no browser download), drive the app, then `npm uninstall playwright-core`. Use isolated `browser.newContext()` per scenario to reset localStorage. Onboarding popups appear on fresh state — the Drive dialog only shows when sync is configured (server env set), otherwise you go straight to the "create plan?" popup; choose a plan option.
 
 ## When extending

@@ -12,7 +12,6 @@ import {
   weeklyMileage,
 } from "@/lib/stats";
 import type { TrainingPlan } from "@/lib/types";
-import { useTrainingStore } from "@/store/use-training-store";
 
 /** Memoized derived statistics for the current plan. */
 export function useStats(plan: TrainingPlan | null) {
@@ -36,12 +35,4 @@ export function useStats(plan: TrainingPlan | null) {
       recent: recentCompleted(plan, 4),
     };
   }, [plan]);
-}
-
-/** Convenience hook reading the active plan straight from the store. */
-export function usePlanStats() {
-  const plan = useTrainingStore((s) =>
-    s.activePlanId ? (s.plans[s.activePlanId] ?? null) : null,
-  );
-  return useStats(plan);
 }

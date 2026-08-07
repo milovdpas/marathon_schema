@@ -135,6 +135,41 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/*
+ * Layout chrome. Sticky offsets are DERIVED from the bar heights, so changing
+ * a bar's height moves everything parked under it instead of silently
+ * detaching it. Plain custom properties rather than @theme: Tailwind v4 has no
+ * --z-index-* namespace (so `z-nav` would never be generated), and it
+ * tree-shakes unused @theme vars, which can drop one that is only referenced
+ * from inside an arbitrary value.
+ *
+ * Consumed via v4's utility-(--var) shorthand, e.g.
+ *   top-(--stick-under-viewbar)   z-(--z-toast)
+ */
+:root {
+  --h-topbar: 3.5625rem; /* 57px — mobile header (32px logo + 2x12px + border) */
+  --h-viewbar: 3.375rem; /* 54px — the calendar's view-mode picker block */
+  --h-bottomnav: 4.375rem; /* 70px — clearance reserved for the mobile nav */
+
+  --stick-viewbar: var(--h-topbar);
+  --stick-under-viewbar: calc(var(--h-topbar) + var(--h-viewbar));
+
+  /* Stacking order, low to high. */
+  --z-sticky-sub: 10; /* weekday row, agenda month headers */
+  --z-sticky: 20; /* view picker, pinned legend */
+  --z-topbar: 30; /* mobile header */
+  --z-nav: 40; /* mobile bottom nav */
+  --z-toast: 100; /* must beat the dialog/sheet overlay at 50 */
+}
+
+/* On md+ the mobile header doesn't exist, so everything parked under it slides
+   up by itself — no md: variant needed at any call site. */
+@media (width >= 48rem) {
+  :root {
+    --h-topbar: 0rem;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

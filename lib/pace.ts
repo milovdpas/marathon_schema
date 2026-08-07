@@ -51,16 +51,6 @@ export function paceFromDistanceDuration(
   return secondsToPace(secondsPerKm);
 }
 
-/** Derive duration (minutes) from distance (km) and pace ("mm:ss"). */
-export function durationFromDistancePace(
-  distanceKm?: number,
-  pace?: string,
-): number | undefined {
-  const secs = paceToSeconds(pace);
-  if (!distanceKm || secs == null) return undefined;
-  return Math.round((distanceKm * secs) / 60);
-}
-
 /** Format total minutes as a clock string: "mm:ss" or "h:mm:ss". */
 export function formatClock(minutes?: number | null): string {
   if (minutes == null || !isFinite(minutes) || minutes <= 0) return "";
@@ -90,15 +80,6 @@ export function deriveStartTime(
   const hh = String(Math.floor(mins / 60)).padStart(2, "0");
   const mm = String(mins % 60).padStart(2, "0");
   return `${hh}:${mm}`;
-}
-
-/** Format minutes as "1h 23m" or "45m". */
-export function formatDuration(minutes?: number | null): string {
-  if (minutes == null || minutes <= 0) return "—";
-  const total = Math.round(minutes);
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
 /** Average pace across runs, weighted by distance. Returns "mm:ss" or "—". */

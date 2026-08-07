@@ -11,8 +11,10 @@ export interface WeatherSnapshot {
   icon: string; // OWM weather[0].icon, e.g. "10d" ("" if unknown)
   source: "forecast" | "historical"; // which timeline it came from
   observedAt: string; // ISO UTC of the observation
-  lat: number;
-  lon: number;
+  /** Where it was observed. Absent on the bundled example plan, whose
+   *  snapshots are scrubbed of coordinates before being committed. */
+  lat?: number;
+  lon?: number;
 }
 
 /** One kilometer split, typically scanned from a Strava screenshot. */
@@ -160,29 +162,3 @@ export const WORKOUT_TYPES: WorkoutType[] = [
   "long",
   "recovery",
 ];
-
-export const WORKOUT_TYPE_LABELS: Record<WorkoutType, string> = {
-  easy: "Easy Run",
-  tempo: "Tempo",
-  interval: "Interval",
-  long: "Long Run",
-  recovery: "Recovery",
-};
-
-export const PHASE_LABELS: Record<WeekPhase, string> = {
-  base: "Base",
-  build: "Build",
-  peak: "Peak",
-  taper: "Taper",
-  race: "Race",
-  reduced: "Reduced",
-};
-
-// Tailwind color token per workout type (see globals.css @theme).
-export const WORKOUT_TYPE_COLOR: Record<WorkoutType, string> = {
-  easy: "easy",
-  tempo: "tempo",
-  interval: "interval",
-  long: "long",
-  recovery: "recovery",
-};

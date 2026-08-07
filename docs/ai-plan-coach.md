@@ -67,7 +67,7 @@ Pass the workout/plan TypeScript types as JSON schema for the tool inputs. Reuse
 ## Open questions for later
 - Streaming vs. single response for the chat UX.
 - How much plan context to send vs. token cost (probably fine to send whole active plan).
-- Whether to support multi-plan operations ("create a new half-marathon plan for April") via `addPlan`.
+- Whether to support multi-plan operations ("create a new half-marathon plan for April") — there is no `addPlan` action any more, so this would go through `addPlanFromImport` with `asNewPlan: true`.
 - Rate-limit / error UX when the user's key is invalid or out of credit.
 
 ## Rough effort

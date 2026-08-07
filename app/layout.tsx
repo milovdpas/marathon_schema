@@ -5,6 +5,7 @@ import { NextPlanGate } from "@/components/common/next-plan-gate";
 import { OnboardingGate } from "@/components/common/onboarding-gate";
 import { SyncInitializer } from "@/components/common/sync-initializer";
 import { Toaster } from "@/components/common/toaster";
+import { AppLogo } from "@/components/layout/app-logo";
 import { AppNav } from "@/components/layout/app-nav";
 import { I18nProvider } from "@/components/layout/i18n-provider";
 import { ThemeProvider } from "@/components/layout/theme-provider";
@@ -23,10 +24,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Marathon Tracker",
   description: "Track your marathon training progress.",
+  applicationName: "Marathon",
+  // Installed to a home screen, this should open chromeless like the manifest
+  // asks for; iOS reads it from here rather than the manifest.
+  appleWebApp: { capable: true, title: "Marathon", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fc4c02",
+  // The literal value of --brand in globals.css. Keep the two in step: this is
+  // the browser/OS chrome colour and a mismatch shows as a seam above the app.
+  themeColor: "#f1472c",
 };
 
 export default function RootLayout({
@@ -56,11 +63,9 @@ export default function RootLayout({
             <AppNav />
             <div className="flex min-w-0 flex-1 flex-col">
               {/* Mobile top bar */}
-              <header className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/80 px-4 py-3 backdrop-blur md:hidden">
+              <header className="sticky top-0 z-(--z-topbar) flex h-(--h-topbar) items-center justify-between border-b bg-background/80 px-4 backdrop-blur md:hidden">
                 <div className="flex items-center gap-2">
-                  <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-                    🏃
-                  </span>
+                  <AppLogo size="sm" />
                   <span className="text-sm font-semibold">Marathon</span>
                 </div>
                 <ThemeToggle />

@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Marathon Tracker — agent orientation
 
-**Read [`docs/architecture.md`](docs/architecture.md) before changing anything.** It is the authoritative guide (data model, state, flows, conventions, how to build/verify). Planned/deferred features (e.g. Google Calendar in the off-days flow, in-app AI coach) are in [`docs/roadmap.md`](docs/roadmap.md). `README.md` is user-facing and may lag.
+**Read [`docs/architecture.md`](docs/architecture.md) before changing anything.** It is the authoritative guide (data model, state, flows, conventions, how to build/verify). Planned/deferred features (e.g. Google Calendar in the off-days flow, in-app AI coach) are in [`docs/roadmap.md`](docs/roadmap.md); known refactors that were deliberately deferred are in [`docs/tech-debt.md`](docs/tech-debt.md). `README.md` is user-facing and may lag.
 
 Quick orientation:
 
@@ -16,6 +16,8 @@ Quick orientation:
   - shadcn here is **Base UI (`@base-ui/react`), not Radix** → compose with the **`render` prop**, not `asChild`.
   - **Tailwind v4** (CSS `@theme`, no config file); dynamic class names aren't generated — use static class maps.
   - i18n: every UI string is a key in **both** `lib/i18n/locales/en.ts` and `nl.ts` (the `Dict` type enforces parity). Use `useTranslation()`.
-  - Persisted-shape changes require **bumping the persist `version` + an additive `migrate`** in `use-training-store.ts` (currently v4).
+  - Persisted-shape changes require **bumping the persist `version` + an additive `migrate`** in `use-training-store.ts` (currently v11).
   - Pages are thin server components rendering a `"use client"` view inside `<HydrationGate>`.
-- **Verify:** keep `npm run build` and `npm run lint` green. Browser smoke via `playwright-core` + system Chrome (`channel: "chrome"`); see `docs/architecture.md` → "Build & verify".
+  - Sticky offsets and z-index are **CSS variables in `app/globals.css`** (`--h-topbar`, `--stick-under-viewbar`, `--z-sticky`, …), consumed as `top-(--stick-under-viewbar)`. Don't reintroduce pixel literals — they silently detach when a bar's height changes.
+  - The bundled example plan (`lib/example-plan.json`) is a scrubbed real export. **This repo is public:** raw exports carry home coordinates, so `marathon-plans-*.json` is gitignored and `scripts/scrub-example-plan.mjs` strips `lat`/`lon` and `preferences`.
+- **Verify:** keep `npm run build` and `npm run lint` green (`npm run typecheck` is the fast inner loop). Browser smoke via `playwright-core` + system Chrome (`channel: "chrome"`); see `docs/architecture.md` → "Build & verify".

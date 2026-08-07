@@ -44,3 +44,8 @@ next-env.d.ts
 client_secret*
 WhatsApp*
 *.traineddata
+
+# Raw plan exports. These carry the exporter's home coordinates in every
+# weather snapshot, so they must never be committed. To refresh the bundled
+# demo plan, run: node scripts/scrub-example-plan.mjs <export.json>
+marathon-plans-*.json

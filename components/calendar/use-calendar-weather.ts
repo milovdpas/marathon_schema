@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toISO } from "@/lib/date";
+import { chunkWeeks, toISO } from "@/lib/date";
 import type { WeatherSnapshot } from "@/lib/types";
 import { getWeekWeather } from "@/lib/weather";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -19,19 +19,24 @@ export function useCalendarWeather(
     (s) => !!s.preferences.weatherEnabled && !!s.preferences.weatherCalendar,
   );
   const configured = useWeatherStore((s) => s.configured);
-  const coords = useWeatherStore((s) => s.lastCoords);
+  // Selected as primitives, not as the `lastCoords` object: an optional-chained
+  // dep can't be verified by the lint rule, and a fresh object identity each
+  // render would refetch on every commit.
+  const lat = useWeatherStore((s) => s.lastCoords?.lat);
+  const lon = useWeatherStore((s) => s.lastCoords?.lon);
   const [map, setMap] = useState<Record<string, WeatherSnapshot>>({});
 
-  const weekStarts: string[] = [];
-  for (let i = 0; i < days.length; i += 7) weekStarts.push(toISO(days[i]));
-  const key = weekStarts.join(",");
+  // Joined so the effect depends on the weeks' identity, not the array's.
+  const key = chunkWeeks(days)
+    .map((w) => toISO(w[0]))
+    .join(",");
 
   useEffect(() => {
-    if (!enabled || !configured || !coords) return;
+    if (!enabled || !configured || lat == null || lon == null) return;
     let cancelled = false;
     (async () => {
-      for (const ws of weekStarts) {
-        const res = await getWeekWeather(coords.lat, coords.lon, ws);
+      for (const ws of key.split(",")) {
+        const res = await getWeekWeather(lat, lon, ws);
         if (cancelled) return;
         if (Object.keys(res).length) setMap((prev) => ({ ...prev, ...res }));
       }
@@ -39,8 +44,7 @@ export function useCalendarWeather(
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, enabled, configured, coords?.lat, coords?.lon]);
+  }, [key, enabled, configured, lat, lon]);
 
   return enabled && configured ? map : {};
 }

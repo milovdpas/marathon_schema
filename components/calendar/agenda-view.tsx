@@ -7,9 +7,10 @@ import { useTranslation } from "react-i18next";
 import { WeatherBadge } from "@/components/calendar/weather-badge";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { fromISO, offDayForDate, todayISO } from "@/lib/date";
-import { getDateLocale } from "@/lib/date-locale";
+import { dateLocaleFor } from "@/lib/date-locale";
 import type { OffDay, WeatherSnapshot, Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { groupByDate, isLogged } from "@/lib/workout";
 
 interface AgendaDay {
   iso: string;
@@ -39,22 +40,15 @@ export function AgendaView({
   className?: string;
 }) {
   const { t, i18n } = useTranslation();
+  const locale = dateLocaleFor(i18n.language);
   const today = todayISO();
   const todayAnchor = useRef<HTMLDivElement>(null);
 
   const days = useMemo(() => {
-    const byDate = new Map<string, Workout[]>();
-    for (const w of workouts) {
-      const list = byDate.get(w.date) ?? [];
-      list.push(w);
-      byDate.set(w.date, list);
-    }
-
+    const byDate = groupByDate(workouts);
     const sorted = [...byDate.keys()].sort();
     return sorted.map((iso, i): AgendaDay => {
-      const month = format(fromISO(iso), "MMMM yyyy", {
-        locale: getDateLocale(),
-      });
+      const month = format(fromISO(iso), "MMMM yyyy", { locale });
       // ISO dates sort chronologically, so "same month as the day before"
       // is just a prefix comparison — no running state to carry.
       const newMonth = i === 0 || sorted[i - 1].slice(0, 7) !== iso.slice(0, 7);
@@ -65,9 +59,7 @@ export function AgendaView({
         monthLabel: newMonth ? month : undefined,
       };
     });
-    // getDateLocale() reads the active language, which isn't a value dep.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workouts, offDays, i18n.language]);
+  }, [workouts, offDays, locale]);
 
   // Open on the last run you actually finished, so what you just did sits at
   // the top and what's coming reads down from it.
@@ -88,7 +80,7 @@ export function AgendaView({
   // rather than dropping the user at week 1.
   const lastDone = [...days]
     .reverse()
-    .find((d) => d.workouts.some((w) => w.completed || w.actualDistanceKm != null));
+    .find((d) => d.workouts.some(isLogged));
   const anchorIso =
     lastDone?.iso ??
     days.find((d) => d.iso >= today)?.iso ??
@@ -106,9 +98,9 @@ export function AgendaView({
               ref={day.iso === anchorIso ? todayAnchor : undefined}
             >
               {day.monthLabel ? (
-                // Parks under the view picker (57px mobile bar + 54px picker);
-                // z-10 keeps it below the pinned legend's z-20.
-                <h3 className="sticky top-[111px] z-10 -mx-1 bg-card/95 px-1 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur md:top-[54px]">
+                // Parks directly under the view picker, and below the pinned
+                // legend. Both offsets are derived tokens (see globals.css).
+                <h3 className="sticky top-(--stick-under-viewbar) z-(--z-sticky-sub) -mx-1 bg-card/95 px-1 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
                   {day.monthLabel}
                 </h3>
               ) : null}
@@ -121,7 +113,7 @@ export function AgendaView({
                     isPast && "text-muted-foreground",
                   )}
                 >
-                  {format(date, "EEEE d", { locale: getDateLocale() })}
+                  {format(date, "EEEE d", { locale })}
                 </span>
                 {isToday(date) ? (
                   <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">

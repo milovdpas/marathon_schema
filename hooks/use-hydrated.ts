@@ -14,7 +14,7 @@ export function useHydrated(): boolean {
 
   // Safety net: ensure a plan exists once hydrated (e.g. first ever visit).
   useEffect(() => {
-    if (hydrated && !hasPlans) initializePlan();
+    if (hydrated && !hasPlans) void initializePlan();
   }, [hydrated, hasPlans, initializePlan]);
 
   return hydrated;

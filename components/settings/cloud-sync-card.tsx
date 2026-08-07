@@ -82,6 +82,8 @@ export function CloudSyncCard() {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             {user?.picture ? (
+              // A Google-hosted avatar on an unbounded domain — not worth a
+              // next.config remotePatterns entry for one 24px image.
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={user.picture}

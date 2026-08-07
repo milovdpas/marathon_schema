@@ -5,6 +5,7 @@
 import { todayISO } from "./date";
 import { distanceRun, effectivePace, overallStats, weeklyMileage } from "./stats";
 import type { TrainingPlan, Workout, WorkoutSplit } from "./types";
+import { isLogged } from "./workout";
 
 export function isBackyard(plan: Pick<TrainingPlan, "raceType">): boolean {
   return plan.raceType === "backyard";
@@ -33,9 +34,7 @@ export function isPlanFinished(plan: TrainingPlan): boolean {
  */
 export function canBeContext(plan: TrainingPlan): boolean {
   if (plan.isExample) return false;
-  return Object.values(plan.workouts).some(
-    (w) => w.completed || w.actualDistanceKm != null,
-  );
+  return Object.values(plan.workouts).some(isLogged);
 }
 
 /**
@@ -135,8 +134,7 @@ export function buildPlanContext(plan: TrainingPlan): PlanContext {
   const weekly = weeklyMileage(plan);
 
   const completedRuns = Object.values(plan.workouts)
-    // Same predicate the store uses for "the user actually ran this".
-    .filter((w) => w.completed || w.actualDistanceKm != null)
+    .filter(isLogged)
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
     .map((w) =>
       compact<PlanContextRun>({

@@ -43,7 +43,7 @@ import {
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { LOCALE_LABELS, LOCALES, type Locale } from "@/lib/i18n";
 import { isBackyard, isPlanFinished } from "@/lib/plan-context";
-import { DEFAULT_TRAINING_PREFS } from "@/lib/plan-generator";
+import { DEFAULT_TRAINING_PREFS } from "@/lib/plan-defaults";
 import { BACKYARD_LOOP_KM, type TrainingPlan } from "@/lib/types";
 import { downloadJSON } from "@/lib/storage";
 import { cn } from "@/lib/utils";

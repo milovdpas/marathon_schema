@@ -1,9 +1,4 @@
-import {
-  differenceInCalendarDays,
-  format,
-  isWithinInterval,
-  parseISO,
-} from "date-fns";
+import { format, parseISO } from "date-fns";
 import { getDateLocale } from "./date-locale";
 import type { OffDay } from "./types";
 
@@ -20,11 +15,6 @@ export function fromISO(iso: string): Date {
 /** Today as a yyyy-mm-dd string (local). */
 export function todayISO(): string {
   return toISO(new Date());
-}
-
-/** Whole calendar days from today until the given ISO date (negative if past). */
-export function daysUntil(iso: string): number {
-  return differenceInCalendarDays(parseISO(iso), startOfToday());
 }
 
 export function startOfToday(): Date {
@@ -48,44 +38,16 @@ export function formatRange(startISO: string, endISO: string): string {
     : `${format(s, "d MMM", { locale })} – ${format(e, "d MMM", { locale })}`;
 }
 
-export interface SpecialPeriod {
-  start: string; // ISO
-  end: string; // ISO (inclusive)
-  label: string;
-  /** How much training is affected. */
-  severity: "none" | "limited" | "reduced";
+/**
+ * Split a day list into weeks of 7. Both the calendar grid and the weather
+ * fetcher need this, and both assume the input is Monday-aligned and a whole
+ * number of weeks (see `visibleDays`).
+ */
+export function chunkWeeks<T>(days: readonly T[]): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < days.length; i += 7) out.push(days.slice(i, i + 7));
+  return out;
 }
-
-// Encoded once here so the plan generator can apply them automatically and
-// they remain easy to edit in one place.
-export const SPECIAL_PERIODS: SpecialPeriod[] = [
-  {
-    // 1/8 triathlon on the 20th — Sunday's long run becomes a short,
-    // optional recovery jog (and it'll be hot).
-    start: "2026-06-20",
-    end: "2026-06-21",
-    label: "Triathlon recovery",
-    severity: "limited",
-  },
-  {
-    start: "2026-07-03",
-    end: "2026-07-05",
-    label: "Vacation",
-    severity: "none",
-  },
-  {
-    start: "2026-07-24",
-    end: "2026-08-02",
-    label: "Surf trip",
-    severity: "limited",
-  },
-  {
-    start: "2026-09-16",
-    end: "2026-09-23",
-    label: "Vacation",
-    severity: "reduced",
-  },
-];
 
 /** The off-day period covering a given ISO date, if any. */
 export function offDayForDate(
@@ -94,26 +56,4 @@ export function offDayForDate(
 ): OffDay | undefined {
   if (!offDays) return undefined;
   return offDays.find((o) => iso >= o.start && iso <= o.end);
-}
-
-/** The special period covering a given ISO date, if any. */
-export function specialPeriodFor(iso: string): SpecialPeriod | undefined {
-  const d = parseISO(iso);
-  return SPECIAL_PERIODS.find((p) =>
-    isWithinInterval(d, { start: parseISO(p.start), end: parseISO(p.end) }),
-  );
-}
-
-/** Does [startISO, endISO] overlap any special period? Returns it if so. */
-export function overlappingSpecialPeriod(
-  startISO: string,
-  endISO: string,
-): SpecialPeriod | undefined {
-  const s = parseISO(startISO);
-  const e = parseISO(endISO);
-  return SPECIAL_PERIODS.find((p) => {
-    const ps = parseISO(p.start);
-    const pe = parseISO(p.end);
-    return ps <= e && pe >= s; // intervals overlap
-  });
 }

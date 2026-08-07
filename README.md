@@ -43,17 +43,25 @@ No login required. Everything lives in your browser's **localStorage**. Optional
 
 ## The training plan
 
-The plan is generated deterministically in [`lib/plan-generator.ts`](lib/plan-generator.ts) from today's week through race week. Each week follows the schedule **Mon easy · Wed quality · Thu easy · Sun long**, with paces derived from the sub-3:30 goal (race pace ~4:58/km) and slightly softened in the first three weeks for an injury return.
+A new install seeds a real, worked example: an exported 17-week marathon block
+with ~17 logged runs, per-kilometre splits, weather and off-day periods. It
+lives in [`lib/example-plan.json`](lib/example-plan.json) and is loaded by
+[`lib/example-plan.ts`](lib/example-plan.ts), which rebases every date onto the
+current week (in whole weeks, so weekdays and the Sunday race survive) — the
+demo never rots into a race that finished months ago.
 
-Long runs build with periodic cutbacks to a **30 km peak two weeks out**, then taper into the marathon. Special periods are encoded once in [`lib/date.ts`](lib/date.ts) and applied automatically:
+To refresh it from your own training: **Settings → Export**, then
 
-| Period | Effect |
-| --- | --- |
-| Jul 3–5 (Vacation) | No training that weekend — long run dropped |
-| Jul 24 – Aug 2 (Surf trip) | Limited — short optional jogs only |
-| Sep 16–23 (Vacation) | Reduced volume |
+```bash
+node scripts/scrub-example-plan.mjs marathon-plans-YYYY-MM-DD.json
+```
 
-Want a different plan? Either tweak the constants in `lib/plan-generator.ts` / `lib/date.ts` and redeploy, or export your JSON, edit it, and import it back from **Settings**.
+That strips the `preferences` block and the home coordinates every weather
+snapshot carries, and writes `lib/example-plan.json`. Raw exports are
+gitignored — **never commit one**, this repo is public.
+
+Want a different plan for yourself? Create one in the app (**Settings → Add
+plan**) and let an AI build it, or export your JSON, edit it, and import it back.
 
 ---
 
@@ -169,8 +177,13 @@ components/
   dashboard|plan|calendar|stats|settings/   # per-page views
 lib/
   types.ts           # domain models
-  plan-generator.ts  # generateDefaultPlan() — the core logic
-  date.ts            # week ranges + SPECIAL_PERIODS
+  plan-defaults.ts   # fallback plan metadata for imports/migrations
+  example-plan.json  # the bundled demo plan (scrubbed export)
+  example-plan.ts    # loads it and rebases its dates onto this week
+  calendar-layout.ts # spanning-bar packing for the calendar grid
+  calendar-range.ts  # which days each calendar view shows
+  workout.ts         # isLogged / groupByDate / flexible-window index
+  date.ts            # ISO helpers, week ranges, off-day lookup
   pace.ts            # pace parsing / formatting / derivation
   stats.ts           # derived statistics (pure functions)
   storage.ts         # export / import + migration hook

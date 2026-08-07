@@ -2,7 +2,7 @@
 
 import { HelpCircle, ScanText } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { SplitsExample } from "@/components/settings/splits-example";
+import { SplitsExample } from "@/components/common/splits-example";
 import { Card } from "@/components/ui/card";
 import {
   Dialog,

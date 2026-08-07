@@ -57,7 +57,10 @@ export function DayDetail({
   // Day weather (when the feature is enabled — independent of the calendar toggle).
   const weatherEnabled = useTrainingStore((s) => s.preferences.weatherEnabled);
   const weatherConfigured = useWeatherStore((s) => s.configured);
-  const coords = useWeatherStore((s) => s.lastCoords);
+  // Primitives, not the `lastCoords` object: an optional-chained dep can't be
+  // verified by the lint rule, and the object's identity changes every render.
+  const lat = useWeatherStore((s) => s.lastCoords?.lat);
+  const lon = useWeatherStore((s) => s.lastCoords?.lon);
   // Keyed by date so a stale snapshot never shows against a different day.
   const [weather, setWeather] = useState<{
     iso: string;
@@ -65,19 +68,17 @@ export function DayDetail({
   } | null>(null);
 
   useEffect(() => {
-    if (!date || !weatherEnabled || !weatherConfigured || !coords) return;
+    if (!date || !weatherEnabled || !weatherConfigured) return;
+    if (lat == null || lon == null) return;
     let cancelled = false;
     (async () => {
-      const snap = await getDayWeather(coords.lat, coords.lon, date).catch(
-        () => null,
-      );
+      const snap = await getDayWeather(lat, lon, date).catch(() => null);
       if (!cancelled && snap) setWeather({ iso: date, snap });
     })();
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date, weatherEnabled, weatherConfigured, coords?.lat, coords?.lon]);
+  }, [date, weatherEnabled, weatherConfigured, lat, lon]);
 
   const dayWeather = weather && weather.iso === date ? weather.snap : null;
 

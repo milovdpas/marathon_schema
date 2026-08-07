@@ -1,13 +1,11 @@
 "use client";
 
-import { addDays, format, startOfWeek } from "date-fns";
 import { Minus, Plus } from "lucide-react";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { getDateLocale } from "@/lib/date-locale";
+import { useWeekdayLabels } from "@/hooks/use-weekday-labels";
 import type { TrainingPrefs } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -18,15 +16,8 @@ export function TrainingPrefsFields({
   prefs: TrainingPrefs;
   onChange: (patch: Partial<TrainingPrefs>) => void;
 }) {
-  const { t, i18n } = useTranslation();
-
-  const weekdayLabels = useMemo(() => {
-    const monday = startOfWeek(new Date(2024, 0, 1), { weekStartsOn: 1 });
-    return Array.from({ length: 7 }, (_, i) =>
-      format(addDays(monday, i), "EEE", { locale: getDateLocale() }),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i18n.language]);
+  const { t } = useTranslation();
+  const weekdayLabels = useWeekdayLabels();
 
   const targetUnknown = prefs.targetDistanceKm === null;
 

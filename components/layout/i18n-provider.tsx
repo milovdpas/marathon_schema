@@ -1,9 +1,8 @@
 "use client";
 
-import { enUS, nl } from "date-fns/locale";
 import { useEffect } from "react";
 import { I18nextProvider } from "react-i18next";
-import { setDateLocale } from "@/lib/date-locale";
+import { dateLocaleFor, setDateLocale } from "@/lib/date-locale";
 import i18n, { detectLocale } from "@/lib/i18n";
 import { useTrainingStore } from "@/store/use-training-store";
 
@@ -20,7 +19,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const active = locale ?? "en";
   useEffect(() => {
     if (i18n.language !== active) void i18n.changeLanguage(active);
-    setDateLocale(active === "nl" ? nl : enUS);
+    setDateLocale(dateLocaleFor(active));
     if (typeof document !== "undefined") document.documentElement.lang = active;
   }, [active]);
 

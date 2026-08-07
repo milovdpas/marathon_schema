@@ -4,7 +4,7 @@ import { Cloud, CloudSun, ScanText, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SplitsExample } from "@/components/settings/splits-example";
+import { SplitsExample } from "@/components/common/splits-example";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -106,7 +106,7 @@ export function OnboardingGate() {
 
   const lookAround = () => {
     setPreferences({ onboardingSeen: true });
-    initializePlan(); // seeds the example plan now that onboarding is done
+    void initializePlan(); // seeds the example plan now that onboarding is done
   };
 
   const createPlan = () => {

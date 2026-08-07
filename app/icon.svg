@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Marathon Tracker">
+  <!-- Brand orange, the literal value of --brand in globals.css. Hardcoded
+       because a favicon is served standalone and can't read the app's theme. -->
+  <rect width="64" height="64" rx="14" fill="#f1472c"/>
+  <g fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Runner, facing right. Strokes are deliberately heavy (~9% of the
+         canvas) so the figure still reads at a 16px tab favicon. -->
+    <path d="M28 30 L36 25"/>
+    <path d="M36 25 L44 30 L47 38"/>
+    <path d="M36 25 L34 36"/>
+    <path d="M34 36 L41 44 L39 52"/>
+    <path d="M34 36 L25 41 L18 38"/>
+  </g>
+  <circle cx="41" cy="15" r="6" fill="#fff"/>
+</svg>

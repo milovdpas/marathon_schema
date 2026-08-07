@@ -1,4 +1,4 @@
-import { DEFAULT_PLAN_META, PLAN_VERSION } from "./plan-generator";
+import { DEFAULT_PLAN_META, PLAN_VERSION } from "./plan-defaults";
 import type { Preferences, TrainingPlan } from "./types";
 
 export const STORAGE_KEY = "marathon-training-v1";
@@ -149,11 +149,7 @@ function normalizePlan(
  *  - a bare plan object ({ weeks, workouts, ... }).
  * Throws on malformed input.
  */
-export function parseImport(json: string): {
-  plans: Record<string, TrainingPlan>;
-  activePlanId: string | null;
-  preferences?: Preferences;
-} {
+export function parseImport(json: string): NormalizedBundle {
   let data;
   try {
     data = JSON.parse(sanitizeImportJson(json));
@@ -162,7 +158,33 @@ export function parseImport(json: string): {
       "That doesn't look like valid JSON — it may have been copied incompletely. Copy the AI's whole response (including the first { and last }), or use Attach file.",
     );
   }
+  return normalizeBundle(data);
+}
 
+export interface NormalizedBundle {
+  plans: Record<string, TrainingPlan>;
+  activePlanId: string | null;
+  preferences?: Preferences;
+}
+
+/**
+ * Validate + normalize already-parsed bundle data. Split out from
+ * `parseImport` so the bundled example plan can travel the same path a user's
+ * import does, without a pointless stringify/parse round trip.
+ */
+export function normalizeBundle(data: unknown): NormalizedBundle {
+  return normalizeBundleData(data as BundleShape);
+}
+
+/** The union of shapes `normalizeBundle` tolerates. */
+interface BundleShape {
+  plans?: Record<string, unknown>;
+  activePlanId?: string;
+  plan?: TrainingPlan;
+  preferences?: Preferences & Partial<TrainingPlan>;
+}
+
+function normalizeBundleData(data: BundleShape): NormalizedBundle {
   // New multi-plan bundle.
   if (data?.plans && typeof data.plans === "object") {
     const plans: Record<string, TrainingPlan> = {};
@@ -181,14 +203,14 @@ export function parseImport(json: string): {
   }
 
   // Legacy single-plan bundle, or a bare plan object.
-  const rawPlan: TrainingPlan = data?.plan ?? data;
+  const rawPlan = (data?.plan ?? data) as TrainingPlan;
   if (!isValidPlanShape(rawPlan)) {
     throw new Error(
       "Invalid file: expected plans, or a plan with `weeks` and `workouts`.",
     );
   }
   // Legacy preferences carried the race meta — fold it into the plan.
-  const legacyPrefs = data?.preferences ?? {};
+  const legacyPrefs: Partial<BundleShape["preferences"]> = data?.preferences ?? {};
   const plan = normalizePlan(rawPlan, {
     name: legacyPrefs.raceName ?? rawPlan.raceName,
     raceName: legacyPrefs.raceName,
