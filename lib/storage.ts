@@ -1,3 +1,4 @@
+import { newId } from "./id";
 import { DEFAULT_PLAN_META, PLAN_VERSION } from "./plan-defaults";
 import type { Preferences, TrainingPlan } from "./types";
 
@@ -27,12 +28,6 @@ export function serializeExport(
     preferences,
   };
   return JSON.stringify(bundle, null, 2);
-}
-
-function newId(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `plan-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
 }
 
 /**

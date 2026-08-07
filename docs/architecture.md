@@ -77,7 +77,8 @@ components/ui/            shadcn (Base UI) primitives — generally don't edit
 components/{layout,common,dashboard,plan,calendar,off-days,stats,settings,wizard}/  feature UI
 hooks/                    cross-feature hooks only: useActivePlan, useStats, useHydrated, useMounted, useWeekdayLabels
                           (feature-specific hooks live beside their components, e.g. components/calendar/use-calendar-nav.ts)
-lib/                      types, plan-defaults, example-plan(+.json), calendar-layout, calendar-range, workout, stats (derived), pace, date(+date-locale), storage(export/import+migrate), google-drive (thin sync client), drive-types, i18n, utils
+lib/                      types, plan-defaults, example-plan(+.json), plan-merge (import reconciliation), plan-request (AI wire format), backyard, calendar-layout, calendar-range, workout, stats (derived), pace, date(+date-locale), id, storage(export/import+migrate), google-drive (thin sync client), drive-types, i18n, utils
+                          *.test.ts alongside — `npm test` (vitest, node env, pure functions only)
 lib/server/               server-only Drive OAuth: session (iron-session), google-oauth, drive, api (error helper)
 app/api/                  Route Handlers: auth/google/{login,callback}, auth/{session,logout}, drive/{meta,content}
 store/                    use-training-store, use-sync-store
@@ -88,7 +89,8 @@ docs/                     this guide, roadmap.md (planned features), ai-plan-coa
 
 - `npm install` then `npm run dev`. `npm run build` (Vercel-ready), `npm run lint` — **keep both green** (lint runs `react-hooks` rules stricter than build; avoid `setState`-in-effect — use the render-time reset or `useMounted`).
 - Optional Drive sync: copy `.env.local.example` → `.env.local`, set `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_REDIRECT_URI`/`SESSION_SECRET`, and register the redirect URI + publish the consent screen (see README "Cloud sync setup").
-- `npm run typecheck` (`tsc --noEmit`) is faster than a full build for a pre-commit loop.
+- `npm run typecheck` (`tsc --noEmit`) is faster than a full build for a pre-commit loop, and `npm test` runs the vitest suite over `lib/**/*.test.ts`.
+- **Regenerate the README screenshots**: `npm run dev`, then `npm i -D playwright-core && node scripts/screenshots.mjs && npm uninstall playwright-core`. It also asserts every page renders and that the Dutch shot is really Dutch.
 - **Check the example plan** without a browser: `npx tsx` a script calling `loadExamplePlan()` from `lib/example-plan.ts` — assert a future `raceDate`, `isExample: true`, and that `JSON.stringify(plan)` contains no `"lat"`.
 - **Browser smoke** (no extra deps committed): `npm i -D playwright-core`, launch with `chromium.launch({ channel: "chrome" })` (uses system Chrome — no browser download), drive the app, then `npm uninstall playwright-core`. Use isolated `browser.newContext()` per scenario to reset localStorage. Onboarding popups appear on fresh state — the Drive dialog only shows when sync is configured (server env set), otherwise you go straight to the "create plan?" popup; choose a plan option.
 

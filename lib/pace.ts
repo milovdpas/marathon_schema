@@ -51,6 +51,79 @@ export function paceFromDistanceDuration(
   return secondsToPace(secondsPerKm);
 }
 
+/** Parse a numeric field, returning undefined for anything unusable. */
+export function num(v: string): number | undefined {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** The three text inputs a user types when logging a run. */
+export interface LoggedRunFields {
+  distance: string;
+  duration: string;
+  pace: string;
+}
+
+export interface ResolvedRun {
+  /** Values to persist on the Workout. */
+  actualDistanceKm?: number;
+  durationMin?: number;
+  actualPace?: string;
+  /** Which field the UI should render as computed-and-locked, if any. */
+  computed: "pace" | "duration" | null;
+  /** What to show in each input — the computed one is derived, not echoed. */
+  paceFieldValue: string;
+  durationFieldValue: string;
+}
+
+/**
+ * Distance plus either duration or pace fills in the third.
+ *
+ * One function drives both the locked-field display and the save payload. They
+ * used to be four separate copies across the two log dialogs, which is exactly
+ * how a run gets saved at a pace the user never saw on screen.
+ *
+ * Duration wins when both are present, since it's the measured value and pace
+ * is derived from it.
+ */
+export function resolveLoggedRun(fields: LoggedRunFields): ResolvedRun {
+  const actualDistanceKm = num(fields.distance);
+  const durationMin = parseDurationToMinutes(fields.duration);
+  const paceSecs = paceToSeconds(fields.pace);
+
+  const hasDuration = fields.duration.trim() !== "" && durationMin != null;
+  const hasPace = fields.pace.trim() !== "" && paceSecs != null;
+
+  // `!actualDistanceKm` is deliberately falsy at 0: a zero-distance run has no
+  // meaningful pace, so nothing is derived from it.
+  const paceComputed = !!actualDistanceKm && hasDuration;
+  const durationComputed = !!actualDistanceKm && !hasDuration && hasPace;
+
+  let pace = fields.pace.trim() || undefined;
+  let duration = durationMin;
+  if (actualDistanceKm) {
+    if (durationMin != null) {
+      // Keep the user's free-form text if the derivation fails.
+      pace = paceFromDistanceDuration(actualDistanceKm, durationMin) ?? pace;
+    } else if (pace && paceSecs != null) {
+      duration = (paceSecs * actualDistanceKm) / 60;
+    }
+  }
+
+  return {
+    actualDistanceKm,
+    durationMin: duration,
+    actualPace: pace,
+    computed: paceComputed ? "pace" : durationComputed ? "duration" : null,
+    paceFieldValue: paceComputed
+      ? (paceFromDistanceDuration(actualDistanceKm, durationMin ?? undefined) ?? "")
+      : fields.pace,
+    durationFieldValue: durationComputed
+      ? formatClock(((paceSecs ?? 0) * (actualDistanceKm ?? 0)) / 60)
+      : fields.duration,
+  };
+}
+
 /** Format total minutes as a clock string: "mm:ss" or "h:mm:ss". */
 export function formatClock(minutes?: number | null): string {
   if (minutes == null || !isFinite(minutes) || minutes <= 0) return "";

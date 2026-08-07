@@ -13,24 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  formatClock,
-  formatPace,
-  paceFromDistanceDuration,
-  paceToSeconds,
-  parseDurationToMinutes,
-} from "@/lib/pace";
+import { formatClock, formatPace, resolveLoggedRun } from "@/lib/pace";
 import type { Workout, WorkoutSplit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SplitScanField } from "@/components/common/split-scan-field";
 import { TimeField } from "@/components/common/time-field";
 import { attachWeather } from "@/lib/weather-sync";
 import { useTrainingStore } from "@/store/use-training-store";
-
-function num(v: string): number | undefined {
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : undefined;
-}
 
 /**
  * Quick "I finished this run" flow: prefills the planned distance + pace so the
@@ -69,35 +58,16 @@ export function CompleteWorkoutDialog({
     setWasOpen(false);
   }
 
-  // distance + (duration OR pace) computes & locks the third field.
-  const d = num(distance);
-  const durMin = parseDurationToMinutes(duration);
-  const paceSecs = paceToSeconds(pace);
-  const hasDuration = duration.trim() !== "" && durMin != null;
-  const hasPace = pace.trim() !== "" && paceSecs != null;
-  const paceComputed = !!d && hasDuration;
-  const durationComputed = !!d && !hasDuration && hasPace;
-  const paceFieldValue = paceComputed
-    ? (paceFromDistanceDuration(d, durMin ?? undefined) ?? "")
-    : pace;
-  const durationFieldValue = durationComputed
-    ? formatClock(((paceSecs ?? 0) * (d ?? 0)) / 60)
-    : duration;
+  // distance + (duration OR pace) computes & locks the third field. The same
+  // call drives what is displayed and what is saved, so they cannot disagree.
+  const resolved = resolveLoggedRun({ distance, duration, pace });
+  const paceComputed = resolved.computed === "pace";
+  const durationComputed = resolved.computed === "duration";
+  const { paceFieldValue, durationFieldValue } = resolved;
 
   const handleConfirm = () => {
     if (!workout) return;
-    const actualDistanceKm = num(distance);
-    let durationMin = parseDurationToMinutes(duration);
-    let actualPace = pace.trim() || undefined;
-    if (actualDistanceKm) {
-      if (durationMin != null) {
-        actualPace =
-          paceFromDistanceDuration(actualDistanceKm, durationMin) ?? actualPace;
-      } else if (actualPace) {
-        const ps = paceToSeconds(actualPace);
-        if (ps != null) durationMin = (ps * actualDistanceKm) / 60;
-      }
-    }
+    const { actualDistanceKm, durationMin, actualPace } = resolved;
     const start = startTime.trim() || undefined;
     updateWorkout(workout.id, {
       actualDistanceKm,

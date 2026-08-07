@@ -3,6 +3,8 @@
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Field } from "@/components/common/field";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +15,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -24,12 +25,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { SplitScanField } from "@/components/common/split-scan-field";
 import { TimeField } from "@/components/common/time-field";
-import {
-  formatClock,
-  paceFromDistanceDuration,
-  paceToSeconds,
-  parseDurationToMinutes,
-} from "@/lib/pace";
+import { formatClock, num, resolveLoggedRun } from "@/lib/pace";
 import {
   WORKOUT_TYPES,
   type Workout,
@@ -95,11 +91,6 @@ function fromWorkout(w: Workout): FormState {
   };
 }
 
-function num(v: string): number | undefined {
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : undefined;
-}
-
 export function WorkoutFormDialog({
   open,
   onOpenChange,
@@ -139,19 +130,15 @@ export function WorkoutFormDialog({
     setForm((f) => ({ ...f, [key]: value }));
 
   // Log mode: distance + (duration OR pace) computes & locks the third field.
-  const logDistance = num(form.actualDistanceKm);
-  const logDurationMin = parseDurationToMinutes(form.durationMin);
-  const logPaceSecs = paceToSeconds(form.actualPace);
-  const hasDuration = form.durationMin.trim() !== "" && logDurationMin != null;
-  const hasPace = form.actualPace.trim() !== "" && logPaceSecs != null;
-  const paceComputed = !!logDistance && hasDuration;
-  const durationComputed = !!logDistance && !hasDuration && hasPace;
-  const paceFieldValue = paceComputed
-    ? (paceFromDistanceDuration(logDistance, logDurationMin ?? undefined) ?? "")
-    : form.actualPace;
-  const durationFieldValue = durationComputed
-    ? formatClock(((logPaceSecs ?? 0) * (logDistance ?? 0)) / 60)
-    : form.durationMin;
+  // The same call drives what is displayed and what is saved.
+  const resolved = resolveLoggedRun({
+    distance: form.actualDistanceKm,
+    duration: form.durationMin,
+    pace: form.actualPace,
+  });
+  const paceComputed = resolved.computed === "pace";
+  const durationComputed = resolved.computed === "duration";
+  const { paceFieldValue, durationFieldValue } = resolved;
 
   const handleSave = () => {
     const title = form.title.trim() || t(`workoutType.${form.type}`);
@@ -159,19 +146,7 @@ export function WorkoutFormDialog({
 
     if (mode === "log") {
       // Logging something you did: record the actuals, mark it complete.
-      const actualDistanceKm = num(form.actualDistanceKm);
-      let durationMin = parseDurationToMinutes(form.durationMin);
-      let actualPace = form.actualPace.trim() || undefined;
-      // Fill in whichever of duration/pace is missing from the other two.
-      if (actualDistanceKm) {
-        if (durationMin != null) {
-          actualPace =
-            paceFromDistanceDuration(actualDistanceKm, durationMin) ?? actualPace;
-        } else if (actualPace) {
-          const ps = paceToSeconds(actualPace);
-          if (ps != null) durationMin = (ps * actualDistanceKm) / 60;
-        }
-      }
+      const { actualDistanceKm, durationMin, actualPace } = resolved;
       payload = {
         date: form.date,
         type: form.type,
@@ -393,8 +368,8 @@ export function WorkoutFormDialog({
               </Field>
               <SplitScanField splits={splits} onChange={setSplits} />
               <Field label={t("workoutForm.notes")}>
-                <textarea
-                  className="min-h-16 w-full resize-y rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                <Textarea
+                  className="resize-y"
                   placeholder={t("workoutForm.notesPlaceholder")}
                   value={form.notes}
                   onChange={(e) => set("notes", e.target.value)}
@@ -438,17 +413,3 @@ export function WorkoutFormDialog({
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-    </div>
-  );
-}

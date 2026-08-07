@@ -102,9 +102,6 @@ export type CalendarViewMode = "month" | "week" | "day" | "agenda";
  */
 export type RaceType = "standard" | "backyard";
 
-/** The official backyard loop: 4.16667 miles. */
-export const BACKYARD_LOOP_KM = 6.706;
-
 /** Editable per-plan metadata (race + goal), independent of the schedule. */
 export interface PlanMeta {
   name: string; // "Milo's Marathon"
@@ -116,7 +113,7 @@ export interface PlanMeta {
   goalLabel: string; // "Sub-3:30"
   /** Absent means a standard road race. */
   raceType?: RaceType;
-  /** Backyard only: loop length, usually BACKYARD_LOOP_KM. */
+  /** Backyard only: loop length, usually BACKYARD_LOOP_KM (see lib/backyard.ts). */
   loopKm?: number;
   /** Backyard only: the goal, in yards (= loops = hours). */
   targetYards?: number;

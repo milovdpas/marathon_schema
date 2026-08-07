@@ -1,136 +1,115 @@
 # Known tech debt
 
-Refactors that are worth doing but weren't done, with enough context to pick up
+Refactors worth doing that haven't been done, with enough context to pick up
 cold. Feature work lives in [`roadmap.md`](roadmap.md); this file is only about
-the shape of the code.
+the shape of the code. Delete an item when it's done.
 
-Written up during the August 2026 cleanup pass, which did the calendar
-decomposition, the layout tokens and the dead-code removal, and deliberately
-stopped there. Delete an item when it's done.
-
----
-
-## 1. No test coverage on the pure logic
-
-**Status:** not started. Highest value item here.
-
-**Why it matters.** `mergeLoggedWorkouts`, `rekeyCollidingWorkouts` and
-`findMatchingPlanId` (`store/use-training-store.ts`) are what stop an
-AI-generated re-import from silently destroying logged training. The failure
-mode is irreversible: there is no backend, so a bad merge means the user's real
-runs are gone from localStorage with nothing to restore from. Today the only
-way to exercise them is to hand-craft an import JSON in the browser.
-
-Also worth covering: `placeBars` (`lib/calendar-layout.ts`) has four
-interacting edge cases — week-boundary clipping, track packing, reuse of a
-freed track, and a `chosenOffset` that falls outside the visible segment — none
-of which are visible until a specific overlap of off-days and flexible windows
-lands in one week. And `resolveElevations` (`lib/split-scanner.ts`).
-
-**Shape.** `vitest` as the only new devDependency. Node environment, no jsdom,
-no Testing Library, `include: ["lib/**/*.test.ts"]`. Component tests would need
-i18n + Zustand + Base UI portals and cost more than everything else here.
-Import `{ describe, it, expect }` explicitly rather than enabling globals, so
-ESLint stays green with no config change.
-
-**Do first:** move the pure functions out of `store/use-training-store.ts`
-(roughly lines 84–200) into `lib/plan-merge.ts`. They're already
-side-effect-free and module-private, so it's a mechanical move, and it drops
-the store by ~110 lines.
-
-**Pin this edge case:** `isLogged` (`lib/workout.ts`) treats
-`actualDistanceKm: 0` as logged, because `0 != null`. That is deliberate.
-
-**Also:** add `npm test` to the verify line in `AGENTS.md` and
-`architecture.md` alongside `build` and `lint`, or the suite will rot.
+Most of what was listed here in August 2026 has since been cleared — see
+"Recently cleared" at the bottom for what changed and why, so the same ground
+isn't re-covered.
 
 ---
 
-## 2. The pace/duration/distance triangle is duplicated four ways
+## 1. No component-level test coverage
 
-**Status:** not started. Highest *risk* item here.
+**Status:** partially addressed. `npm test` runs vitest over `lib/**/*.test.ts`
+— 53 tests covering the import-merge logic, calendar layout/range, the
+workout predicates and the plan-request wire format.
 
-`components/plan/workout-form-dialog.tsx` and
-`components/common/complete-workout-dialog.tsx` each contain the same
-"distance + one of duration/pace fills in the third" logic **twice**: once to
-render the computed field as locked, once to build the save payload.
+**What's still uncovered:** anything rendered. There are no component tests,
+because they'd need i18n + Zustand + Base UI portals stood up, which costs more
+than the suite would be worth at this size. The browser smoke recipe in
+[`architecture.md`](architecture.md) and `scripts/screenshots.mjs` are the
+stand-ins: both drive the real app and fail loudly if a page renders empty.
 
-**Why it matters.** Four copies that can drift. Display and save drifting is
-precisely the bug that saves a run at a pace the user never saw on screen.
+If a UI regression ever does slip through twice in the same place, that's the
+signal to add jsdom + Testing Library for that one component — not before.
 
-**Fix.** One `resolveLoggedRun(fields)` in `lib/pace.ts` returning both the
-domain values (`actualDistanceKm`, `durationMin`, `actualPace`) and the display
-values (which field is computed, what to show in each input). Both dialogs call
-it once. Preserve two behaviours exactly: `if (actualDistanceKm)` is falsy at 0,
-and a failed derivation falls back to the user's free-form pace string. Write
-the test before touching the dialogs — see item 1.
-
----
-
-## 3. Smaller duplication
-
-None of these are urgent; they're listed so nobody has to rediscover them.
-
-| What | Where | Note |
-|---|---|---|
-| `newId()` | `lib/storage.ts`, `store/use-training-store.ts`, `components/wizard/add-plan-wizard.tsx` | 3 identical copies → `lib/id.ts` |
-| `function Field({label, children})` | `off-days-view.tsx`, `workout-form-dialog.tsx`, `settings-view.tsx`, `add-plan-wizard.tsx` | byte-identical in all four → `components/common/field.tsx` (not `ui/`, which is scaffolded shadcn) |
-| `Math.round(loopKm * targetYards * 10) / 10` | `settings-view.tsx` ×2, `add-plan-wizard.tsx` ×2 | → `backyardDistanceKm()` next to `BACKYARD_LOOP_KM` in `lib/types.ts` |
-| `num(v: string)` | `complete-workout-dialog.tsx`, `workout-form-dialog.tsx` | byte-identical |
-| Raw `<textarea>` | `add-plan-wizard.tsx`, `settings-view.tsx` | a genuine primitive gap: `ui/input.tsx` exists, `ui/textarea.tsx` doesn't. Base UI has no Textarea, so render a plain element matching `input.tsx`'s style |
-
-**Clipboard copy is a latent bug, not just duplication.** Four copies
-(`settings-view.tsx` ×2, `add-plan-wizard.tsx` ×2) each do a bare
-`await navigator.clipboard.writeText(…)` in an async handler: on a permission
-denial or a non-secure context that's an unhandled rejection and the button
-silently does nothing. All four also leak a `setTimeout` that can fire after
-unmount. A `useCopyToClipboard(resetMs)` hook returning `{ copied, copy }`
-fixes the behaviour and removes the duplication in one go.
+**Also uncovered:** `lib/split-scanner.ts` (`resolveElevations`,
+`findPaceColumn`). Pure and subtle, but its inputs are OCR word-boxes, so a
+meaningful test needs a realistic fixture captured from a real screenshot.
+Worth doing next time that code is touched.
 
 ---
 
-## 4. Two oversized view components
+## 2. `lib/split-scanner.ts` is a 493-line grab bag
 
-`components/wizard/add-plan-wizard.tsx` (733 lines) and
-`components/settings/settings-view.tsx` (529) are both larger than
-`calendar-view.tsx` was before it was decomposed.
+**Status:** not started. The largest hand-written file left.
 
-**Why they were skipped.** Unlike the calendar — where a layout algorithm, the
-sticky-offset arithmetic and three view modes were tangled into one render —
-these are mostly linear JSX with low interconnection: four wizard steps, N
-settings cards. The size is real but the coupling isn't, so the payoff per hour
-is the lowest on this list.
+It does canvas preprocessing, column detection, split parsing and elevation
+resolution in one module, and exports nine internals (`OcrWord`, `ElevEntry`,
+`findPaceColumn`, `parseSplitsFromWords`, `parsePartialKm`,
+`resolveElevations`, …) that nothing outside the file imports.
 
-**Seams when you do get to it.**
-- Wizard → `components/wizard/steps/step-{race,off-days,training,ai}.tsx`, each
-  taking `{ draft, set }`, plus `lib/plan-request.ts` for `buildRequest()` and
-  the `Draft`/`LatestRun` types. That last one is pure data transformation for a
-  versioned wire format — the part most likely to need a test when the AI schema
-  version bumps.
-- Settings → one `*-card.tsx` per section. The pattern is already established:
-  `cloud-sync-card`, `split-scanner-card` and `weather-card` exist;
-  `settings-view.tsx` just hasn't finished following it. Candidates:
-  plans, race details, appearance, data.
+**Why it was skipped:** it works, it's cohesive in the sense that every part is
+about one screenshot, and it was tuned against real Strava output over many
+iterations. Splitting it risks re-introducing OCR bugs that were expensive to
+find, for no user-visible gain. Do it alongside item 1's fixtures, so the
+behaviour is pinned before it moves.
+
+**Cheap win in the meantime:** drop `export` from the nine internals so the
+module's real surface (`scanSplits`, `ScanResult`) is obvious.
 
 ---
 
-## 5. Won't fix (recorded so it isn't re-litigated)
+## 3. Miscellaneous
+
+- **`components/common/onboarding-gate.tsx`** hand-rolls a phase machine across
+  four near-identical dialogs (`if (phase === … && applicable)`). An
+  `<OnboardingStep>` plus a declarative `steps` array would roughly halve it and
+  make the "returning users only see new prompts" rule explicit rather than
+  emergent.
+- **`app/api/**` route handlers** have no tests. They're thin, but
+  `lib/server/google-oauth.ts`'s refresh-token path is the kind of thing that
+  fails silently at 3am.
+
+---
+
+## 4. Won't fix (recorded so it isn't re-litigated)
 
 **`lib/google-drive.ts` and `lib/server/drive.ts` export the same four names**
 (`findFile`/`downloadFile`/`createFile`/`updateFile`) with different signatures.
 Looks like a trap, isn't one in practice: nothing imports both, they run in
 different runtimes (`store/use-sync-store.ts` takes the client pair,
 `app/api/drive/*` the server pair), and renaming is churn on the one subsystem
-where a mistake loses user data. A header comment on each saying which side of
-the wire it's on is enough.
+where a mistake loses user data.
 
 **`lib/weather-sync.ts` imports the Zustand stores directly**, which inverts the
 dependency direction the rest of `lib/` respects. It is explicitly the glue
-layer between UI actions and the weather client — that's what its header says.
-Purifying it means threading store state through five call sites to make one
-file tidier. Net negative.
+layer between UI actions and the weather client. Purifying it means threading
+store state through five call sites to make one file tidier. Net negative.
 
 **`shadcn` sits in `dependencies`, not `devDependencies`.** It looks like a
 misplaced CLI, but `app/globals.css` does `@import "shadcn/tailwind.css"`, so it
 is needed at build time. Moving it risks a broken deploy under any install that
 skips dev dependencies, and gains nothing.
+
+---
+
+## Recently cleared
+
+Kept short, as a record of decisions rather than a changelog.
+
+- **The pace/duration/distance triangle** was duplicated four ways across the
+  two log dialogs — display and save could drift, which is how a run gets saved
+  at a pace the user never saw. Now one `resolveLoggedRun()` in `lib/pace.ts`
+  drives both, with tests pinning the edge cases (0 km derives nothing; a
+  free-form pace survives a failed derivation).
+- **The store's import-merge logic** moved to `lib/plan-merge.ts` and is tested.
+  It's what stops an AI-generated re-import from destroying logged training,
+  and there is no backend to restore from.
+- **`newId` ×4, `Field` ×4, `num` ×2, `backyardDistanceKm` ×4** collapsed into
+  `lib/id.ts`, `components/common/field.tsx`, `lib/pace.ts` and
+  `lib/backyard.ts`. `components/ui/textarea.tsx` filled a real primitive gap.
+- **Clipboard copy ×4** became `hooks/use-copy-to-clipboard.ts`. That was a
+  latent bug, not just duplication: every copy did a bare
+  `await navigator.clipboard.writeText(…)`, so a permission denial was an
+  unhandled rejection with no feedback, and each leaked a `setTimeout` past
+  unmount.
+- **`add-plan-wizard.tsx` (733 → 133)** split into four step components plus
+  `lib/plan-request.ts` for the versioned wire format, which is now tested.
+- **`settings-view.tsx` (529 → 69)** split into per-section cards, finishing the
+  pattern `cloud-sync-card` / `weather-card` / `split-scanner-card` had started.
+- **The backyard rules** were smeared across `lib/types.ts` (constant) and
+  `lib/plan-context.ts` (predicates); they now live in `lib/backyard.ts`.
+  `lib/types.ts` is the domain model and shouldn't carry behaviour.

@@ -3,6 +3,7 @@
 import { Pencil, Plus, Trash2, Umbrella } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Field } from "@/components/common/field";
 import { NoPlanState } from "@/components/common/no-plan-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,7 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { formatRange } from "@/lib/date";
 import type { OffDay } from "@/lib/types";
 import { useActivePlan } from "@/hooks/use-active-plan";
@@ -182,17 +182,3 @@ export function OffDaysView() {
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-    </div>
-  );
-}

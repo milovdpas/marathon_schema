@@ -7,20 +7,6 @@ import { distanceRun, effectivePace, overallStats, weeklyMileage } from "./stats
 import type { TrainingPlan, Workout, WorkoutSplit } from "./types";
 import { isLogged } from "./workout";
 
-export function isBackyard(plan: Pick<TrainingPlan, "raceType">): boolean {
-  return plan.raceType === "backyard";
-}
-
-/**
- * How to describe a plan's target distance. A backyard ultra is measured in
- * yards (loops/hours), so "160.9 km" would be technically true but wrong to a
- * runner: the goal is to still be standing, not to cover a distance.
- */
-export function raceSizeLabel(plan: TrainingPlan): string {
-  if (isBackyard(plan) && plan.targetYards) return `${plan.targetYards} yards`;
-  return `${plan.raceDistanceKm} km`;
-}
-
 /** A plan is done once its race day has passed. */
 export function isPlanFinished(plan: TrainingPlan): boolean {
   return todayISO() > plan.raceDate;
