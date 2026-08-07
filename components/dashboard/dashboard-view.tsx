@@ -13,6 +13,8 @@ import { WorkoutRow } from "@/components/common/workout-row";
 import { Card } from "@/components/ui/card";
 import { fromISO, startOfToday } from "@/lib/date";
 import { getDateLocale } from "@/lib/date-locale";
+import { isBackyard } from "@/lib/plan-context";
+import { BACKYARD_LOOP_KM } from "@/lib/types";
 import type { Workout } from "@/lib/types";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";
@@ -71,10 +73,17 @@ export function DashboardView() {
           </ProgressRing>
           <div className="flex-1 text-center sm:text-left">
             <p className="text-sm font-medium text-primary">
-              {t("dashboard.goalLine", {
-                goal: plan.goalLabel,
-                pace: plan.goalPace,
-              })}
+              {/* "/km" is baked into goalLine, which reads wrong for a
+                  backyard goal expressed in yards. */}
+              {isBackyard(plan)
+                ? t("dashboard.goalLineBackyard", {
+                    goal: plan.goalLabel,
+                    loop: plan.loopKm ?? BACKYARD_LOOP_KM,
+                  })
+                : t("dashboard.goalLine", {
+                    goal: plan.goalLabel,
+                    pace: plan.goalPace,
+                  })}
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight">
               {plan.raceName}

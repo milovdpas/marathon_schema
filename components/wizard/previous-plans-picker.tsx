@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDayLabel } from "@/lib/date";
-import { canBeContext, isPlanFinished } from "@/lib/plan-context";
+import { canBeContext, isPlanFinished, raceSizeLabel } from "@/lib/plan-context";
 import { overallStats } from "@/lib/stats";
 import type { TrainingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -87,8 +87,7 @@ export function PreviousPlansPicker({
                   </span>
                 </span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  {p.raceName} · {p.raceDistanceKm} km ·{" "}
-                  {formatDayLabel(p.raceDate)}
+                  {p.raceName} · {raceSizeLabel(p)} · {formatDayLabel(p.raceDate)}
                 </span>
                 <span className="block text-xs text-muted-foreground">
                   {t("wizard.planRuns", {

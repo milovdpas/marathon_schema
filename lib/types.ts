@@ -82,17 +82,42 @@ export interface Preferences {
   splitScannerOnboardingSeen?: boolean;
   /** Plan ids whose "race done, plan your next race?" prompt has been shown. */
   nextPlanPromptSeen?: string[];
+  /**
+   * Last calendar view the user picked. Absent means they haven't chosen yet,
+   * which falls back to a per-device default (agenda on mobile, month on
+   * desktop) rather than a fixed one.
+   */
+  calendarView?: CalendarViewMode;
 }
+
+/** The calendar's display modes. Persisted, so keep the strings stable. */
+export type CalendarViewMode = "month" | "week" | "day" | "agenda";
+
+/**
+ * A backyard ultra repeats a fixed loop every hour, on the hour, until one
+ * runner is left. There is no finish time and no fixed distance: the goal is a
+ * number of "yards" (loops, one per hour).
+ */
+export type RaceType = "standard" | "backyard";
+
+/** The official backyard loop: 4.16667 miles. */
+export const BACKYARD_LOOP_KM = 6.706;
 
 /** Editable per-plan metadata (race + goal), independent of the schedule. */
 export interface PlanMeta {
   name: string; // "Milo's Marathon"
   raceName: string; // "Marathon"
-  raceDistanceKm: number; // 42.2
+  raceDistanceKm: number; // 42.2 — for a backyard plan, targetYards × loopKm
   raceDate: string; // "2026-10-11"
   startDate?: string; // "2026-06-22" — when the plan begins
   goalPace: string; // "4:58"
   goalLabel: string; // "Sub-3:30"
+  /** Absent means a standard road race. */
+  raceType?: RaceType;
+  /** Backyard only: loop length, usually BACKYARD_LOOP_KM. */
+  loopKm?: number;
+  /** Backyard only: the goal, in yards (= loops = hours). */
+  targetYards?: number;
 }
 
 /** How the user wants to train — collected in the wizard, editable in settings. */

@@ -482,7 +482,11 @@ export const useTrainingStore = create<TrainingState>()(
       // v10: additive — TrainingPlan.isExample, set only on newly seeded demo
       //      plans. Deliberately NOT backfilled: an existing seeded plan may
       //      have been adopted as the user's real training.
-      version: 10,
+      // v11: additive — PlanMeta.raceType/loopKm/targetYards. Absent raceType
+      //      means "standard", so existing plans need no backfill.
+      //      v11 also adds `preferences.calendarView`; absent means "month",
+      //      so it needs no backfill either.
+      version: 11,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,

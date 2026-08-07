@@ -24,7 +24,7 @@ import { formatRange, toISO } from "@/lib/date";
 import { buildPlanContext, canBeContext } from "@/lib/plan-context";
 import { paceFromDistanceDuration, parseDurationToMinutes } from "@/lib/pace";
 import { downloadJSON } from "@/lib/storage";
-import type { OffDay, TrainingPrefs } from "@/lib/types";
+import { BACKYARD_LOOP_KM, type OffDay, type RaceType, type TrainingPrefs } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -41,6 +41,10 @@ interface Draft {
   raceDistanceKm: number;
   raceDate: string;
   startDate: string;
+  raceType: RaceType;
+  /** Backyard only. */
+  loopKm: number;
+  targetYards: number;
   goalType: "finish" | "time" | "pace";
   goalValue: string;
   offDays: OffDay[];
@@ -99,6 +103,9 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
       raceDistanceKm: 42.2,
       raceDate: "",
       startDate: toISO(new Date()),
+      raceType: "standard",
+      loopKm: BACKYARD_LOOP_KM,
+      targetYards: 24, // 24 yards = 24 hours = 100 miles, the classic benchmark
       goalType: "finish",
       goalValue: "",
       offDays: [],
@@ -131,6 +138,8 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
     t("wizard.stepAi"),
   ];
 
+  const isBackyard = draft.raceType === "backyard";
+
   const buildRequest = () => ({
     app: "marathon-tracker-plan-request",
     // v2 added `previousPlans`.
@@ -138,14 +147,25 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
     race: {
       name: draft.name.trim(),
       raceName: draft.raceName.trim(),
-      distanceKm: draft.raceDistanceKm,
+      type: draft.raceType,
+      // For a backyard the distance is derived, so downstream code that only
+      // knows about "race distance" still gets a sensible number.
+      distanceKm: isBackyard
+        ? Math.round(draft.targetYards * draft.loopKm * 10) / 10
+        : draft.raceDistanceKm,
       date: draft.raceDate,
+      ...(isBackyard
+        ? { loopKm: draft.loopKm, targetYards: draft.targetYards }
+        : {}),
     },
     startDate: draft.startDate,
-    goal: {
-      type: draft.goalType,
-      value: draft.goalType === "finish" ? null : draft.goalValue.trim() || null,
-    },
+    goal: isBackyard
+      ? { type: "yards" as const, value: String(draft.targetYards) }
+      : {
+          type: draft.goalType,
+          value:
+            draft.goalType === "finish" ? null : draft.goalValue.trim() || null,
+        },
     offDays: draft.offDays,
     latestRuns: draft.latestRuns
       .filter((r) => r.distanceKm)
@@ -270,37 +290,104 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
               onChange={(e) => set("raceName", e.target.value)}
             />
           </Field>
+          {/* Race format decides what the distance and goal fields mean. */}
           <div>
             <Label className="text-xs text-muted-foreground">
-              {t("wizard.raceDistance")}
+              {t("wizard.raceTypeQ")}
             </Label>
-            <div className="mt-1.5 flex flex-wrap gap-2">
-              {DISTANCE_PRESETS.map((p) => (
+            <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+              {(["standard", "backyard"] as const).map((rt) => (
                 <button
-                  key={p.km}
+                  key={rt}
                   type="button"
-                  onClick={() => set("raceDistanceKm", p.km)}
+                  onClick={() => set("raceType", rt)}
                   className={cn(
-                    "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
-                    draft.raceDistanceKm === p.km
-                      ? "border-primary bg-primary/10 text-primary"
+                    "rounded-lg border p-3 text-left transition-colors",
+                    draft.raceType === rt
+                      ? "border-primary bg-primary/5"
                       : "hover:bg-accent",
                   )}
                 >
-                  {p.label}
+                  <p className="text-sm font-medium">
+                    {rt === "standard"
+                      ? t("wizard.raceTypeStandard")
+                      : t("wizard.raceTypeBackyard")}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {rt === "standard"
+                      ? t("wizard.raceTypeStandardDesc")
+                      : t("wizard.raceTypeBackyardDesc")}
+                  </p>
                 </button>
               ))}
             </div>
-            <Input
-              type="number"
-              inputMode="decimal"
-              step="0.1"
-              className="mt-2"
-              aria-label={t("wizard.distanceCustom")}
-              value={draft.raceDistanceKm}
-              onChange={(e) => set("raceDistanceKm", Number(e.target.value) || 0)}
-            />
           </div>
+
+          {draft.raceType === "backyard" ? (
+            <div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t("wizard.loopKm")}>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.001"
+                    value={draft.loopKm}
+                    onChange={(e) => set("loopKm", Number(e.target.value) || 0)}
+                  />
+                </Field>
+                <Field label={t("wizard.targetYards")}>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="1"
+                    value={draft.targetYards}
+                    onChange={(e) =>
+                      set("targetYards", Math.max(1, Number(e.target.value) || 0))
+                    }
+                  />
+                </Field>
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {t("wizard.backyardDerived", {
+                  hours: draft.targetYards,
+                  km: Math.round(draft.targetYards * draft.loopKm * 10) / 10,
+                })}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <Label className="text-xs text-muted-foreground">
+                {t("wizard.raceDistance")}
+              </Label>
+              <div className="mt-1.5 flex flex-wrap gap-2">
+                {DISTANCE_PRESETS.map((p) => (
+                  <button
+                    key={p.km}
+                    type="button"
+                    onClick={() => set("raceDistanceKm", p.km)}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                      draft.raceDistanceKm === p.km
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "hover:bg-accent",
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <Input
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                className="mt-2"
+                aria-label={t("wizard.distanceCustom")}
+                value={draft.raceDistanceKm}
+                onChange={(e) => set("raceDistanceKm", Number(e.target.value) || 0)}
+              />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <Field label={t("wizard.startDate")}>
               <Input
@@ -321,7 +408,9 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
             {t("wizard.startDateHint")}
           </p>
 
-          <div>
+          {/* A backyard ultra's goal IS the target yards set above, so the
+              finish/time/pace choice doesn't apply. */}
+          <div className={cn(draft.raceType === "backyard" && "hidden")}>
             <Label className="text-xs text-muted-foreground">
               {t("wizard.goalQ")}
             </Label>

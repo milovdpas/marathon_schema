@@ -44,6 +44,7 @@ export const en = {
     subtitle: "Your road to the start line.",
     daysToGo: "days to go",
     goalLine: "{{goal}} · {{pace}}/km",
+    goalLineBackyard: "{{goal}} · {{loop}} km loop",
     throughBlock: "You're <b>{{pct}}%</b> through your training block.",
     planComplete: "Plan complete",
     workoutsRatio: "{{done}}/{{total}} workouts",
@@ -117,6 +118,13 @@ export const en = {
     today: "Today",
     prevMonth: "Previous month",
     nextMonth: "Next month",
+    prev: "Previous",
+    next: "Next",
+    viewMonth: "Month",
+    viewWeek: "Week",
+    viewDay: "Day",
+    viewAgenda: "Agenda",
+    agendaEmpty: "No workouts scheduled in this plan yet.",
     weather: "Weather",
     offDayLabel: "Off day",
     legend:
@@ -348,6 +356,15 @@ JSON (paste below, or attach the exported .json file):
       "Add vacations, trips or busy periods that will limit your training. The AI will plan around them.",
     calendarSoon: "Connect Google Calendar (coming soon)",
     // Step 3
+    raceTypeQ: "What kind of race is it?",
+    raceTypeStandard: "Standard race",
+    raceTypeStandardDesc: "A set distance you run once, like a 10K or marathon.",
+    raceTypeBackyard: "Backyard ultra",
+    raceTypeBackyardDesc:
+      "A loop repeated every hour, on the hour, until one runner is left.",
+    loopKm: "Loop distance (km)",
+    targetYards: "Target yards",
+    backyardDerived: "{{hours}} yards = {{hours}} hours · {{km}} km total",
     previousPlans: "Previous plans as context",
     previousPlansHint:
       "Attach earlier training so the AI can see how you actually progressed. Saves entering recent runs by hand.",
@@ -399,7 +416,15 @@ What the attached plan-request fields mean:
 - race.distanceKm: the race distance in kilometers.
 - race.date: race day (YYYY-MM-DD).
 - startDate: the date I'll begin this plan (YYYY-MM-DD). Build week 1 from this date — do NOT assume today's date.
-- goal: my race goal — { type: "finish" | "time" | "pace", value }. "finish" = just complete it; "time" = target finish time (value); "pace" = target pace per km (value). Use it to set "goalPace"/"goalLabel" and the plan's intensity.
+- race.type: "standard" (one continuous race over a set distance) or "backyard" (see below).
+- goal: my race goal — { type: "finish" | "time" | "pace" | "yards", value }. "finish" = just complete it; "time" = target finish time (value); "pace" = target pace per km (value); "yards" = target number of backyard yards (value). Use it to set "goalPace"/"goalLabel" and the plan's intensity.
+
+If race.type is "backyard", this is a BACKYARD ULTRA and the usual marathon logic does NOT apply:
+- The format: I run a fixed loop (race.loopKm, usually 6.706 km) every hour, ON THE HOUR. Finish the loop faster and the remaining time is my rest. Anyone who fails to start or finish a loop is out; the last runner standing wins. One "yard" = one loop = one hour, so race.targetYards is both my distance goal and my duration goal (e.g. 24 yards = 24 hours = about 161 km).
+- Train time on feet, not speed. There is no finish time and no single peak long run to taper from.
+- Build toward my target with: long back-to-back runs on consecutive days; "mock backyards" (several loops started on the hour, progressively more yards); at least some running at night and on tired legs; and deliberate practice at eating, drinking and changing kit inside the short rest between loops.
+- "goalPace" should be an easy, repeatable loop pace that still banks useful rest each hour (finishing a loop in roughly 40-50 minutes is typical), NOT a race pace. "goalLabel" should read like "24 yards".
+- Taper into race week, but the peak sessions are duration and repeated loops rather than one long distance.
 - offDays[]: periods I can't fully train — { start, end, title, note }. The "note" says how limited it is (e.g. no training / very limited / reduced).
 - latestRuns[]: my recent runs — { distanceKm, durationMin (TOTAL time for the run, in minutes), pace (min/km, derived from distance + total time), date }. Use these to estimate my current fitness. If this is empty, ask me about my fitness.
 - previousPlans[]: my earlier training blocks, as READ-ONLY history. Each has { name, raceName, raceDistanceKm, raceDate, startDate, goalPace, goalLabel, weeks, summary, weeklyMileage[], completedRuns[] }.

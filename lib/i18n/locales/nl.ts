@@ -46,6 +46,7 @@ export const nl: Dict = {
     subtitle: "Op weg naar de startstreep.",
     daysToGo: "dagen te gaan",
     goalLine: "{{goal}} · {{pace}}/km",
+    goalLineBackyard: "{{goal}} · ronde van {{loop}} km",
     throughBlock: "Je bent <b>{{pct}}%</b> door je trainingsblok.",
     planComplete: "Plan voltooid",
     workoutsRatio: "{{done}}/{{total}} trainingen",
@@ -119,6 +120,13 @@ export const nl: Dict = {
     today: "Vandaag",
     prevMonth: "Vorige maand",
     nextMonth: "Volgende maand",
+    prev: "Vorige",
+    next: "Volgende",
+    viewMonth: "Maand",
+    viewWeek: "Week",
+    viewDay: "Dag",
+    viewAgenda: "Agenda",
+    agendaEmpty: "Nog geen trainingen ingepland in dit plan.",
     weather: "Weer",
     offDayLabel: "Vrije dag",
     legend:
@@ -351,6 +359,15 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
       "Voeg vakanties, reizen of drukke periodes toe die je training beperken. De AI plant eromheen.",
     calendarSoon: "Verbind Google Agenda (binnenkort)",
     // Stap 3
+    raceTypeQ: "Wat voor wedstrijd is het?",
+    raceTypeStandard: "Gewone wedstrijd",
+    raceTypeStandardDesc: "Een vaste afstand die je één keer loopt, zoals een 10K of marathon.",
+    raceTypeBackyard: "Backyard ultra",
+    raceTypeBackyardDesc:
+      "Een ronde die je elk heel uur herhaalt, tot er één loper over is.",
+    loopKm: "Rondeafstand (km)",
+    targetYards: "Doel in yards",
+    backyardDerived: "{{hours}} yards = {{hours}} uur · {{km}} km totaal",
     previousPlans: "Eerdere plannen als context",
     previousPlansHint:
       "Voeg eerdere training toe zodat de AI ziet hoe je echt vooruit bent gegaan. Scheelt het handmatig invoeren van recente lopen.",
@@ -402,7 +419,15 @@ Wat de velden in de bijgevoegde plan-aanvraag betekenen:
 - race.distanceKm: de wedstrijdafstand in kilometers.
 - race.date: wedstrijddag (YYYY-MM-DD).
 - startDate: de datum waarop ik dit plan begin (YYYY-MM-DD). Bouw week 1 vanaf deze datum — ga NIET uit van de datum van vandaag.
-- goal: mijn wedstrijddoel — { type: "finish" | "time" | "pace", value }. "finish" = gewoon uitlopen; "time" = streeftijd (value); "pace" = streeftempo per km (value). Gebruik dit om "goalPace"/"goalLabel" en de intensiteit te bepalen.
+- race.type: "standard" (één aaneengesloten wedstrijd over een vaste afstand) of "backyard" (zie hieronder).
+- goal: mijn wedstrijddoel — { type: "finish" | "time" | "pace" | "yards", value }. "finish" = gewoon uitlopen; "time" = streeftijd (value); "pace" = streeftempo per km (value); "yards" = aantal backyard-yards (value). Gebruik dit om "goalPace"/"goalLabel" en de intensiteit te bepalen.
+
+Als race.type "backyard" is, gaat het om een BACKYARD ULTRA en geldt de gebruikelijke marathonlogica NIET:
+- Het format: ik loop een vaste ronde (race.loopKm, meestal 6,706 km) elk heel uur, precies op het uur. Wat ik sneller loop, is mijn rust. Wie een ronde niet start of niet uitloopt, ligt eruit; de laatste loper wint. Eén "yard" is één ronde en één uur, dus race.targetYards is tegelijk mijn afstands- en tijdsdoel (bijv. 24 yards = 24 uur = ongeveer 161 km).
+- Train tijd op de benen, geen snelheid. Er is geen eindtijd en geen enkele piek-duurloop om naartoe af te bouwen.
+- Bouw op richting mijn doel met: lange duurlopen op opeenvolgende dagen; "mock backyards" (meerdere rondes die telkens op het uur starten, met steeds meer yards); een deel van de training 's nachts en op vermoeide benen; en bewust oefenen met eten, drinken en omkleden in de korte rust tussen de rondes.
+- "goalPace" moet een rustig, herhaalbaar rondetempo zijn dat elk uur genoeg rust overhoudt (een ronde in ongeveer 40-50 minuten is gebruikelijk), NIET een wedstrijdtempo. "goalLabel" moet iets als "24 yards" zijn.
+- Bouw af richting de wedstrijdweek, maar de piektrainingen zijn duur en herhaalde rondes in plaats van één lange afstand.
 - offDays[]: periodes waarin ik niet volledig kan trainen — { start, end, title, note }. De "note" zegt hoe beperkt (bijv. geen training / zeer beperkt / verminderd).
 - latestRuns[]: mijn recente lopen — { distanceKm, durationMin (TOTALE tijd van de loop, in minuten), pace (min/km, afgeleid uit afstand + totale tijd), date }. Gebruik deze om mijn conditie te schatten. Als dit leeg is, vraag me dan naar mijn conditie.
 - previousPlans[]: mijn eerdere trainingsblokken, als ALLEEN-LEZEN historie. Elk blok heeft { name, raceName, raceDistanceKm, raceDate, startDate, goalPace, goalLabel, weeks, summary, weeklyMileage[], completedRuns[] }.

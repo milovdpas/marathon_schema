@@ -51,17 +51,24 @@ export function WorkoutRow({
       ) : null}
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        {/* One line of pills. The flexible pill is the only one that can
+            shrink, and it truncates rather than wrapping the row. */}
+        <div className="flex min-w-0 items-center gap-2">
           <WorkoutTypeBadge type={workout.type} />
           {workout.flexible && workout.windowStart && workout.windowEnd ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-tempo/15 px-2 py-0.5 text-[10px] font-medium text-tempo">
-              <CalendarRange className="size-3" />
-              {t("workoutRow.flexible")} ·{" "}
+            /* Just the window: spelling out "Flexible" as well pushed the pill
+               past the available width and truncated it to "Flexibl…". The
+               icon carries the meaning and the legend maps it. */
+            <span
+              title={`${t("workoutRow.flexible")} · ${formatRange(workout.windowStart, workout.windowEnd)}`}
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-tempo/15 px-2 py-0.5 text-[10px] font-medium text-tempo"
+            >
+              <CalendarRange className="size-3 shrink-0" />
               {formatRange(workout.windowStart, workout.windowEnd)}
             </span>
           ) : null}
           {workout.isCustom ? (
-            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
               {t("workoutRow.custom")}
             </span>
           ) : null}

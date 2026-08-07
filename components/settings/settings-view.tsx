@@ -42,9 +42,9 @@ import {
 } from "@/components/ui/select";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { LOCALE_LABELS, LOCALES, type Locale } from "@/lib/i18n";
-import { isPlanFinished } from "@/lib/plan-context";
+import { isBackyard, isPlanFinished } from "@/lib/plan-context";
 import { DEFAULT_TRAINING_PREFS } from "@/lib/plan-generator";
-import type { TrainingPlan } from "@/lib/types";
+import { BACKYARD_LOOP_KM, type TrainingPlan } from "@/lib/types";
 import { downloadJSON } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { toast } from "@/store/use-toast-store";
@@ -216,19 +216,35 @@ export function SettingsView() {
                 onChange={(e) => updatePlanMeta({ raceName: e.target.value })}
               />
             </Field>
-            <Field label={t("settings.raceDistance")}>
-              <Input
-                type="number"
-                inputMode="decimal"
-                step="0.1"
-                value={activePlan.raceDistanceKm}
-                onChange={(e) =>
+            {isBackyard(activePlan) ? (
+              /* raceDistanceKm stays derived (yards × loop) so every stat and
+                 chart downstream keeps working without knowing about yards. */
+              <BackyardRaceFields
+                loopKm={activePlan.loopKm ?? BACKYARD_LOOP_KM}
+                targetYards={activePlan.targetYards ?? 0}
+                onChange={(loopKm, targetYards) =>
                   updatePlanMeta({
-                    raceDistanceKm: Number(e.target.value) || 0,
+                    loopKm,
+                    targetYards,
+                    raceDistanceKm: Math.round(loopKm * targetYards * 10) / 10,
                   })
                 }
               />
-            </Field>
+            ) : (
+              <Field label={t("settings.raceDistance")}>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  value={activePlan.raceDistanceKm}
+                  onChange={(e) =>
+                    updatePlanMeta({
+                      raceDistanceKm: Number(e.target.value) || 0,
+                    })
+                  }
+                />
+              </Field>
+            )}
             <Field label={t("settings.startDate")}>
               <Input
                 type="date"
@@ -449,6 +465,51 @@ export function SettingsView() {
         </Button>
       </Card>
     </div>
+  );
+}
+
+/**
+ * Loop distance + target yards, with the total they imply. Rendered as a
+ * fragment so it drops straight into the parent's two-column grid.
+ */
+function BackyardRaceFields({
+  loopKm,
+  targetYards,
+  onChange,
+}: {
+  loopKm: number;
+  targetYards: number;
+  onChange: (loopKm: number, targetYards: number) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Field label={t("wizard.loopKm")}>
+        <Input
+          type="number"
+          inputMode="decimal"
+          step="0.001"
+          value={loopKm}
+          onChange={(e) => onChange(Number(e.target.value) || 0, targetYards)}
+        />
+      </Field>
+      <Field label={t("wizard.targetYards")}>
+        <Input
+          type="number"
+          inputMode="numeric"
+          step="1"
+          min="1"
+          value={targetYards}
+          onChange={(e) => onChange(loopKm, Number(e.target.value) || 0)}
+        />
+      </Field>
+      <p className="text-xs text-muted-foreground sm:col-span-2">
+        {t("wizard.backyardDerived", {
+          hours: targetYards,
+          km: Math.round(loopKm * targetYards * 10) / 10,
+        })}
+      </p>
+    </>
   );
 }
 
