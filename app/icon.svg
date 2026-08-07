@@ -1,6 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Marathon Tracker">
-  <!-- Brand orange, the literal value of --brand in globals.css. Hardcoded
-       because a favicon is served standalone and can't read the app's theme. -->
+  <!-- The source of truth for the app mark. favicon.ico (16/32/48px) and
+       apple-icon.tsx are both derived from this artwork; keep them in step.
+
+       Brand orange, the literal value of --brand in globals.css. Hardcoded
+       because an icon is served standalone and can't read the app's theme. -->
   <rect width="64" height="64" rx="14" fill="#f1472c"/>
   <g fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
     <!-- Runner, facing right. Strokes are deliberately heavy (~9% of the
