@@ -20,12 +20,16 @@ export function SplitsExample() {
   return (
     <figure className="overflow-hidden rounded-lg border">
       <div className="bg-neutral-900 p-3 text-neutral-100">
-        <p className="mb-2 text-sm font-bold">Splits</p>
+        {/* Labels mirror Strava's own wording per language, so the example
+            matches what the user is looking at in the app. */}
+        <p className="mb-2 text-sm font-bold">
+          {t("splitScanner.mockHeading")}
+        </p>
         <div className="flex items-center gap-2 border-b border-neutral-700 pb-1 text-[10px] text-neutral-400">
-          <span className="w-6">Km</span>
-          <span className="w-9">Pace</span>
+          <span className="w-6">{t("splitScanner.mockKm")}</span>
+          <span className="w-9">{t("splitScanner.mockPace")}</span>
           <span className="flex-1" />
-          <span className="w-6 text-right">Elev</span>
+          <span className="w-8 text-right">{t("splitScanner.mockElev")}</span>
         </div>
         {ROWS.map(([km, pace, elev, bar]) => (
           <div key={km} className="flex items-center gap-2 py-[3px] text-[11px]">

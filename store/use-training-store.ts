@@ -45,8 +45,16 @@ interface TrainingState {
   /** Add an AI-built plan from imported JSON (does not replace existing plans). */
   addPlanFromImport: (
     json: string,
-    trainingPrefs?: TrainingPrefs,
-    startDate?: string,
+    opts?: {
+      trainingPrefs?: TrainingPrefs;
+      startDate?: string;
+      /**
+       * Always insert as a brand-new plan instead of updating one that shares
+       * workout ids. Set when previous plans were shown to the AI as context,
+       * since it may echo their ids back.
+       */
+      asNewPlan?: boolean;
+    },
   ) => void;
   selectPlan: (id: string) => void;
   deletePlan: (id: string) => void;
@@ -107,6 +115,38 @@ function findMatchingPlanId(
     }
   }
   return bestOverlap > 0 ? best : null;
+}
+
+/**
+ * Give any workout whose id is already taken by another plan a fresh one.
+ *
+ * When previous plans are attached as AI context, the model often reuses their
+ * workout ids in the plan it returns. Left alone, `findMatchingPlanId` would
+ * read that as "an update to the old plan" and overwrite the user's finished
+ * training history. Re-keying first makes the new plan unambiguously new.
+ */
+function rekeyCollidingWorkouts(
+  plan: TrainingPlan,
+  taken: Set<string>,
+): TrainingPlan {
+  const remap = new Map<string, string>();
+  for (const id of Object.keys(plan.workouts)) {
+    if (taken.has(id)) remap.set(id, newId());
+  }
+  if (remap.size === 0) return plan;
+
+  // An id lives in three places: the record key, the workout's own `id`, and
+  // the week's `workoutIds` — all three have to move together.
+  const workouts: Record<string, Workout> = {};
+  for (const [id, w] of Object.entries(plan.workouts)) {
+    const next = remap.get(id) ?? id;
+    workouts[next] = { ...w, id: next };
+  }
+  const weeks = plan.weeks.map((wk) => ({
+    ...wk,
+    workoutIds: wk.workoutIds.map((id) => remap.get(id) ?? id),
+  }));
+  return { ...plan, weeks, workouts };
 }
 
 /**
@@ -192,6 +232,7 @@ export const useTrainingStore = create<TrainingState>()(
           id: DEFAULT_PLAN_ID,
           seedRuns: MILO_SEED_RUNS,
           offDays: DEFAULT_OFF_DAYS,
+          isExample: true,
         });
         set({
           plans: { [plan.id]: plan },
@@ -210,18 +251,30 @@ export const useTrainingStore = create<TrainingState>()(
         return plan.id;
       },
 
-      addPlanFromImport: (json, trainingPrefs, startDate) => {
+      addPlanFromImport: (json, opts) => {
+        const { trainingPrefs, startDate, asNewPlan } = opts ?? {};
         const { plans: imported } = parseImport(json);
         const entries = Object.values(imported);
         if (entries.length === 0) throw new Error("No plan found in file.");
         const existing = get().plans;
         const next = { ...existing };
         let activeId = get().activePlanId;
-        for (const p of entries) {
+        // Ids already spoken for, so a forced-new plan can dodge them.
+        const takenWorkoutIds = new Set(
+          Object.values(existing).flatMap((pl) => Object.keys(pl.workouts)),
+        );
+
+        for (const raw of entries) {
+          // `asNewPlan` short-circuits the update path: the AI saw previous
+          // plans and may have echoed their ids, which would otherwise be read
+          // as "update that plan" and wipe it.
+          const p = asNewPlan
+            ? rekeyCollidingWorkouts(raw, takenWorkoutIds)
+            : raw;
           // If this import updates a plan we already have (shared workout ids),
           // replace it in place and carry over completed sessions — so a "behind"
           // AI plan never wipes finished workouts, and stats aren't double-counted.
-          const targetId = findMatchingPlanId(existing, p);
+          const targetId = asNewPlan ? null : findMatchingPlanId(existing, p);
           const source = targetId ? existing[targetId] : null;
           const merged = source ? mergeLoggedWorkouts(p, source) : p;
           const id = targetId ?? newId();
@@ -232,6 +285,7 @@ export const useTrainingStore = create<TrainingState>()(
             trainingPrefs: trainingPrefs ?? p.trainingPrefs ?? source?.trainingPrefs,
             startDate: startDate ?? p.startDate ?? source?.startDate,
           };
+          for (const wid of Object.keys(merged.workouts)) takenWorkoutIds.add(wid);
           activeId = id;
         }
         set({ plans: next, activePlanId: activeId, lastModified: nowISO() });
@@ -249,7 +303,9 @@ export const useTrainingStore = create<TrainingState>()(
           let activePlanId = s.activePlanId;
           if (activePlanId === id) activePlanId = Object.keys(plans)[0] ?? null;
           if (Object.keys(plans).length === 0) {
-            const def = generateDefaultPlan();
+            // Placeholder so the app is never planless — not the user's own
+            // training, so keep it out of previous-plan context too.
+            const def = generateDefaultPlan({ isExample: true });
             plans[def.id] = def;
             activePlanId = def.id;
           }
@@ -422,8 +478,11 @@ export const useTrainingStore = create<TrainingState>()(
       //     (absent = correct default, so no transform needed).
       // v8: additive — Preferences.splitScannerOnboardingSeen. Left unset for
       //     existing users on purpose, so they get the one-time prompt too.
-      // The migrate below is idempotent and runs for all prior versions.
-      version: 8,
+      // v9: additive — Preferences.nextPlanPromptSeen (plan ids already asked).
+      // v10: additive — TrainingPlan.isExample, set only on newly seeded demo
+      //      plans. Deliberately NOT backfilled: an existing seeded plan may
+      //      have been adopted as the user's real training.
+      version: 10,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,

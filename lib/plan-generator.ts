@@ -245,6 +245,8 @@ export interface GeneratePlanOptions {
   planStart?: string;
   /** Preserve a fixed creation timestamp when rebuilding a plan. */
   createdAt?: string;
+  /** Mark as the bundled demo plan (excluded from previous-plan context). */
+  isExample?: boolean;
 }
 
 export const DEFAULT_PLAN_META = {
@@ -476,6 +478,7 @@ export function generateDefaultPlan(
     goalLabel: opts.goalLabel ?? DEFAULT_PLAN_META.goalLabel,
     version: PLAN_VERSION,
     createdAt: opts.createdAt ?? new Date().toISOString(),
+    ...(opts.isExample ? { isExample: true } : {}),
     weeks,
     workouts,
     offDays: opts.offDays ?? [],

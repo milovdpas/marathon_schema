@@ -42,7 +42,7 @@ interface BarEvent {
   end: string; // ISO (inclusive)
   label: string;
   kind: "off" | "flex";
-  type?: WorkoutType; // for flex bars (colour)
+  type?: WorkoutType; // for flex bars (color)
   chosenDate?: string; // for flex bars (highlighted day)
 }
 

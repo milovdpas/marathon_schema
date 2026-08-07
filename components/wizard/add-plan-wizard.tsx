@@ -12,14 +12,16 @@ import {
   Upload,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TrainingPrefsFields } from "@/components/common/training-prefs-fields";
+import { PreviousPlansPicker } from "@/components/wizard/previous-plans-picker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatRange, toISO } from "@/lib/date";
+import { buildPlanContext, canBeContext } from "@/lib/plan-context";
 import { paceFromDistanceDuration, parseDurationToMinutes } from "@/lib/pace";
 import { downloadJSON } from "@/lib/storage";
 import type { OffDay, TrainingPrefs } from "@/lib/types";
@@ -43,6 +45,8 @@ interface Draft {
   goalValue: string;
   offDays: OffDay[];
   latestRuns: LatestRun[];
+  /** Previous plans attached as read-only context for the AI. */
+  contextPlanIds: string[];
   prefs: TrainingPrefs;
 }
 
@@ -69,30 +73,47 @@ function newId(): string {
     : `off-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
 }
 
-export function AddPlanWizard() {
+export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const addPlanFromImport = useTrainingStore((s) => s.addPlanFromImport);
+  const plans = useTrainingStore((s) => s.plans);
+
+  // Previous plans, most recent race first.
+  const planList = useMemo(
+    () =>
+      Object.values(plans).sort((a, b) =>
+        a.raceDate > b.raceDate ? -1 : a.raceDate < b.raceDate ? 1 : 0,
+      ),
+    [plans],
+  );
 
   const [step, setStep] = useState(1);
-  const [draft, setDraft] = useState<Draft>(() => ({
-    name: "",
-    raceName: "Marathon",
-    raceDistanceKm: 42.2,
-    raceDate: "",
-    startDate: toISO(new Date()),
-    goalType: "finish",
-    goalValue: "",
-    offDays: [],
-    latestRuns: [],
-    prefs: {
-      daysPerWeek: 4,
-      flexibleDays: false,
-      trainingDays: [true, false, true, true, false, false, true],
-      planningMode: "exact",
-      targetDistanceKm: null,
-    },
-  }));
+  const [draft, setDraft] = useState<Draft>(() => {
+    // Arriving from a finished plan: attach it and carry its training
+    // preferences over, since those rarely change race to race.
+    const from = fromPlanId ? plans[fromPlanId] : undefined;
+    return {
+      name: "",
+      raceName: "Marathon",
+      raceDistanceKm: 42.2,
+      raceDate: "",
+      startDate: toISO(new Date()),
+      goalType: "finish",
+      goalValue: "",
+      offDays: [],
+      latestRuns: [],
+      // Only preselect a plan the picker would actually show.
+      contextPlanIds: from && canBeContext(from) ? [from.id] : [],
+      prefs: from?.trainingPrefs ?? {
+        daysPerWeek: 4,
+        flexibleDays: false,
+        trainingDays: [true, false, true, true, false, false, true],
+        planningMode: "exact",
+        targetDistanceKm: null,
+      },
+    };
+  });
   const [importText, setImportText] = useState("");
   const [requestCopied, setRequestCopied] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
@@ -112,7 +133,8 @@ export function AddPlanWizard() {
 
   const buildRequest = () => ({
     app: "marathon-tracker-plan-request",
-    version: 1,
+    // v2 added `previousPlans`.
+    version: 2,
     race: {
       name: draft.name.trim(),
       raceName: draft.raceName.trim(),
@@ -146,6 +168,12 @@ export function AddPlanWizard() {
       planningMode: draft.prefs.planningMode,
       targetDistanceKm: draft.prefs.targetDistanceKm,
     },
+    // Past training as read-only context. `filter(Boolean)` covers a plan
+    // deleted while the wizard was open.
+    previousPlans: draft.contextPlanIds
+      .map((id) => plans[id])
+      .filter(Boolean)
+      .map(buildPlanContext),
   });
 
   const requestJson = () => JSON.stringify(buildRequest(), null, 2);
@@ -164,7 +192,13 @@ export function AddPlanWizard() {
 
   const complete = (json: string) => {
     try {
-      addPlanFromImport(json, draft.prefs, draft.startDate);
+      addPlanFromImport(json, {
+        trainingPrefs: draft.prefs,
+        startDate: draft.startDate,
+        // The AI saw previous plans and may echo their ids; force a new plan so
+        // it can never overwrite the history it was given as context.
+        asNewPlan: draft.contextPlanIds.length > 0,
+      });
       toast.success(t("wizard.created"));
       router.push("/");
     } catch (e) {
@@ -398,6 +432,12 @@ export function AddPlanWizard() {
       {/* Step 3 — Training */}
       {step === 3 ? (
         <Card className="gap-0 space-y-4 p-4">
+          <PreviousPlansPicker
+            plans={planList}
+            selectedIds={draft.contextPlanIds}
+            onChange={(ids) => set("contextPlanIds", ids)}
+          />
+
           <div>
             <Label className="text-xs text-muted-foreground">
               {t("wizard.latestRuns")}

@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Flag, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CompleteWorkoutDialog } from "@/components/common/complete-workout-dialog";
@@ -11,6 +12,8 @@ import { WorkoutFormDialog } from "@/components/plan/workout-form-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatRange, todayISO } from "@/lib/date";
+import { isPlanFinished } from "@/lib/plan-context";
+import { overallStats } from "@/lib/stats";
 import { type WeekPhase, type Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActivePlan } from "@/hooks/use-active-plan";
@@ -27,6 +30,7 @@ const PHASE_BADGE: Record<WeekPhase, string> = {
 
 export function PlanView() {
   const { t } = useTranslation();
+  const router = useRouter();
   const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
   const updateWorkout = useTrainingStore((s) => s.updateWorkout);
@@ -43,6 +47,8 @@ export function PlanView() {
   const [completing, setCompleting] = useState<Workout | null>(null);
 
   if (!plan) return <NoPlanState />;
+
+  const finishedStats = overallStats(plan);
 
   // Completing opens the quick-log dialog (prefilled); un-checking just flips it.
   const handleToggle = (id: string) => {
@@ -62,6 +68,29 @@ export function PlanView() {
 
   return (
     <div className="space-y-3">
+      {isPlanFinished(plan) ? (
+        <div className="rounded-xl border border-primary/30 bg-primary/[0.06] p-4">
+          <div className="flex items-center gap-2">
+            <Flag className="size-4 text-primary" />
+            <h3 className="text-sm font-semibold">{t("plan.finishedTitle")}</h3>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("plan.finishedBody", {
+              race: plan.raceName,
+              km: finishedStats.totalKm,
+              runs: finishedStats.completedCount,
+            })}
+          </p>
+          <Button
+            size="sm"
+            className="mt-3"
+            onClick={() => router.push(`/plan/new?from=${plan.id}`)}
+          >
+            <Flag className="size-4" /> {t("plan.createNext")}
+          </Button>
+        </div>
+      ) : null}
+
       <div className="flex justify-end">
         <Button size="sm" onClick={() => setAdding(true)}>
           <Plus className="size-4" /> {t("plan.addWorkout")}

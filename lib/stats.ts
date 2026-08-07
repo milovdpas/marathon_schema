@@ -208,7 +208,7 @@ export function latestSplitRun(plan: TrainingPlan): SplitRun | null {
   const w = withSplits[withSplits.length - 1];
   if (!w?.splits) return null;
 
-  // Only full kilometres are comparable; a partial km is always "faster".
+  // Only full kilometers are comparable; a partial km is always "faster".
   const full = w.splits.filter((s) => s.km >= 1);
   const secs = (full.length > 0 ? full : w.splits)
     .map((s) => paceToSeconds(s.pace))

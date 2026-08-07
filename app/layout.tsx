@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { NextPlanGate } from "@/components/common/next-plan-gate";
 import { OnboardingGate } from "@/components/common/onboarding-gate";
 import { SyncInitializer } from "@/components/common/sync-initializer";
 import { Toaster } from "@/components/common/toaster";
@@ -49,6 +50,7 @@ export default function RootLayout({
           <I18nProvider>
           <SyncInitializer />
           <OnboardingGate />
+          <NextPlanGate />
           <Toaster />
           <div className="flex min-h-dvh">
             <AppNav />

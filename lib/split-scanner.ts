@@ -1,4 +1,4 @@
-// Scan a Strava "Splits" screenshot for per-kilometre splits, entirely in the
+// Scan a Strava "Splits" screenshot for per-kilometer splits, entirely in the
 // browser (tesseract.js WASM). The image never leaves the device and there's no
 // API key. tesseract is imported dynamically so it stays out of the main bundle.
 
@@ -38,7 +38,7 @@ async function preprocess(file: File): Promise<HTMLCanvasElement> {
   const h = Math.round(bitmap.height * fit * SCALE);
 
   // Resize in two steps (fit, then upscale) rather than one big jump — it
-  // smooths JPEG artefacts and measurably improves recognition.
+  // smooths JPEG artifacts and measurably improves recognition.
   let source: CanvasImageSource = bitmap;
   if (fit < 1) {
     const fw = Math.max(1, Math.round(bitmap.width * fit));
@@ -87,7 +87,7 @@ const PACE_RE = /^(\d{1,2}):([0-5]\d)$/;
  *   2. cluster them by x — the biggest column is the Pace column (the pace
  *      chart's axis labels form their own, smaller cluster at a different x),
  *   3. read km from **row order** (the index column OCRs poorly and is just
- *      1,2,3… anyway), honouring a leading fraction for the final partial km,
+ *      1,2,3… anyway), honoring a leading fraction for the final partial km,
  *   4. attach an elevation number found far to the right on the same row.
  *
  * Only numbers are ever inspected, so the screenshot's language is irrelevant.
@@ -175,11 +175,11 @@ export function findPaceColumn(
 }
 
 /**
- * Read Strava's trailing partial kilometre ("0.4", "0.1").
+ * Read Strava's trailing partial kilometer ("0.4", "0.1").
  *
  * OCR frequently loses the decimal point ("0.1" → "01") or splits the label
  * into separate words ("0" + "1"), which would otherwise parse as 1 and make
- * the row look like another whole kilometre. A leading zero followed by digits
+ * the row look like another whole kilometer. A leading zero followed by digits
  * is therefore read as the fraction it must be. Whole indices ("1", "10") never
  * match, so this can't corrupt a normal row.
  */
@@ -234,7 +234,7 @@ export function parseSplitsFromWords(
     }
     let km = kmCounter;
 
-    // Only Strava's final row can be a partial kilometre ("0.4"), and OCR
+    // Only Strava's final row can be a partial kilometer ("0.4"), and OCR
     // mangles it often — so join everything left of the pace on that row and
     // parse leniently.
     if (i === column.length - 1) {

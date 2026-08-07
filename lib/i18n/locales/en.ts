@@ -79,6 +79,10 @@ export const en = {
     weekMeta: "{{range}} · {{km}} km · {{done}}/{{total}} done",
     restWeek: "Rest week — no scheduled runs.",
     pickDay: "Pick a day",
+    finishedTitle: "Plan complete 🏁",
+    finishedBody:
+      "{{race}} is behind you: {{runs}} runs, {{km}} km logged. Start your next plan and bring this training along as context.",
+    createNext: "Create next plan",
   },
   workoutForm: {
     editTitle: "Edit workout",
@@ -208,7 +212,7 @@ The plan has an "offDays" list (vacations/trips with a note on whether I can tra
 
 You MAY freely reschedule, add, remove or modify any PLANNED (not-yet-completed) future workout to make this work.
 
-Each workout has PLANNED targets ("plannedDistanceKm", "plannedPace") and, once I've done it, LOGGED actuals ("actualDistanceKm", "actualPace", "durationMin" in minutes, optional "startTime" as "HH:mm", optional "weather" = {tempC, condition, ...}, and optional "splits" = per-kilometre pacing [{km, pace "mm:ss", elevM}]). Use "splits" to see how the run was paced (even splits, positive/negative split, a blow-up late on, hills via elevM). Compare planned vs actual to judge how the training is actually going (e.g. consistently slower/shorter than planned, or hard sessions done in heat) and adapt upcoming workouts accordingly.
+Each workout has PLANNED targets ("plannedDistanceKm", "plannedPace") and, once I've done it, LOGGED actuals ("actualDistanceKm", "actualPace", "durationMin" in minutes, optional "startTime" as "HH:mm", optional "weather" = {tempC, condition, ...}, and optional "splits" = per-kilometer pacing [{km, pace "mm:ss", elevM}]). Use "splits" to see how the run was paced (even splits, positive/negative split, a blow-up late on, hills via elevM). Compare planned vs actual to judge how the training is actually going (e.g. consistently slower/shorter than planned, or hard sessions done in heat) and adapt upcoming workouts accordingly.
 
 You MUST follow these rules:
 - NEVER change the race date. Keep "raceDate" exactly the same and keep the marathon / race-day workout on its date — the marathon date is fixed.
@@ -263,8 +267,13 @@ JSON (paste below, or attach the exported .json file):
     enableWeather: "Enable weather",
     splitsTitle: "Scan your splits?",
     splitsBody:
-      "Upload your Strava splits screenshot when logging a run and the pace for every kilometre is read from it automatically. It runs on your device, so the image is never uploaded.",
+      "Upload your Strava splits screenshot when logging a run and the pace for every kilometer is read from it automatically. It runs on your device, so the image is never uploaded.",
     enableSplits: "Enable scanning",
+  },
+  nextPlan: {
+    title: "Race done! 🏁",
+    body: "Nice work on {{name}}. Want to plan your next race and take this block's training along as context?",
+    create: "Plan my next race",
   },
   weather: {
     title: "Weather",
@@ -286,7 +295,7 @@ JSON (paste below, or attach the exported .json file):
     title: "Split scanner",
     enable: "Scan splits from a screenshot",
     enableBody:
-      "When logging a run, upload your Strava splits screenshot and the per-kilometre paces are read from it automatically. It runs on your device, so the image is never uploaded and is discarded after scanning.",
+      "When logging a run, upload your Strava splits screenshot and the per-kilometer paces are read from it automatically. It runs on your device, so the image is never uploaded and is discarded after scanning.",
     scanButton: "Scan screenshot",
     scanning: "Scanning…",
     scanned_one: "Scanned {{count}} split",
@@ -298,11 +307,16 @@ JSON (paste below, or attach the exported .json file):
     km: "km",
     helpTitle: "Which screenshot?",
     helpBody:
-      "In Strava, open a run and screenshot the “Splits” table: the part listing each kilometre and its pace.",
+      "In Strava, open a run and screenshot the “Splits” table: the part listing each kilometer and its pace.",
     exampleCaption: "Example of what to capture",
-    tip1: "Make sure the whole Splits table is visible, including the last partial kilometre.",
+    tip1: "Make sure the whole Splits table is visible, including the last partial kilometer.",
     tip2: "Extra content around it (the pace chart, best efforts) is fine, because it gets ignored.",
     tip3: "Works in any language, and in light or dark mode.",
+    // Column labels as Strava's English app shows them, so the example matches.
+    mockHeading: "Splits",
+    mockKm: "Km",
+    mockPace: "Pace",
+    mockElev: "Elev",
   },
   wizard: {
     title: "Create a plan",
@@ -334,6 +348,14 @@ JSON (paste below, or attach the exported .json file):
       "Add vacations, trips or busy periods that will limit your training. The AI will plan around them.",
     calendarSoon: "Connect Google Calendar (coming soon)",
     // Step 3
+    previousPlans: "Previous plans as context",
+    previousPlansHint:
+      "Attach earlier training so the AI can see how you actually progressed. Saves entering recent runs by hand.",
+    planFinished: "finished",
+    planInProgress: "in progress",
+    planRuns: "{{runs}} runs · {{km}} km logged",
+    showAllPlans: "Show all {{count}} plans",
+    showLess: "Show less",
     latestRuns: "Your latest runs",
     latestRunsHint:
       "Optional — gives the AI a sense of your current fitness. Add a few recent runs.",
@@ -374,12 +396,17 @@ JSON (paste below, or attach the exported .json file):
 
 What the attached plan-request fields mean:
 - race.name: what to call the plan. race.raceName: the race's name.
-- race.distanceKm: the race distance in kilometres.
+- race.distanceKm: the race distance in kilometers.
 - race.date: race day (YYYY-MM-DD).
 - startDate: the date I'll begin this plan (YYYY-MM-DD). Build week 1 from this date — do NOT assume today's date.
 - goal: my race goal — { type: "finish" | "time" | "pace", value }. "finish" = just complete it; "time" = target finish time (value); "pace" = target pace per km (value). Use it to set "goalPace"/"goalLabel" and the plan's intensity.
 - offDays[]: periods I can't fully train — { start, end, title, note }. The "note" says how limited it is (e.g. no training / very limited / reduced).
 - latestRuns[]: my recent runs — { distanceKm, durationMin (TOTAL time for the run, in minutes), pace (min/km, derived from distance + total time), date }. Use these to estimate my current fitness. If this is empty, ask me about my fitness.
+- previousPlans[]: my earlier training blocks, as READ-ONLY history. Each has { name, raceName, raceDistanceKm, raceDate, startDate, goalPace, goalLabel, weeks, summary, weeklyMileage[], completedRuns[] }.
+  - summary: { completionPct (how much of that plan I actually did), completedRuns, totalKm, plannedTotalKm, longestRunKm, averagePace, peakWeekKm }.
+  - weeklyMileage[]: { week, plannedKm, actualKm } — planned vs actual per week, so you can see adherence and how volume ramped.
+  - completedRuns[]: only the runs I actually logged — { date, type, title, plannedDistanceKm, plannedPace, distanceKm, pace, durationMin, startTime, tempC, condition, splits, elevM, notes }. "splits" is per-kilometer pace where the FIRST entry is km 1, the second km 2, and so on; "elevM" (when present) is the matching elevation change per kilometer.
+  Use this to judge my real training load, how consistently I hit planned paces, how my long runs progressed, and a realistic goal for the new race.
 - training.daysPerWeek: how many days per week I want to run.
 - training.trainingDays: the weekdays I prefer to run (e.g. ["Monday","Wednesday"]). null means I'm flexible — choose sensible days yourself.
 - training.flexibleDays: true if I have no fixed training days.
@@ -427,6 +454,7 @@ Rules:
 - Use my latest runs to estimate fitness and paces. Set every workout "completed": false.
 - If my goal time/pace isn't provided, infer a sensible "goalPace"/"goalLabel" from my latest runs and the race distance (or ask me first).
 - Each workout's id must appear in its week's "workoutIds", and its "date" must fall within that week.
+- "previousPlans" is history to learn from, NOT a template. Return ONLY the new plan in "plans" — never copy a previous plan, its weeks or its workouts into your output. Every id you emit must be brand new and unique.
 - Give me the result as a downloadable .json FILE so I can attach it directly. If you can't create a file, put the ENTIRE JSON in a single \`\`\`json code block, including the very first { and the very last } — never split it or leave characters out.
 - Ask me any clarifying questions first, then return ONLY the JSON.`,
   },

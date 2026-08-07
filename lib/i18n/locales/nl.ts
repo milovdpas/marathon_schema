@@ -81,6 +81,10 @@ export const nl: Dict = {
     weekMeta: "{{range}} · {{km}} km · {{done}}/{{total}} gedaan",
     restWeek: "Rustweek — geen geplande trainingen.",
     pickDay: "Kies een dag",
+    finishedTitle: "Plan afgerond 🏁",
+    finishedBody:
+      "{{race}} zit erop: {{runs}} lopen, {{km}} km vastgelegd. Begin je volgende plan en neem deze training mee als context.",
+    createNext: "Volgend plan maken",
   },
   workoutForm: {
     editTitle: "Training bewerken",
@@ -264,10 +268,15 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     weatherBody:
       "Zie de voorspelling in je kalender en leg de omstandigheden van elke loop vast. Gebruikt de locatie van je apparaat.",
     enableWeather: "Weer inschakelen",
-    splitsTitle: "Rondetijden scannen?",
+    splitsTitle: "Tussentijden scannen?",
     splitsBody:
-      "Upload bij het vastleggen van een loop je Strava-screenshot met rondetijden; het tempo van elke kilometer wordt er automatisch uit gelezen. Het draait op je apparaat, dus de afbeelding wordt nooit geüpload.",
+      "Upload bij het vastleggen van een loop je Strava-screenshot met tussentijden; het tempo van elke kilometer wordt er automatisch uit gelezen. Het draait op je apparaat, dus de afbeelding wordt nooit geüpload.",
     enableSplits: "Scannen inschakelen",
+  },
+  nextPlan: {
+    title: "Wedstrijd volbracht! 🏁",
+    body: "Goed gedaan met {{name}}. Wil je je volgende wedstrijd plannen en de training van dit blok meenemen als context?",
+    create: "Volgende wedstrijd plannen",
   },
   weather: {
     title: "Weer",
@@ -286,26 +295,31 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     subtitle: "Optionele extra's die je kunt inschakelen.",
   },
   splitScanner: {
-    title: "Rondetijden-scanner",
-    enable: "Rondetijden scannen uit screenshot",
+    title: "Tussentijden-scanner",
+    enable: "Tussentijden scannen uit screenshot",
     enableBody:
-      "Upload bij het vastleggen van een loop je Strava-screenshot met rondetijden; de tempo's per kilometer worden er automatisch uit gelezen. Het draait op je apparaat, dus de afbeelding wordt nooit geüpload en wordt na het scannen weggegooid.",
+      "Upload bij het vastleggen van een loop je Strava-screenshot met tussentijden; de tempo's per kilometer worden er automatisch uit gelezen. Het draait op je apparaat, dus de afbeelding wordt nooit geüpload en wordt na het scannen weggegooid.",
     scanButton: "Screenshot scannen",
     scanning: "Scannen…",
-    scanned_one: "{{count}} rondetijd gescand",
-    scanned_other: "{{count}} rondetijden gescand",
+    scanned_one: "{{count}} tussentijd gescand",
+    scanned_other: "{{count}} tussentijden gescand",
     scanFailed:
-      "Kon geen rondetijden uit die afbeelding lezen. Zorg dat de rondetijden-tabel zichtbaar is in de screenshot.",
-    splitsTitle: "Rondetijden",
-    clear: "Rondetijden wissen",
+      "Kon geen tussentijden uit die afbeelding lezen. Zorg dat de tussentijden-tabel zichtbaar is in de screenshot.",
+    splitsTitle: "Tussentijden",
+    clear: "Tussentijden wissen",
     km: "km",
     helpTitle: "Welke screenshot?",
     helpBody:
-      "Open in Strava een loop en maak een screenshot van de “Splits”-tabel: het deel met elke kilometer en het tempo.",
+      "Open in Strava een loop en maak een screenshot van de “Tussentijden”-tabel: het deel met elke kilometer en het tempo.",
     exampleCaption: "Voorbeeld van wat je vastlegt",
     tip1: "Zorg dat de hele tabel zichtbaar is, inclusief de laatste gedeeltelijke kilometer.",
     tip2: "Extra inhoud eromheen (de tempografiek, beste prestaties) is geen probleem, want dat wordt genegeerd.",
     tip3: "Werkt in elke taal en in lichte of donkere modus.",
+    // Column labels as Strava's Dutch app shows them, so the example matches.
+    mockHeading: "Tussentijden",
+    mockKm: "Km",
+    mockPace: "Tempo",
+    mockElev: "Hoogte",
   },
   wizard: {
     title: "Een plan maken",
@@ -337,6 +351,14 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
       "Voeg vakanties, reizen of drukke periodes toe die je training beperken. De AI plant eromheen.",
     calendarSoon: "Verbind Google Agenda (binnenkort)",
     // Stap 3
+    previousPlans: "Eerdere plannen als context",
+    previousPlansHint:
+      "Voeg eerdere training toe zodat de AI ziet hoe je echt vooruit bent gegaan. Scheelt het handmatig invoeren van recente lopen.",
+    planFinished: "afgerond",
+    planInProgress: "loopt nog",
+    planRuns: "{{runs}} lopen · {{km}} km vastgelegd",
+    showAllPlans: "Toon alle {{count}} plannen",
+    showLess: "Toon minder",
     latestRuns: "Je laatste lopen",
     latestRunsHint:
       "Optioneel — geeft de AI een idee van je huidige conditie. Voeg een paar recente lopen toe.",
@@ -383,6 +405,11 @@ Wat de velden in de bijgevoegde plan-aanvraag betekenen:
 - goal: mijn wedstrijddoel — { type: "finish" | "time" | "pace", value }. "finish" = gewoon uitlopen; "time" = streeftijd (value); "pace" = streeftempo per km (value). Gebruik dit om "goalPace"/"goalLabel" en de intensiteit te bepalen.
 - offDays[]: periodes waarin ik niet volledig kan trainen — { start, end, title, note }. De "note" zegt hoe beperkt (bijv. geen training / zeer beperkt / verminderd).
 - latestRuns[]: mijn recente lopen — { distanceKm, durationMin (TOTALE tijd van de loop, in minuten), pace (min/km, afgeleid uit afstand + totale tijd), date }. Gebruik deze om mijn conditie te schatten. Als dit leeg is, vraag me dan naar mijn conditie.
+- previousPlans[]: mijn eerdere trainingsblokken, als ALLEEN-LEZEN historie. Elk blok heeft { name, raceName, raceDistanceKm, raceDate, startDate, goalPace, goalLabel, weeks, summary, weeklyMileage[], completedRuns[] }.
+  - summary: { completionPct (hoeveel van dat plan ik echt heb gedaan), completedRuns, totalKm, plannedTotalKm, longestRunKm, averagePace, peakWeekKm }.
+  - weeklyMileage[]: { week, plannedKm, actualKm } — gepland versus werkelijk per week, zodat je ziet hoe trouw ik was en hoe de omvang opliep.
+  - completedRuns[]: alleen de lopen die ik echt heb vastgelegd — { date, type, title, plannedDistanceKm, plannedPace, distanceKm, pace, durationMin, startTime, tempC, condition, splits, elevM, notes }. "splits" is het tempo per kilometer waarbij de EERSTE waarde km 1 is, de tweede km 2, enzovoort; "elevM" (indien aanwezig) is het bijbehorende hoogteverschil per kilometer.
+  Gebruik dit om mijn echte trainingsbelasting te beoordelen, hoe consistent ik geplande tempo's haalde, hoe mijn lange duurlopen opbouwden, en een realistisch doel voor de nieuwe wedstrijd.
 - training.daysPerWeek: hoeveel dagen per week ik wil hardlopen.
 - training.trainingDays: de weekdagen waarop ik wil lopen (bijv. ["Monday","Wednesday"]). null betekent dat ik flexibel ben — kies dan zelf logische dagen.
 - training.flexibleDays: true als ik geen vaste trainingsdagen heb.
@@ -430,6 +457,7 @@ Regels:
 - Gebruik mijn laatste lopen om conditie en tempo's te schatten. Zet elke training op "completed": false.
 - Als mijn doeltijd/-tempo niet is gegeven, leid dan een logische "goalPace"/"goalLabel" af uit mijn laatste lopen en de wedstrijdafstand (of vraag het me eerst).
 - Het id van elke training moet in de "workoutIds" van zijn week staan, en de "date" moet binnen die week vallen.
+- "previousPlans" is historie om van te leren, GEEN sjabloon. Geef in "plans" alleen het nieuwe plan terug — kopieer nooit een eerder plan, zijn weken of trainingen naar je uitvoer. Elk id dat je teruggeeft moet volledig nieuw en uniek zijn.
 - Geef het resultaat als een downloadbaar .json-BESTAND zodat ik het direct kan toevoegen. Als je geen bestand kunt maken, zet dan de VOLLEDIGE JSON in één \`\`\`json-codeblok, inclusief de allereerste { en de allerlaatste } — splits het nooit en laat geen tekens weg.
 - Stel eerst eventuele verduidelijkende vragen en geef daarna ALLEEN de JSON terug.`,
   },

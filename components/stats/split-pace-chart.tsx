@@ -13,7 +13,7 @@ import { paceToSeconds, secondsToPace } from "@/lib/pace";
 import type { WorkoutSplit } from "@/lib/types";
 
 /**
- * Pace per kilometre for a single run. Y is inverted (a faster pace — fewer
+ * Pace per kilometer for a single run. Y is inverted (a faster pace — fewer
  * seconds — sits higher) and ticks are formatted back to mm:ss.
  */
 export function SplitPaceChart({ splits }: { splits: WorkoutSplit[] }) {

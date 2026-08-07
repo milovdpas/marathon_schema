@@ -7,7 +7,7 @@ import { WORKOUT_TYPES } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
- * Google-Calendar-style legend strip: what the colours mean + a toggle to show
+ * Google-Calendar-style legend strip: what the colors mean + a toggle to show
  * weather on the calendar (only shown when a weather key is configured).
  */
 export function CalendarLegend({

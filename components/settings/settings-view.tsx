@@ -42,7 +42,9 @@ import {
 } from "@/components/ui/select";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { LOCALE_LABELS, LOCALES, type Locale } from "@/lib/i18n";
+import { isPlanFinished } from "@/lib/plan-context";
 import { DEFAULT_TRAINING_PREFS } from "@/lib/plan-generator";
+import type { TrainingPlan } from "@/lib/types";
 import { downloadJSON } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { toast } from "@/store/use-toast-store";
@@ -80,6 +82,9 @@ export function SettingsView() {
 
   const planList = Object.values(plans);
   const aiPrompt = t("settings.aiPrompt");
+  // Past races stay in the list; mark them so the active block stands out.
+  const planLabel = (p: TrainingPlan) =>
+    isPlanFinished(p) ? `${p.name} (${t("wizard.planFinished")})` : p.name;
 
   const handleExport = () => {
     const json = exportData();
@@ -134,13 +139,16 @@ export function SettingsView() {
         >
           <SelectTrigger className="mt-1.5 w-full">
             <SelectValue>
-              {(value) => (value && plans[value as string]?.name) || ""}
+              {(value) => {
+                const p = value ? plans[value as string] : undefined;
+                return p ? planLabel(p) : "";
+              }}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {planList.map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.name}
+                {planLabel(p)}
               </SelectItem>
             ))}
           </SelectContent>

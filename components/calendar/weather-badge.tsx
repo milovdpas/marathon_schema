@@ -13,7 +13,7 @@ import {
 import type { WeatherSnapshot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-/** Render a coloured lucide icon for an OpenWeatherMap condition id. */
+/** Render a colored lucide icon for an OpenWeatherMap condition id. */
 export function WeatherIcon({
   id,
   className,

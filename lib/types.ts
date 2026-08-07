@@ -15,11 +15,11 @@ export interface WeatherSnapshot {
   lon: number;
 }
 
-/** One kilometre split, typically scanned from a Strava screenshot. */
+/** One kilometer split, typically scanned from a Strava screenshot. */
 export interface WorkoutSplit {
   km: number; // 1, 2, 3 … or a fraction (0.4) for the final partial km
   pace: string; // "mm:ss" per km — same format as plannedPace/actualPace
-  elevM?: number; // elevation delta in metres (may be negative)
+  elevM?: number; // elevation delta in meters (may be negative)
 }
 
 export type WeekPhase =
@@ -46,7 +46,7 @@ export interface Workout {
   startTime?: string;
   /** Weather captured for this workout (when the weather feature is on). */
   weather?: WeatherSnapshot;
-  /** Per-kilometre splits (from the screenshot scanner). */
+  /** Per-kilometer splits (from the screenshot scanner). */
   splits?: WorkoutSplit[];
   completed: boolean;
   isCustom?: boolean;
@@ -80,6 +80,8 @@ export interface Preferences {
   splitScannerEnabled?: boolean;
   /** Whether the one-time split-scanner prompt has been shown. */
   splitScannerOnboardingSeen?: boolean;
+  /** Plan ids whose "race done, plan your next race?" prompt has been shown. */
+  nextPlanPromptSeen?: string[];
 }
 
 /** Editable per-plan metadata (race + goal), independent of the schedule. */
@@ -115,6 +117,11 @@ export interface TrainingPlan extends PlanMeta {
   id: string;
   version: number; // schema version, for export / migration
   createdAt: string;
+  /**
+   * The bundled demo plan seeded on first run. It's someone else's training,
+   * so it must never be offered as context for a user's own next plan.
+   */
+  isExample?: boolean;
   weeks: TrainingWeek[];
   workouts: Record<string, Workout>; // keyed by id
   offDays: OffDay[];
