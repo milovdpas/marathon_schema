@@ -11,6 +11,7 @@ import {
   updateFile,
   type SyncUser,
 } from "@/lib/google-drive";
+import { decideSync } from "@/lib/sync-decision";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export type SyncStatus =
@@ -63,27 +64,39 @@ function stampLocal(time: string) {
 /** Bidirectional newest-wins reconcile (used on load, refocus and "Sync now"). */
 async function reconcile(): Promise<void> {
   const training = useTrainingStore.getState();
-  const localTime = training.lastModified || "";
   const meta = await findFile();
+  const plan = decideSync({
+    localModified: training.lastModified,
+    hasPlan: !!training.activePlanId,
+    remote: meta,
+  });
 
-  if (!meta) {
-    if (training.activePlanId) {
+  switch (plan.action) {
+    case "create": {
       const created = await createFile(training.exportData());
       stampLocal(created.modifiedTime);
       useSyncStore.setState({ fileId: created.id });
+      break;
     }
-  } else if (meta.modifiedTime > localTime) {
-    const json = await downloadFile(meta.id);
-    suppressAutoPush = true;
-    useTrainingStore.getState().applyRemote(json, meta.modifiedTime);
-    suppressAutoPush = false;
-    useSyncStore.setState({ fileId: meta.id });
-  } else if (localTime > meta.modifiedTime) {
-    const updated = await updateFile(meta.id, training.exportData());
-    stampLocal(updated.modifiedTime);
-    useSyncStore.setState({ fileId: meta.id });
-  } else {
-    useSyncStore.setState({ fileId: meta.id });
+    case "pull": {
+      const json = await downloadFile(plan.fileId);
+      suppressAutoPush = true;
+      useTrainingStore.getState().applyRemote(json, meta!.modifiedTime);
+      suppressAutoPush = false;
+      useSyncStore.setState({ fileId: plan.fileId });
+      break;
+    }
+    case "push": {
+      const updated = await updateFile(plan.fileId, training.exportData());
+      stampLocal(updated.modifiedTime);
+      useSyncStore.setState({ fileId: plan.fileId });
+      break;
+    }
+    case "adopt":
+      useSyncStore.setState({ fileId: plan.fileId });
+      break;
+    case "skip":
+      break;
   }
 
   useSyncStore.setState({ lastSyncedAt: nowISO() });

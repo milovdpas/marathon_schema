@@ -12,10 +12,11 @@ isn't re-covered.
 
 ## 1. No component-level test coverage
 
-**Status:** partially addressed. `npm test` runs vitest over `lib/**/*.test.ts`
-— 94 tests covering the import-merge logic, calendar layout/range, the workout
-predicates, the plan-request wire format, the pace resolver, the OCR repair
-rules, the OAuth refresh path and the redirect guard.
+**Status:** partially addressed. `npm test` runs vitest over `lib/**` and
+`store/**` — 125 tests covering the import-merge logic, the Drive sync
+decisions and auto-push, calendar layout/range, the workout predicates, the
+plan-request wire format, the pace resolver, the OCR repair rules, the OAuth
+refresh path and the redirect guard.
 
 **What's still uncovered:** anything rendered. There are no component tests,
 because they'd need i18n + Zustand + Base UI portals stood up, which costs more
@@ -58,13 +59,15 @@ outside the repo (gitignored `split-screenshots/`).
 
 ## 3. Miscellaneous
 
-- **`store/use-sync-store.ts` (215 lines)** owns the Drive auto-push debounce
-  and conflict resolution, untested. The same class of risk as the import
-  merge, but harder to isolate because it reaches the network.
 - **The route handlers themselves** are still untested end to end; only the
   logic behind them (`lib/server/google-oauth.ts`, `lib/server/api.ts`) is.
   Covering the handlers means stubbing `next/headers`, which is more
   scaffolding than their thin bodies justify today.
+- **A live Drive round trip** is never exercised. The sync store is tested
+  against a mocked client, which pins every decision but not the wire format.
+  Doing better needs a real Google account and consent flow in CI — not worth
+  it for a personal app; a manual connect-and-sync after touching
+  `lib/google-drive.ts` covers it.
 
 ---
 
@@ -122,6 +125,13 @@ Kept short, as a record of decisions rather than a changelog.
   the first applicable one from a cursor. That makes the "returning users only
   see genuinely new prompts" rule something you can read, rather than something
   that falls out of `phase !== "splits" && phase !== "plan"`.
+- **The Drive newest-wins decision** moved to `lib/sync-decision.ts` and is
+  tested. Extracting it surfaced a data-loss path: `exportData()` returns `""`
+  when there are no plans, and the push branch of `reconcile()` had no plan
+  guard (both sibling branches did). Deleting the last plan stamps a fresh
+  `lastModified` and re-seeds *asynchronously*, so a reconcile in that window —
+  a tab refocus is enough — uploaded an empty file over the user's synced
+  training. It now adopts the remote file id instead of pushing nothing.
 - **An open redirect on the OAuth callback.** The `returnTo` guard checked
   `startsWith("/") && !startsWith("//")`, which `/\evil.com` passes — but the
   URL parser reads the backslash as a slash, so `new URL()` resolved it to

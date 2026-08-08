@@ -16,6 +16,6 @@ export default defineConfig({
     // i18n + Zustand + Base UI portals and would cost more than the suite is
     // worth — see docs/tech-debt.md.
     environment: "node",
-    include: ["lib/**/*.test.ts"],
+    include: ["lib/**/*.test.ts", "store/**/*.test.ts"],
   },
 });
