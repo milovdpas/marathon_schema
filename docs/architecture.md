@@ -54,7 +54,7 @@ Consequences worth knowing:
 - `public/sw.js` caches the app shell under `/app`, and only `/app*` navigations
   may refresh it — caching the marketing page under that key would serve the
   wrong page to an offline user.
-- Returning users skip the landing page **twice over**. `middleware.ts` (matcher
+- Returning users skip the landing page **twice over**. `proxy.ts` (matcher
   `/` only) redirects when the `rp_has_plans` cookie is present, which is what
   stops the marketing page flashing before hydration — `localStorage` is
   invisible to the server, so a client-only redirect always paints first. The
@@ -62,12 +62,12 @@ Consequences worth knowing:
   mirrors "this browser has plans" into it in both directions, so wiping your
   data hands you the landing page back rather than an empty app.
   `components/marketing/returning-user-redirect.tsx` stays as the fallback, and
-  covers what middleware can't see (an installed PWA, or a cleared cookie with
+  covers what the server can't see (an installed PWA, or a cleared cookie with
   surviving `localStorage`). It is a separate client component so the landing
   page module never imports the store.
 - A crawler has no cookie, so `/` still prerenders and still serves the
   marketing page. The narrow matcher is deliberate: a broader one would put
-  middleware in front of every static page for no gain.
+  the proxy in front of every static page for no gain.
 
 ## Data model — `lib/types.ts` (read this first)
 

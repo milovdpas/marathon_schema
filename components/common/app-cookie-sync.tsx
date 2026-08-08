@@ -5,8 +5,8 @@ import { APP_COOKIE, APP_COOKIE_MAX_AGE } from "@/lib/app-cookie";
 import { useTrainingStore } from "@/store/use-training-store";
 
 /**
- * Mirrors "this browser has training data" into a cookie so `middleware.ts` can
- * skip the landing page for returning users without a flash.
+ * Mirrors "this browser has training data" into a cookie so `proxy.ts` can skip
+ * the landing page for returning users without a flash.
  *
  * Kept in sync in both directions: clearing your plans clears the cookie too,
  * or someone who wiped their data would be bounced into an empty app instead of
