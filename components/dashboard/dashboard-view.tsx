@@ -147,7 +147,7 @@ export function DashboardView() {
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-sm font-semibold">{t("dashboard.upcoming")}</h3>
           <Link
-            href="/plan"
+            href="/app/plan"
             className="text-xs font-medium text-primary hover:underline"
           >
             {t("dashboard.viewPlan")}

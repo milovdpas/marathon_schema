@@ -84,7 +84,7 @@ export function PlanView() {
           <Button
             size="sm"
             className="mt-3"
-            onClick={() => router.push(`/plan/new?from=${plan.id}`)}
+            onClick={() => router.push(`/app/plan/new?from=${plan.id}`)}
           >
             <Flag className="size-4" /> {t("plan.createNext")}
           </Button>

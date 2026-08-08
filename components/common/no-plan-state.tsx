@@ -15,7 +15,7 @@ export function NoPlanState() {
       <AppLogo size="lg" />
       <p className="mt-1 text-sm font-medium">{t("dashboard.noPlanTitle")}</p>
       <p className="text-xs text-muted-foreground">{t("dashboard.noPlanBody")}</p>
-      <Button className="mt-2" onClick={() => router.push("/plan/new")}>
+      <Button className="mt-2" onClick={() => router.push("/app/plan/new")}>
         <Plus className="size-4" /> {t("common.createPlan")}
       </Button>
     </Card>

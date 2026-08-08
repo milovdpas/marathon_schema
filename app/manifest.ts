@@ -6,19 +6,25 @@ import type { MetadataRoute } from "next";
  * chrome so the bottom nav sits where a native tab bar would.
  *
  * Android only mints a real installed app (a WebAPK) when the manifest offers
- * a raster icon of at least 192px plus a 512px one, AND a service worker with
- * a fetch handler is registered. Miss either and Chrome silently downgrades
- * "Install" to a home-screen bookmark — see public/sw.js.
+ * a raster icon of at least 192px plus a 512px one. Miss that and Chrome
+ * silently downgrades "Install" to a home-screen bookmark. (A service worker
+ * is *not* required for installability — measured both ways — but see
+ * public/sw.js for why we ship one anyway.)
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    // A stable identity, so changing start_url later doesn't create a second
-    // installed app alongside the first.
+    // A stable identity, so moving start_url doesn't create a second installed
+    // app alongside the first. Frozen: changing it mints a duplicate icon on
+    // every Android home screen that already has the app.
     id: "/",
-    name: "Marathon Tracker",
-    short_name: "Marathon",
-    description: "Track your marathon training progress.",
-    start_url: "/",
+    name: "RacePilot",
+    short_name: "RacePilot",
+    description:
+      "Free training plans for marathon, ultra, trail and backyard races.",
+    // The app, not the marketing page — an installed app should never open on
+    // a landing page selling itself. `scope` stays "/" because narrowing it
+    // would put `id` outside the scope.
+    start_url: "/app",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

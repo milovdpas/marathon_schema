@@ -1,7 +1,11 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { deriveStartTime, paceFromDistanceDuration } from "@/lib/pace";
-import { loadExamplePlan } from "@/lib/plan/example-plan";
+import {
+  defaultExampleFor,
+  exampleByKey,
+  type ExamplePlanKey,
+} from "@/lib/plan/examples";
 import {
   DEFAULT_PLAN_META,
   DEFAULT_TRAINING_PREFS,
@@ -42,6 +46,13 @@ interface TrainingState {
   lastModified: string;
 
   setHydrated: (v: boolean) => void;
+  /**
+   * Install a bundled example plan. No opinion about onboarding — the caller
+   * decides, which is what lets the welcome flow seed one before the user is
+   * marked as onboarded. Single-flight; no-ops once any plan exists.
+   */
+  seedExamplePlan: (key?: ExamplePlanKey) => Promise<void>;
+  /** Automatic seeding — only for a user who has finished the welcome flow. */
   initializePlan: () => Promise<void>;
 
   // Plan management
@@ -59,6 +70,8 @@ interface TrainingState {
       asNewPlan?: boolean;
     },
   ) => void;
+  /** Add an example plan alongside the existing ones, and make it active. */
+  addExamplePlan: (key: ExamplePlanKey) => Promise<void>;
   selectPlan: (id: string) => void;
   deletePlan: (id: string) => void;
   updatePlanMeta: (patch: Partial<PlanMeta>) => void;
@@ -109,14 +122,18 @@ export const useTrainingStore = create<TrainingState>()(
 
       setHydrated: (v) => set({ hydrated: v }),
 
-      initializePlan: () => {
+      seedExamplePlan: (key) => {
         if (seedInFlight) return seedInFlight;
         if (Object.keys(get().plans).length > 0) return Promise.resolve();
-        // Fresh installs wait for onboarding to decide (create vs. example).
-        if (!get().preferences.onboardingSeen) return Promise.resolve();
+
+        // No key given: pick the demo that matches what the user told us they
+        // train for. Falls back to the marathon plan when they haven't said.
+        const entry = key
+          ? exampleByKey(key)
+          : defaultExampleFor(get().preferences.athleteTypes);
 
         seedInFlight = (async () => {
-          const plan = await loadExamplePlan();
+          const plan = await entry.load();
           // A Drive sync or an import can land while the chunk is loading.
           if (Object.keys(get().plans).length > 0) return;
           set({
@@ -129,6 +146,16 @@ export const useTrainingStore = create<TrainingState>()(
         });
 
         return seedInFlight;
+      },
+
+      /**
+       * The automatic path. Fresh installs wait for the welcome flow to decide
+       * (create your own vs. look around with the example), so this stays inert
+       * until `onboardingSeen`; the flow itself calls `seedExamplePlan`.
+       */
+      initializePlan: () => {
+        if (!get().preferences.onboardingSeen) return Promise.resolve();
+        return get().seedExamplePlan();
       },
 
       addPlanFromImport: (json, opts) => {
@@ -169,6 +196,16 @@ export const useTrainingStore = create<TrainingState>()(
           activeId = id;
         }
         set({ plans: next, activePlanId: activeId, lastModified: nowISO() });
+      },
+
+      addExamplePlan: async (key) => {
+        const plan = await exampleByKey(key).load();
+        // Re-adding one the user already has would silently replace it (the ids
+        // are fixed per entry), so treat that as "just switch to it".
+        if (!get().plans[plan.id]) {
+          set((s) => ({ plans: { ...s.plans, [plan.id]: plan } }));
+        }
+        set({ activePlanId: plan.id, lastModified: nowISO() });
       },
 
       selectPlan: (id) => {
@@ -364,7 +401,14 @@ export const useTrainingStore = create<TrainingState>()(
       //      means "standard", so existing plans need no backfill.
       //      v11 also adds `preferences.calendarView`; absent means "month",
       //      so it needs no backfill either.
-      version: 11,
+      // v12: additive — Preferences.athleteTypes and installPromptSeen. Both
+      //      left unset for existing users on purpose: `athleteTypes`
+      //      distinguishes "never asked" (undefined) from "declined" ([]), so
+      //      absent is exactly what makes the one-time prompt appear.
+      //      v12 also drops the write-only `weatherOnboardingSeen`. Leftover
+      //      copies in stored blobs are harmless, and stripping them would
+      //      rewrite every user's data for nothing.
+      version: 12,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,

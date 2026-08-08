@@ -5,22 +5,45 @@ import { Field } from "@/components/common/field";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { type AthleteCapabilities, capabilitiesFor } from "@/lib/athlete";
 import { BACKYARD_LOOP_KM, backyardDistanceKm } from "@/lib/plan/backyard";
 import type { Draft } from "@/lib/plan/request";
 import { cn } from "@/lib/utils";
+import { useTrainingStore } from "@/store/use-training-store";
 import type { SetDraft } from "@/components/wizard/steps/types";
 
-const DISTANCE_PRESETS = [
+const ROAD_PRESETS = [
   { km: 42.2, label: "Marathon" },
   { km: 21.1, label: "½ Marathon" },
   { km: 10, label: "10K" },
   { km: 5, label: "5K" },
 ];
 
+const ULTRA_PRESETS = [
+  { km: 50, label: "50K" },
+  { km: 80, label: "50 mi" },
+  { km: 100, label: "100K" },
+  { km: 161, label: "100 mi" },
+];
+
+/** The distances worth one tap. Someone racing 100K shouldn't have to type it. */
+function presetsFor(caps: AthleteCapabilities) {
+  return caps.ultraFormats ? [...ROAD_PRESETS, ...ULTRA_PRESETS] : ROAD_PRESETS;
+}
+
 /** Everything about the race itself: name, format, distance, dates, goal. */
 export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
   const { t } = useTranslation();
+  const athleteTypes = useTrainingStore((s) => s.preferences.athleteTypes);
+  const caps = capabilitiesFor(athleteTypes);
   const isBackyard = draft.raceType === "backyard";
+
+  // A road runner has no use for the backyard format, and until they say
+  // otherwise every user has been shown a card they will never click.
+  const raceTypes = caps.ultraFormats
+    ? (["standard", "backyard"] as const)
+    : (["standard"] as const);
+  const presets = presetsFor(caps);
 
   return (
     <Card className="gap-0 space-y-3 p-4">
@@ -39,13 +62,14 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
         />
       </Field>
 
-      {/* Race format decides what the distance and goal fields mean. */}
-      <div>
+      {/* Race format decides what the distance and goal fields mean. With only
+          one format left there is nothing to choose, so the picker goes. */}
+      <div className={cn(raceTypes.length < 2 && "hidden")}>
         <Label className="text-xs text-muted-foreground">
           {t("wizard.raceTypeQ")}
         </Label>
         <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
-          {(["standard", "backyard"] as const).map((rt) => (
+          {raceTypes.map((rt) => (
             <button
               key={rt}
               type="button"
@@ -112,7 +136,7 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
             {t("wizard.raceDistance")}
           </Label>
           <div className="mt-1.5 flex flex-wrap gap-2">
-            {DISTANCE_PRESETS.map((p) => (
+            {presets.map((p) => (
               <button
                 key={p.km}
                 type="button"

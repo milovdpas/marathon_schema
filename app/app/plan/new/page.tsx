@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { HydrationGate } from "@/components/common/hydration-gate";
 import { PageHeader } from "@/components/common/page-header";
 import { AddPlanWizard } from "@/components/wizard/add-plan-wizard";
+
+export const metadata: Metadata = { title: "New plan" };
 
 /**
  * `?from=<planId>` arrives when starting the next plan from a finished one.

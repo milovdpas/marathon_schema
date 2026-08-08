@@ -12,6 +12,8 @@
 import { chromium } from "playwright-core";
 
 const BASE = "http://localhost:3000";
+// The app moved under /app; "/" is the marketing page.
+const APP = `${BASE}/app`;
 const OUT = "docs/screenshots";
 const VIEWPORT = { width: 430, height: 932 }; // a tall phone, matching the old shots
 
@@ -51,7 +53,7 @@ async function app({ dark = false, locale = "en" } = {}) {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 
-  await page.goto(BASE, { waitUntil: "networkidle" });
+  await page.goto(APP, { waitUntil: "networkidle" });
   await page.evaluate(
     ([theme, loc]) => {
       const raw = JSON.parse(
@@ -67,8 +69,10 @@ async function app({ dark = false, locale = "en" } = {}) {
           // At phone width the calendar defaults to the agenda, which renders
           // the whole plan; the month grid is the representative shot.
           calendarView: "month",
-          weatherOnboardingSeen: true,
           splitScannerOnboardingSeen: true,
+          // Otherwise the athlete-type and install prompts photobomb every shot.
+          athleteTypes: [],
+          installPromptSeen: true,
         },
       };
       localStorage.setItem("marathon-training-v1", JSON.stringify(raw));
@@ -80,7 +84,7 @@ async function app({ dark = false, locale = "en" } = {}) {
 }
 
 async function shot(page, path, name) {
-  await page.goto(BASE + path, { waitUntil: "networkidle" });
+  await page.goto(APP + path, { waitUntil: "networkidle" });
   await page.waitForTimeout(1400);
   for (let i = 0; i < 3; i++) {
     if (!(await page.locator('[role="dialog"]').count())) break;
@@ -99,7 +103,7 @@ async function shot(page, path, name) {
 // --- light ---
 {
   const { ctx, page, errors } = await app();
-  await shot(page, "/", "dashboard-light");
+  await shot(page, "", "dashboard-light");
   await shot(page, "/plan", "plan-light");
   await shot(page, "/calendar", "calendar-light");
   await shot(page, "/stats", "stats-light");
@@ -107,7 +111,7 @@ async function shot(page, path, name) {
   await shot(page, "/settings", "settings-light");
 
   // Wizard step 3 (the training step) — click through from step 1.
-  await page.goto(`${BASE}/plan/new`, { waitUntil: "networkidle" });
+  await page.goto(`${APP}/plan/new`, { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
   const form = page.locator("main");
   await form.getByRole("textbox").first().fill("Spring marathon");
@@ -134,7 +138,7 @@ async function shot(page, path, name) {
 // --- dark ---
 {
   const { ctx, page, errors } = await app({ dark: true });
-  await shot(page, "/", "dashboard-dark");
+  await shot(page, "", "dashboard-dark");
   await shot(page, "/calendar", "calendar-dark");
   await shot(page, "/stats", "stats-dark");
   if (errors.length) problems.push(`dark console: ${errors.slice(0, 3).join(" | ")}`);
@@ -144,7 +148,7 @@ async function shot(page, path, name) {
 // --- Dutch ---
 {
   const { ctx, page, errors } = await app({ locale: "nl" });
-  await shot(page, "/", "dashboard-nl");
+  await shot(page, "", "dashboard-nl");
   const txt = await page.locator("main").innerText();
   if (!/dagen te gaan|Totale afstand/i.test(txt)) {
     problems.push("dashboard-nl: page is not in Dutch");

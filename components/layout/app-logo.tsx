@@ -10,12 +10,18 @@ const SIZE = {
  * The app mark: the same runner badge as `app/icon.svg`, rendered as an emoji
  * so it picks up the platform's own glyph. Shared so the three places that show
  * it can't drift apart on radius or colour, as they had.
+ *
+ * `emoji` lets the mark follow the athlete (see `AthleteLogo`). Note this only
+ * ever changes the *in-app* mark: an installed PWA's icon is baked in at
+ * install time on both Android and iOS and cannot be swapped afterwards.
  */
 export function AppLogo({
   size = "md",
+  emoji = "🏃",
   className,
 }: {
   size?: keyof typeof SIZE;
+  emoji?: string;
   className?: string;
 }) {
   return (
@@ -27,7 +33,7 @@ export function AppLogo({
         className,
       )}
     >
-      🏃
+      {emoji}
     </span>
   );
 }

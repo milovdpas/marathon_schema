@@ -5,7 +5,9 @@ making changes. (`README.md` is user-facing and may lag behind features.)
 
 ## What this app is
 
-A **marathon / running training tracker**. Almost entirely a **client-side SPA on
+**RacePilot** — an endurance training planner and tracker (marathon, ultra,
+backyard ultra and trail today; cycling, swimming and triathlon are planned, see
+[`racepilot.md`](racepilot.md)). Almost entirely a **client-side SPA on
 Next.js (App Router)** — **no database**. All data lives in the browser's
 `localStorage`. The **only** server code is a thin set of Route Handlers under
 `app/api/*` that implement **server-side Google OAuth** for the optional Drive
@@ -21,6 +23,52 @@ sync (refresh token in an encrypted session cookie; no DB). Deploys to Vercel
 - Everything interactive is a client component (`"use client"`). Pages in `app/*` are thin server components that render a client `*View` inside `<HydrationGate>`.
 - `Date.now()`/`Math.random()`/`new Date()` are fine here (browser runtime) — the no-`Date` restriction only applies to Workflow scripts, not app code.
 
+## Routing — `/` is not the app
+
+```
+app/layout.tsx        providers + root metadata only. No chrome.
+app/page.tsx          marketing landing. Server-rendered, indexable.
+app/privacy/          the data promise. Indexable.
+app/welcome/          the first-run flow. Full-bleed, no chrome.
+app/app/layout.tsx    the app chrome (AppNav, mobile top bar, <main>) + the
+                      global dialog gates + `robots: noindex`.
+app/app/**            dashboard, plan, calendar, off-days, stats, settings.
+app/api/**            Route Handlers (OAuth, Drive, weather).
+```
+
+Why the app sits under a real `/app` prefix rather than a route group: every app
+page renders behind `<HydrationGate>`, which shows a skeleton until Zustand
+rehydrates from `localStorage`. A crawler's `localStorage` is empty, so it never
+sees past the skeleton — before this split, the entire indexable body of `/` was
+six words. A real segment also lets one `metadata` export in `app/app/layout.tsx`
+mark the whole section `noindex`, including routes added later.
+
+Consequences worth knowing:
+
+- `next.config.ts` holds **308 redirects** from the old top-level paths
+  (`/plan/*`, `/calendar`, `/off-days`, `/stats`, `/settings`).
+- `app/manifest.ts` uses `start_url: "/app"`. **`id` stays `"/"`** — Chrome keys
+  the installed Android WebAPK on it, so changing it mints a *second* icon on
+  every home screen that already has the app. `scope` stays `"/"` too, since
+  narrowing it would put `id` outside the scope.
+- `public/sw.js` caches the app shell under `/app`, and only `/app*` navigations
+  may refresh it — caching the marketing page under that key would serve the
+  wrong page to an offline user.
+- Returning users skip the landing page **twice over**. `middleware.ts` (matcher
+  `/` only) redirects when the `rp_has_plans` cookie is present, which is what
+  stops the marketing page flashing before hydration — `localStorage` is
+  invisible to the server, so a client-only redirect always paints first. The
+  cookie is a *signal*, not state: `components/common/app-cookie-sync.tsx`
+  mirrors "this browser has plans" into it in both directions, so wiping your
+  data hands you the landing page back rather than an empty app.
+  `components/marketing/returning-user-redirect.tsx` stays as the fallback, and
+  covers what middleware can't see (an installed PWA, or a cleared cookie with
+  surviving `localStorage`). It is a separate client component so the landing
+  page module never imports the store.
+- A crawler has no cookie, so `/` still prerenders and still serves the
+  marketing page. The narrow matcher is deliberate: a broader one would put
+  middleware in front of every static page for no gain.
+
 ## Data model — `lib/types.ts` (read this first)
 
 - **`TrainingPlan`** = `PlanMeta` + `{ id, version, createdAt, weeks[], workouts{}, offDays[], trainingPrefs? }`.
@@ -29,18 +77,19 @@ sync (refresh token in an encrypted session cookie; no DB). Deploys to Vercel
 - **`TrainingWeek`** = `{ weekNumber, startDate(Mon), endDate(Sun), phase, label?, workoutIds[] }`.
 - **`OffDay`** = `{ id, start, end, title, note? }` — vacations/trips; context + calendar display.
 - **`TrainingPrefs`** = `{ daysPerWeek, flexibleDays, trainingDays[7 Mon→Sun], planningMode: "exact"|"flexible", targetDistanceKm|null }`.
-- **`Preferences`** = `{ theme, locale?, onboardingSeen? }` (app-wide, not per-plan).
+- **`Preferences`** = `{ theme, locale?, onboardingSeen?, athleteTypes?, ... }` (app-wide, not per-plan).
+- **`AthleteType`** = `"runner"|"trail"|"ultra"|"triathlete"|"cyclist"|"swimmer"`. `preferences.athleteTypes` is **tri-state**: `undefined` = never asked (so the one-time prompt still fires), `[]` = asked and declined. UI must branch on `capabilitiesFor(types)` from `lib/athlete.ts`, never on the raw list; both `undefined` and `[]` return every capability, because hiding features from someone who told us nothing is how an app looks broken.
 
 ## State & persistence — `store/use-training-store.ts`
 
 The single source of truth. Shape: `{ plans: Record<id,TrainingPlan>, activePlanId, preferences, hydrated, lastModified }`.
 
 - **Active plan** is read via the `useActivePlan()` hook (`hooks/use-active-plan.ts`) — components select it, not `s.plan` (there is no `s.plan`).
-- **Actions:** plan mgmt (`addPlanFromImport`, `selectPlan`, `deletePlan`, `updatePlanMeta`, `updateTrainingPrefs`, `initializePlan`), off days (`add/update/deleteOffDay`), workouts (`toggleComplete`, `updateWorkout`, `addWorkout`, `deleteWorkout`), data (`exportData`, `importData`, `applyRemote`), and `setPreferences`. Mutations bump `lastModified` (used for sync conflict resolution).
-- **persist**: key `marathon-training-v1`, **`version: 11`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan` (async — it dynamic-imports the example plan, and a module-level `seedInFlight` guard stops it racing the `useHydrated` safety net).
+- **Actions:** plan mgmt (`addPlanFromImport`, `selectPlan`, `deletePlan`, `updatePlanMeta`, `updateTrainingPrefs`, `seedExamplePlan`, `addExamplePlan`, `initializePlan`), off days (`add/update/deleteOffDay`), workouts (`toggleComplete`, `updateWorkout`, `addWorkout`, `deleteWorkout`), data (`exportData`, `importData`, `applyRemote`), and `setPreferences`. Mutations bump `lastModified` (used for sync conflict resolution).
+- **persist**: key `marathon-training-v1`, **`version: 12`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan` (async — it dynamic-imports the example plan, and a module-level `seedInFlight` guard stops it racing the `useHydrated` safety net).
 - **Hydration**: `<HydrationGate>` (`hooks/use-hydrated.ts`) renders a skeleton until rehydrated, avoiding SSR/client mismatch. `useMounted()` is used where a value differs server vs client.
 
-## The example plan — `lib/plan/example-plan.ts`
+## Example plans — `lib/plan/examples.ts`
 
 The demo plan is **data, not a generator**: `lib/plan/example-plan.json` is a real 17-week export (17 logged runs with splits, weather and off days), produced by `scripts/scrub-example-plan.mjs`. `loadExamplePlan()` dynamic-imports it (so the ~26 KB isn't in every route's chunk), runs it through `normalizeBundle` from `lib/plan/storage.ts` — the same path a user's import takes — rebases every date by a whole number of weeks onto the current week, and stamps `id: DEFAULT_PLAN_ID` + `isExample: true`.
 
@@ -51,12 +100,27 @@ Two rules the loader enforces, both load-bearing:
 
 Raw exports carry the exporter's home coordinates in every weather snapshot. `marathon-plans-*.json` is gitignored and the scrub script strips `lat`/`lon`; the loader strips them again on the way in. **This repo is public — don't weaken any of those three.**
 
+`lib/plan/examples.ts` is the **catalogue**: one entry per kind of athlete
+(`marathon`, `trail`, `ultra`, `backyard`), each with a fixed id and its **own**
+`import()`. Do not collapse those into one template-literal import — the bundler
+would emit a single chunk containing every demo. `examplesFor(caps)` filters by
+athlete capabilities and `defaultExampleFor(caps)` picks the one to seed, matching
+the athlete's *primary* type rather than the first they merely qualify for.
+
+Only the marathon entry is a real export. The other three are generated from a
+small spec (`example-specs.ts` → `example-builder.ts`), deterministically, so a
+reload never changes a demo's stats. **Cycling, swimming and triathlon demos are
+absent on purpose**: `Workout` has no `sport` field yet, so they are
+unrepresentable rather than unwritten, and faking them by relabelling running
+workouts would make the demo lie about the one thing it exists to show.
+
 `lib/plan-defaults.ts` keeps what survived the old generator: `DEFAULT_PLAN_META` (fallback metadata for partial imports and migrations), `DEFAULT_PLAN_ID`, `DEFAULT_TRAINING_PREFS`, `PLAN_VERSION`.
 
 ## Key flows
 
-- **Onboarding** (`components/common/onboarding-gate.tsx`): fresh install (`!onboardingSeen` & no plans) shows a Drive dialog (when `useSyncStore().configured` && not yet connected) then a "create plan?" popup. "Just look around" seeds the example; "Create my plan" → `/plan/new`. Migration marks existing users `onboardingSeen: true`. `initializePlan` only seeds once `onboardingSeen` is true.
-- **AI Add-Plan wizard** (`app/plan/new`, `components/wizard/add-plan-wizard.tsx`): 4 steps collect a `PlanDraft` → step 4 exports a **plan-request JSON** + a localized **prompt** (`wizard.aiPrompt` in the dictionaries, which documents the importable plan schema). User pastes/attaches the AI's plan → `addPlanFromImport(json, trainingPrefs, startDate)` validates via `parseImport` and inserts it as a new active plan. The importable schema == what `parseImport` accepts.
+- **Onboarding** — a *page*, not a dialog stack. `components/common/onboarding-redirect.tsx` (mounted in the root layout) sends `hydrated && !onboardingSeen` to **`/welcome`**, where `components/onboarding/onboarding-flow.tsx` runs privacy → tour → athlete profile → feature opt-ins → finish. Two rules hold it together: nothing under `components/onboarding/` may call `useHydrated()` (it carries a seeding side effect) or `useActivePlan()` (there is no plan yet), and **Drive connect happens last**, in the terminal action, because `connect()` is a full-page redirect that would discard the flow. "Look around" calls `seedExamplePlan()` (awaited, so the dynamic import lands before navigating); "Create my plan" goes to `/app/plan/new` and lets `useHydrated`'s safety net seed. `initializePlan` is now just `onboardingSeen ? seedExamplePlan() : noop`, which is what un-tangled "first-run UI done" from "seeding permitted".
+- **What's new** (`components/common/whats-new-gate.tsx`): the popup mechanism that survived, now only for *existing* users — currently the split scanner, the athlete-type question and the install prompt. Each step declares when it `applies`; the gate shows the first applicable one from the cursor onward. It exports **`useWhatsNewPending()`**, which `next-plan-gate.tsx` uses instead of hand-listing the flags it must not stack on, so adding a step never means editing that file. A step's `applies` may flip true *after* mount (the install prompt waits for `beforeinstallprompt`), so the list is recomputed each render rather than snapshotted.
+- **AI Add-Plan wizard** (`app/app/plan/new`, `components/wizard/add-plan-wizard.tsx`): 4 steps collect a `PlanDraft` → step 4 exports a **plan-request JSON** + a localized **prompt** (`wizard.aiPrompt` in the dictionaries, which documents the importable plan schema). User pastes/attaches the AI's plan → `addPlanFromImport(json, trainingPrefs, startDate)` validates via `parseImport` and inserts it as a new active plan. The importable schema == what `parseImport` accepts.
 - **Google Drive sync** — **server-side OAuth**:
   - **Server** (`lib/server/*` + `app/api/*`): `google-oauth.ts` (auth URL, code exchange, refresh, `getValidAccessToken`, revoke, userinfo), `session.ts` (iron-session encrypted cookie `marathon-session` holding `{refreshToken, accessToken, accessTokenExpiry, user}`), `drive.ts` (Drive REST against the hidden `appDataFolder`, token-parameterized). Routes: `auth/google/login` (redirect to consent w/ `access_type=offline&prompt=consent`, CSRF `state` cookie), `auth/google/callback` (exchange + save session), `auth/session` (`{configured, connected, user}` — no tokens), `auth/logout` (revoke + destroy), `drive/meta` (findFile), `drive/content` (GET download / POST create / PATCH update). All `runtime="nodejs"`, `dynamic="force-dynamic"`; a 401 (refresh failed / Drive 401) → client re-auth.
   - **Client** (`lib/google-drive.ts`, `store/use-sync-store.ts`): a thin same-origin fetch client (`findFile`/`downloadFile`/`createFile`/`updateFile` → `/api/drive/*`, serialized via a single-flight queue; `fetchSession`/`loginUrl`/`logout`). `connect()` is a **full-page redirect** to `/api/auth/google/login`. The store learns `configured`/`connected`/`user` from `/api/auth/session` on `init()`; conflict = newest-wins (`lastModified` vs Drive `modifiedTime`); 3s debounced auto-push + refresh-on-refocus unchanged.

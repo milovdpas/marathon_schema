@@ -11,21 +11,23 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { AppLogo } from "@/components/layout/app-logo";
+import { AthleteLogo } from "@/components/layout/athlete-logo";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
 
 const NAV = [
-  { href: "/", labelKey: "nav.dashboard", icon: LayoutDashboard },
-  { href: "/plan", labelKey: "nav.plan", icon: ListChecks },
-  { href: "/calendar", labelKey: "nav.calendar", icon: CalendarDays },
-  { href: "/off-days", labelKey: "nav.offDays", icon: Umbrella },
-  { href: "/stats", labelKey: "nav.stats", icon: BarChart3 },
-  { href: "/settings", labelKey: "nav.settings", icon: Settings },
+  { href: "/app", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { href: "/app/plan", labelKey: "nav.plan", icon: ListChecks },
+  { href: "/app/calendar", labelKey: "nav.calendar", icon: CalendarDays },
+  { href: "/app/off-days", labelKey: "nav.offDays", icon: Umbrella },
+  { href: "/app/stats", labelKey: "nav.stats", icon: BarChart3 },
+  { href: "/app/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 function isActive(pathname: string, href: string): boolean {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  // The dashboard is the section root, so it needs an exact match or every
+  // other page would light it up too.
+  return href === "/app" ? pathname === "/app" : pathname.startsWith(href);
 }
 
 export function AppNav() {
@@ -37,7 +39,7 @@ export function AppNav() {
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card/40 px-4 py-6 md:flex">
         <div className="mb-8 flex items-center gap-2 px-2">
-          <AppLogo />
+          <AthleteLogo />
           <div className="leading-tight">
             <p className="text-sm font-semibold">{t("common.appName")}</p>
             <p className="text-xs text-muted-foreground">

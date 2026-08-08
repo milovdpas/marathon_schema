@@ -1,16 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { NextPlanGate } from "@/components/common/next-plan-gate";
-import { OnboardingGate } from "@/components/common/onboarding-gate";
+import { AppCookieSync } from "@/components/common/app-cookie-sync";
+import { OnboardingRedirect } from "@/components/common/onboarding-redirect";
 import { SyncInitializer } from "@/components/common/sync-initializer";
 import { Toaster } from "@/components/common/toaster";
-import { AppLogo } from "@/components/layout/app-logo";
-import { AppNav } from "@/components/layout/app-nav";
 import { ServiceWorker } from "@/components/layout/service-worker";
 import { I18nProvider } from "@/components/layout/i18n-provider";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -23,12 +21,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Marathon Tracker",
-  description: "Track your marathon training progress.",
-  applicationName: "Marathon",
+  // Without this, every relative OG/canonical URL silently resolves against
+  // localhost in production.
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME}: ${SITE_TAGLINE}`,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description:
+    "A free training planner for marathons, ultras, trail and backyard races. No account, no ads and no database. Your training stays in your browser, or in your own Google Drive.",
+  applicationName: SITE_NAME,
   // Installed to a home screen, this should open chromeless like the manifest
   // asks for; iOS reads it from here rather than the manifest.
-  appleWebApp: { capable: true, title: "Marathon", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "default" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME}: ${SITE_TAGLINE}`,
+    description:
+      "Plan and track marathon, ultra, trail and backyard training. Free, no account, and your data never leaves your device unless you say so.",
+    url: "/",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
@@ -37,6 +51,11 @@ export const viewport: Viewport = {
   themeColor: "#f1472c",
 };
 
+/**
+ * Providers only. The app's chrome (nav, top bar, popups) lives in
+ * `app/app/layout.tsx`, because `/`, `/privacy` and `/welcome` are full-bleed
+ * pages that must not render it.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -56,27 +75,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <I18nProvider>
-          <ServiceWorker />
-          <SyncInitializer />
-          <OnboardingGate />
-          <NextPlanGate />
-          <Toaster />
-          <div className="flex min-h-dvh">
-            <AppNav />
-            <div className="flex min-w-0 flex-1 flex-col">
-              {/* Mobile top bar */}
-              <header className="sticky top-0 z-(--z-topbar) flex h-(--h-topbar) items-center justify-between border-b bg-background/80 px-4 backdrop-blur md:hidden">
-                <div className="flex items-center gap-2">
-                  <AppLogo size="sm" />
-                  <span className="text-sm font-semibold">Marathon</span>
-                </div>
-                <ThemeToggle />
-              </header>
-              <main className="flex-1 px-4 pb-24 pt-5 md:px-8 md:pb-12 md:pt-8">
-                <div className="mx-auto w-full max-w-3xl">{children}</div>
-              </main>
-            </div>
-          </div>
+            <ServiceWorker />
+            <SyncInitializer />
+            <OnboardingRedirect />
+            <AppCookieSync />
+            <Toaster />
+            {children}
           </I18nProvider>
         </ThemeProvider>
       </body>

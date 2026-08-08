@@ -8,12 +8,14 @@ export const nl: Dict = {
     save: "Opslaan",
     delete: "Verwijderen",
     add: "Toevoegen",
-    appName: "Marathon",
+    appName: "RacePilot",
     appTagline: "Trainingstracker",
     createPlan: "Maak een plan",
     decrease: "Verlagen",
     increase: "Verhogen",
     now: "Nu",
+    gotIt: "Duidelijk",
+    example: "Voorbeeld",
   },
   nav: {
     dashboard: "Dashboard",
@@ -56,7 +58,7 @@ export const nl: Dict = {
     doneRatio: "{{done}}/{{total}} gedaan",
     upcoming: "Aankomende trainingen",
     viewPlan: "Bekijk plan",
-    caughtUp: "Geen aankomende trainingen — je bent helemaal bij! 🎉",
+    caughtUp: "Geen aankomende trainingen - je bent helemaal bij! 🎉",
     recent: "Onlangs voltooid",
     noPlanTitle: "Nog geen plan",
     noPlanBody: "Maak je eerste trainingsplan om te beginnen.",
@@ -67,18 +69,18 @@ export const nl: Dict = {
   },
   completeWorkout: {
     title: "Loop vastleggen",
-    desc: "We hebben je geplande doel ingevuld — pas het aan naar wat je werkelijk liep.",
+    desc: "We hebben je geplande doel ingevuld - pas het aan naar wat je werkelijk liep.",
     confirm: "Vastleggen & voltooien",
     planned: "Gepland: {{km}} km · {{pace}}/km",
   },
   plan: {
-    title: "Marathonplan",
+    title: "Trainingsplan",
     subtitle: "Je trainingsblok, gegroepeerd per week.",
     addWorkout: "Training toevoegen",
     week: "Week {{n}}",
     thisWeek: "deze week",
     weekMeta: "{{range}} · {{km}} km · {{done}}/{{total}} gedaan",
-    restWeek: "Rustweek — geen geplande trainingen.",
+    restWeek: "Rustweek - geen geplande trainingen.",
     pickDay: "Kies een dag",
     finishedTitle: "Plan afgerond 🏁",
     finishedBody:
@@ -99,7 +101,7 @@ export const nl: Dict = {
     distanceKm: "Afstand (km)",
     paceLabel: "Tempo (mm:ss)",
     durationMin: "Duur (mm:ss)",
-    computeHint: "Vul afstand + duur óf tempo in — de derde wordt automatisch berekend.",
+    computeHint: "Vul afstand + duur óf tempo in - de derde wordt automatisch berekend.",
     notes: "Notities",
     notesPlaceholder: "Hoe voelde het?",
     completed: "Voltooid",
@@ -124,7 +126,7 @@ export const nl: Dict = {
     legend:
       "Tik op een dag om de trainingen te bekijken of bewerken. Vage stippen zijn gepland; volle stippen zijn voltooid.",
     flexLegend:
-      "Vakanties en flexibele trainingen verschijnen als balken over hun dagen. De onderstreping op een flexibele balk markeert de dag waarop hij nu gepland staat — tik op de balk om dit te wijzigen.",
+      "Vakanties en flexibele trainingen verschijnen als balken over hun dagen. De onderstreping op een flexibele balk markeert de dag waarop hij nu gepland staat - tik op de balk om dit te wijzigen.",
     workoutsScheduled_one: "{{count}} training gepland",
     workoutsScheduled_other: "{{count}} trainingen gepland",
     nothingScheduled: "Niets gepland deze dag.",
@@ -159,10 +161,10 @@ export const nl: Dict = {
     weeklyMileage: "Wekelijkse kilometers",
     historyTitle: "Kilometergeschiedenis",
     historySub:
-      "Elke vastgelegde loop per kalenderweek — inclusief lopen van vóór dit plan en uit je andere plannen.",
+      "Elke vastgelegde loop per kalenderweek - inclusief lopen van vóór dit plan en uit je andere plannen.",
     splitPaces: "Tempo per kilometer",
     splitPacesSub:
-      "{{title}} · {{date}} — snelste {{fastest}}, langzaamste {{slowest}} per km.",
+      "{{title}} · {{date}} - snelste {{fastest}}, langzaamste {{slowest}} per km.",
     longRunProgression: "Opbouw lange duurloop",
     longRunHint: "Opbouw naar je piek, daarna afbouwen richting wedstrijddag.",
     planned: "Gepland",
@@ -188,7 +190,7 @@ export const nl: Dict = {
     goalLabel: "Doel-label",
     goalPace: "Doeltempo (mm:ss /km)",
     raceDateNote:
-      "Het wijzigen van de wedstrijddatum werkt alleen de wedstrijdgegevens bij — gebruik de AI-plantools om het schema aan te passen.",
+      "Het wijzigen van de wedstrijddatum werkt alleen de wedstrijdgegevens bij - gebruik de AI-plantools om het schema aan te passen.",
     appearance: "Weergave",
     language: "Taal",
     themeLight: "Licht",
@@ -207,9 +209,9 @@ export const nl: Dict = {
     aiIntro:
       "Exporteer je JSON, plak het in een AI-chatbot met de prompt hieronder en importeer het resultaat. De AI mag aankomende trainingen vrij verschuiven, maar de prompt houdt je wedstrijddatum vast en je voltooide trainingen onaangeroerd.",
     copyPrompt: "Prompt kopiëren",
-    aiPrompt: `Hier is mijn marathon-trainingsplan als JSON.
+    aiPrompt: `Hier is mijn trainingsplan als JSON.
 
-Gewenste wijziging: [beschrijf hier je wijziging — bijv. "Ik ben op een festival van 2026-08-14 tot 2026-08-16 en kan niet trainen; verplaats, verkort of verwijder die trainingen en pas de omliggende dagen aan zodat de opbouw logisch blijft"].
+Gewenste wijziging: [beschrijf hier je wijziging - bijv. "Ik ben op een festival van 2026-08-14 tot 2026-08-16 en kan niet trainen; verplaats, verkort of verwijder die trainingen en pas de omliggende dagen aan zodat de opbouw logisch blijft"].
 
 Het plan heeft een "offDays"-lijst (vakanties/reizen met een notitie of ik kan trainen). Respecteer deze: plan geen zware of lange trainingen tijdens die periodes, en verwijder een vrije dag niet tenzij ik erom vraag.
 
@@ -218,17 +220,17 @@ Je MAG elke GEPLANDE (nog niet voltooide) toekomstige training vrij verplaatsen,
 Elke training heeft GEPLANDE doelen ("plannedDistanceKm", "plannedPace") en, zodra ik hem gedaan heb, VASTGELEGDE werkelijke waarden ("actualDistanceKm", "actualPace", "durationMin" in minuten, optioneel "startTime" als "HH:mm", optioneel "weather" = {tempC, condition, ...}, en optioneel "splits" = tempo per kilometer [{km, pace "mm:ss", elevM}]). Gebruik "splits" om te zien hoe de loop verdeeld was (gelijkmatig, positieve/negatieve split, inzakken aan het eind, heuvels via elevM). Vergelijk gepland met werkelijk om te beoordelen hoe de training echt verloopt (bijv. structureel langzamer/korter dan gepland, of zware sessies in de hitte) en pas de komende trainingen daarop aan.
 
 Je MOET je aan deze regels houden:
-- WIJZIG NOOIT de wedstrijddatum. Houd "raceDate" exact hetzelfde en houd de marathon / wedstrijddag-training op zijn datum — de marathondatum staat vast.
+- WIJZIG NOOIT de wedstrijddatum. Houd "raceDate" exact hetzelfde en houd de wedstrijddag-training op zijn datum. De wedstrijddatum staat vast.
 - WIJZIG NOOIT een voltooide training: elke training met "completed": true moet exact zo blijven, inclusief "id", "completed", "actualDistanceKm", "actualPace", "durationMin", "startTime", "weather" en "splits" (zodat ik mijn vastgelegde voortgang niet verlies).
 - Houd de JSON-structuur geldig (plans, weeks, workouts). Als je een training naar een andere week verplaatst, verplaats dan ook zijn id naar de "workoutIds" van die week, en houd de "date" van elke training binnen het start/eind-bereik van zijn week.
 - Geef alleen de volledige bijgewerkte JSON terug, niets anders.
-- BELANGRIJK — geef het resultaat als een downloadbaar .json-BESTAND zodat ik het direct kan toevoegen. Als je geen bestand kunt maken, zet dan de VOLLEDIGE JSON in één \`\`\`json-codeblok, inclusief de allereerste { en de allerlaatste } — splits het nooit en laat geen tekens weg.
+- BELANGRIJK - geef het resultaat als een downloadbaar .json-BESTAND zodat ik het direct kan toevoegen. Als je geen bestand kunt maken, zet dan de VOLLEDIGE JSON in één \`\`\`json-codeblok, inclusief de allereerste { en de allerlaatste } - splits het nooit en laat geen tekens weg.
 
 JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
 [plak hier je geëxporteerde JSON]`,
     importedOk: "Plannen succesvol geïmporteerd.",
     importFailed:
-      "Importeren mislukt — de JSON is mogelijk onvolledig gekopieerd. Kopieer het hele antwoord van de AI (inclusief de eerste { en laatste }), of gebruik het .json-bestand met Bestand importeren.",
+      "Importeren mislukt - de JSON is mogelijk onvolledig gekopieerd. Kopieer het hele antwoord van de AI (inclusief de eerste { en laatste }), of gebruik het .json-bestand met Bestand importeren.",
     planDeleted: "Plan verwijderd.",
     support: "Steun",
     supportDesc:
@@ -245,7 +247,7 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     syncing: "Synchroniseren…",
     lastSynced: "Laatst gesynchroniseerd {{time}}",
     backingUp: "Back-up naar je verborgen Drive-appmap.",
-    reauthHint: "Aanmelding verlopen — verbind opnieuw om te blijven synchroniseren.",
+    reauthHint: "Aanmelding verlopen - verbind opnieuw om te blijven synchroniseren.",
     syncNow: "Nu synchroniseren",
     reconnect: "Opnieuw verbinden",
     disconnect: "Verbinding verbreken",
@@ -286,16 +288,109 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     enableBody:
       "Gebruik je locatie om de weersomstandigheden van elke loop die je vastlegt op te slaan. De kalenderweergave schakel je in via de legenda van de kalender.",
     locationDenied:
-      "Locatietoegang geweigerd — sta het toe in je browser om weer te gebruiken.",
+      "Locatietoegang geweigerd - sta het toe in je browser om weer te gebruiken.",
     locationUnavailable: "Kon je locatie niet ophalen. Probeer opnieuw.",
   },
   install: {
     title: "App installeren",
-    body: "Zet Marathon op je beginscherm, zodat de app schermvullend opent zonder browserbalken. Hij blijft ook werken zonder verbinding.",
+    body: "Zet RacePilot op je beginscherm, zodat de app schermvullend opent zonder browserbalken. Hij blijft ook werken zonder verbinding.",
     action: "App installeren",
     iosStep1: "Tik op de deelknop in Safari.",
     iosStep2: "Scrol omlaag en kies \"Zet op beginscherm\".",
-    iosStep3: "Tik op \"Voeg toe\" — Marathon opent daarna als een gewone app.",
+    iosStep3: "Tik op \"Voeg toe\" - RacePilot opent daarna als een gewone app.",
+  },
+  athlete: {
+    runner: "Hardloper",
+    runnerDesc: "5 km tot marathon",
+    trail: "Trailloper",
+    trailDesc: "Heuvels en technisch terrein",
+    ultra: "Ultraloper",
+    ultraDesc: "Verder dan de marathon",
+    triathlete: "Triatleet",
+    triathleteDesc: "Zwemmen, fietsen, lopen",
+    cyclist: "Wielrenner",
+    cyclistDesc: "Weg, gravel of baan",
+    swimmer: "Zwemmer",
+    swimmerDesc: "Bad of open water",
+    promptTitle: "Waar train je voor?",
+    promptBody:
+      "Kies alles wat van toepassing is, dan laat RacePilot alleen zien wat relevant is. Je kunt dit altijd aanpassen in instellingen.",
+    cardTitle: "Jouw sporten",
+    cardBody:
+      "Waar je voor traint. Bepaalt welke wedstrijdvormen en functies je ziet.",
+    none: "Niet ingesteld - alles wordt getoond.",
+  },
+  examples: {
+    marathon: "Marathonplan",
+    marathonDesc: "Een echt marathonblok van 16 weken, inclusief splits.",
+    trail: "Trail 50K-plan",
+    trailDesc: "Twaalf weken heuvels en lange dagen op de trails.",
+    ultra: "100 km ultraplan",
+    ultraDesc: "Zestien weken opgebouwd rond lange duurlopen op elkaar.",
+    backyard: "Backyard-ultraplan",
+    backyardDesc: "Veertien weken rondjes trainen richting 20 yards.",
+    addTitle: "Probeer een voorbeeldplan",
+    addBody:
+      "Voorbeeldplannen zijn andermans training, puur om te bekijken. Ze worden nooit als context gebruikt als een AI jouw plan schrijft.",
+    showAll: "Toon alle sporten",
+    added: "Toegevoegd",
+    comingSoon:
+      "Nog geen voorbeeldplan voor {{sports}}. Die komen zodra RacePilot fiets- en zwemtrainingen kan inplannen, en dat is de volgende grote stap.",
+  },
+  welcome: {
+    continue: "Verder",
+    back: "Terug",
+    privacyTitle: "Gratis, en van jou",
+    privacySubtitle:
+      "Eerst even dit: wat er met je trainingsgegevens gebeurt.",
+    tourTitle: "Wat je krijgt",
+    tourSubtitle: "Vier dingen die RacePilot goed doet.",
+    profileTitle: "Waar train je voor?",
+    profileSubtitle: "Zodat we alleen laten zien wat relevant is.",
+    featuresTitle: "Optionele extra's",
+    featuresSubtitle: "Standaard allemaal uit. Zet aan wat je wilt.",
+    finishTitle: "Klaar wanneer jij dat bent",
+    finishSubtitle:
+      "Maak je eigen plan, of kijk eerst rond met een voorbeeld.",
+    profileHint:
+      "Optioneel - sla het over en alles blijft zichtbaar. Je kunt dit aanpassen in instellingen.",
+    exploreWith: "Rondkijken met het {{plan}}",
+    privacy: {
+      free: "Helemaal gratis",
+      freeBody: "Geen abonnement, geen proefperiode, geen advertenties.",
+      local: "Opgeslagen in je browser",
+      localBody:
+        "Er is geen account en geen database. Je training staat op dit apparaat.",
+      drive: "Jouw Drive, als je wilt",
+      driveBody:
+        "Zet synchronisatie aan en het bestand gaat naar je eigen Google Drive. Wij houden nooit een kopie.",
+      noTracking: "Geen trackers",
+      noTrackingBody:
+        "Geen analytics, geen advertenties, niets om toestemming voor te geven.",
+      readMore: "Lees de volledige privacypagina",
+    },
+    tour: {
+      plan: "Een plan rond jouw week",
+      planBody:
+        "Kies je trainingsdagen en doel. Maak het zelf, of laat een AI het schrijven en importeer het resultaat.",
+      calendar: "Een kalender die op een telefoon past",
+      calendarBody:
+        "Maand, week, dag, of een scrollende agenda met alleen je trainingsdagen.",
+      log: "Een training in seconden loggen",
+      logBody:
+        "Afstand, tijd en tempo rekenen elkaar uit - en je splits worden zo van een screenshot gelezen.",
+      stats: "Cijfers die iets zeggen",
+      statsBody:
+        "Weekvolume, opbouw van de lange duurloop en tempotrends voor het blok waar je in zit.",
+    },
+    finish: {
+      create: "Maak mijn plan",
+      createBody:
+        "Beantwoord een paar vragen en krijg een plan rond jouw week.",
+      explore: "Eerst rondkijken",
+      exploreBody:
+        "Laad een voorbeeldplan en klik door een echt trainingsblok.",
+    },
   },
   features: {
     title: "Functies",
@@ -344,7 +439,7 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     distanceCustom: "Aangepast (km)",
     raceDate: "Wedstrijddatum",
     startDate: "Wanneer start je dit plan?",
-    startDateHint: "Het plan wordt vanaf deze datum opgebouwd — niet vanaf vandaag.",
+    startDateHint: "Het plan wordt vanaf deze datum opgebouwd - niet vanaf vandaag.",
     goalQ: "Wat is je doel?",
     goalFinish: "Gewoon uitlopen",
     goalTime: "Streeftijd",
@@ -375,13 +470,13 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     showLess: "Toon minder",
     latestRuns: "Je laatste lopen",
     latestRunsHint:
-      "Optioneel — geeft de AI een idee van je huidige conditie. Voeg een paar recente lopen toe.",
+      "Optioneel - geeft de AI een idee van je huidige conditie. Voeg een paar recente lopen toe.",
     addRun: "Loop toevoegen",
     runDistance: "Afstand (km)",
     runTimePlaceholder: "Totale tijd (bijv. 50:43)",
     daysPerWeek: "Trainingsdagen per week",
     trainingDaysQ: "Op welke dagen wil je trainen?",
-    flexibleDays: "Ik ben flexibel — geen vaste dagen",
+    flexibleDays: "Ik ben flexibel - geen vaste dagen",
     planningModeQ: "Hoe moeten trainingen worden ingepland?",
     planningExact: "Exacte datums",
     planningExactDesc: "Elke training staat vast op een specifieke dag.",
@@ -389,14 +484,14 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     planningFlexibleDesc:
       "Elke training krijgt een periode (bijv. ma–wo) en jij kiest de exacte dag.",
     targetQ: "Afstand die je comfortabel wilt kunnen lopen vóór de wedstrijd",
-    targetUnknown: "Ik weet het niet — laat de AI beslissen",
+    targetUnknown: "Ik weet het niet - laat de AI beslissen",
     targetKm: "Doelafstand (km)",
     // Stap 4
     aiIntro:
       "Je planaanvraag is klaar. Geef het aan een AI-chatbot om het volledige schema te bouwen:",
     aiStep1: "1. Exporteer de planaanvraag (of kopieer het) hieronder.",
     aiStep2: "2. Kopieer de prompt en plak het in je AI-chatbot, met het geëxporteerde bestand erbij.",
-    aiStep3: "3. De AI geeft een plan terug als JSON — mogelijk stelt het eerst een paar vragen.",
+    aiStep3: "3. De AI geeft een plan terug als JSON - mogelijk stelt het eerst een paar vragen.",
     aiStep4: "4. Plak of voeg die JSON hieronder toe en druk op Plan voltooien.",
     exportRequest: "Aanvraag exporteren (JSON)",
     copyRequest: "Aanvraag kopiëren",
@@ -407,32 +502,32 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     completePlan: "Plan voltooien",
     created: "Plan aangemaakt",
     completeError:
-      "Kon dit niet als plan lezen — het is mogelijk onvolledig gekopieerd. Kopieer het hele antwoord van de AI (inclusief de eerste { en laatste }), of voeg het .json-bestand toe.",
+      "Kon dit niet als plan lezen - het is mogelijk onvolledig gekopieerd. Kopieer het hele antwoord van de AI (inclusief de eerste { en laatste }), of voeg het .json-bestand toe.",
     aiPrompt: `Je bouwt een hardloop-trainingsplan voor mij. Ik voeg een plan-aanvraag-JSON toe met mijn wedstrijd en voorkeuren. Lees het en geef daarna een plan terug in EXACT onderstaand JSON-schema zodat ik het in mijn app kan importeren.
 
 Wat de velden in de bijgevoegde plan-aanvraag betekenen:
 - race.name: hoe het plan moet heten. race.raceName: de naam van de wedstrijd.
 - race.distanceKm: de wedstrijdafstand in kilometers.
 - race.date: wedstrijddag (YYYY-MM-DD).
-- startDate: de datum waarop ik dit plan begin (YYYY-MM-DD). Bouw week 1 vanaf deze datum — ga NIET uit van de datum van vandaag.
+- startDate: de datum waarop ik dit plan begin (YYYY-MM-DD). Bouw week 1 vanaf deze datum - ga NIET uit van de datum van vandaag.
 - race.type: "standard" (één aaneengesloten wedstrijd over een vaste afstand) of "backyard" (zie hieronder).
-- goal: mijn wedstrijddoel — { type: "finish" | "time" | "pace" | "yards", value }. "finish" = gewoon uitlopen; "time" = streeftijd (value); "pace" = streeftempo per km (value); "yards" = aantal backyard-yards (value). Gebruik dit om "goalPace"/"goalLabel" en de intensiteit te bepalen.
+- goal: mijn wedstrijddoel - { type: "finish" | "time" | "pace" | "yards", value }. "finish" = gewoon uitlopen; "time" = streeftijd (value); "pace" = streeftempo per km (value); "yards" = aantal backyard-yards (value). Gebruik dit om "goalPace"/"goalLabel" en de intensiteit te bepalen.
 
-Als race.type "backyard" is, gaat het om een BACKYARD ULTRA en geldt de gebruikelijke marathonlogica NIET:
+Als race.type "backyard" is, gaat het om een BACKYARD ULTRA en geldt de gebruikelijke logica voor een vaste afstand NIET:
 - Het format: ik loop een vaste ronde (race.loopKm, meestal 6,706 km) elk heel uur, precies op het uur. Wat ik sneller loop, is mijn rust. Wie een ronde niet start of niet uitloopt, ligt eruit; de laatste loper wint. Eén "yard" is één ronde en één uur, dus race.targetYards is tegelijk mijn afstands- en tijdsdoel (bijv. 24 yards = 24 uur = ongeveer 161 km).
 - Train tijd op de benen, geen snelheid. Er is geen eindtijd en geen enkele piek-duurloop om naartoe af te bouwen.
 - Bouw op richting mijn doel met: lange duurlopen op opeenvolgende dagen; "mock backyards" (meerdere rondes die telkens op het uur starten, met steeds meer yards); een deel van de training 's nachts en op vermoeide benen; en bewust oefenen met eten, drinken en omkleden in de korte rust tussen de rondes.
 - "goalPace" moet een rustig, herhaalbaar rondetempo zijn dat elk uur genoeg rust overhoudt (een ronde in ongeveer 40-50 minuten is gebruikelijk), NIET een wedstrijdtempo. "goalLabel" moet iets als "24 yards" zijn.
 - Bouw af richting de wedstrijdweek, maar de piektrainingen zijn duur en herhaalde rondes in plaats van één lange afstand.
-- offDays[]: periodes waarin ik niet volledig kan trainen — { start, end, title, note }. De "note" zegt hoe beperkt (bijv. geen training / zeer beperkt / verminderd).
-- latestRuns[]: mijn recente lopen — { distanceKm, durationMin (TOTALE tijd van de loop, in minuten), pace (min/km, afgeleid uit afstand + totale tijd), date }. Gebruik deze om mijn conditie te schatten. Als dit leeg is, vraag me dan naar mijn conditie.
+- offDays[]: periodes waarin ik niet volledig kan trainen - { start, end, title, note }. De "note" zegt hoe beperkt (bijv. geen training / zeer beperkt / verminderd).
+- latestRuns[]: mijn recente lopen - { distanceKm, durationMin (TOTALE tijd van de loop, in minuten), pace (min/km, afgeleid uit afstand + totale tijd), date }. Gebruik deze om mijn conditie te schatten. Als dit leeg is, vraag me dan naar mijn conditie.
 - previousPlans[]: mijn eerdere trainingsblokken, als ALLEEN-LEZEN historie. Elk blok heeft { name, raceName, raceDistanceKm, raceDate, startDate, goalPace, goalLabel, weeks, summary, weeklyMileage[], completedRuns[] }.
   - summary: { completionPct (hoeveel van dat plan ik echt heb gedaan), completedRuns, totalKm, plannedTotalKm, longestRunKm, averagePace, peakWeekKm }.
-  - weeklyMileage[]: { week, plannedKm, actualKm } — gepland versus werkelijk per week, zodat je ziet hoe trouw ik was en hoe de omvang opliep.
-  - completedRuns[]: alleen de lopen die ik echt heb vastgelegd — { date, type, title, plannedDistanceKm, plannedPace, distanceKm, pace, durationMin, startTime, tempC, condition, splits, elevM, notes }. "splits" is het tempo per kilometer waarbij de EERSTE waarde km 1 is, de tweede km 2, enzovoort; "elevM" (indien aanwezig) is het bijbehorende hoogteverschil per kilometer.
+  - weeklyMileage[]: { week, plannedKm, actualKm } - gepland versus werkelijk per week, zodat je ziet hoe trouw ik was en hoe de omvang opliep.
+  - completedRuns[]: alleen de lopen die ik echt heb vastgelegd - { date, type, title, plannedDistanceKm, plannedPace, distanceKm, pace, durationMin, startTime, tempC, condition, splits, elevM, notes }. "splits" is het tempo per kilometer waarbij de EERSTE waarde km 1 is, de tweede km 2, enzovoort; "elevM" (indien aanwezig) is het bijbehorende hoogteverschil per kilometer.
   Gebruik dit om mijn echte trainingsbelasting te beoordelen, hoe consistent ik geplande tempo's haalde, hoe mijn lange duurlopen opbouwden, en een realistisch doel voor de nieuwe wedstrijd.
 - training.daysPerWeek: hoeveel dagen per week ik wil hardlopen.
-- training.trainingDays: de weekdagen waarop ik wil lopen (bijv. ["Monday","Wednesday"]). null betekent dat ik flexibel ben — kies dan zelf logische dagen.
+- training.trainingDays: de weekdagen waarop ik wil lopen (bijv. ["Monday","Wednesday"]). null betekent dat ik flexibel ben - kies dan zelf logische dagen.
 - training.flexibleDays: true als ik geen vaste trainingsdagen heb.
 - training.planningMode: "exact" = elke training vast op een specifieke dag; "flexible" = geef elke training een periode en ik kies zelf de exacte dag.
 - training.targetDistanceKm: de langste ENKELE lange duurloop die ik comfortabel wil halen vóór de wedstrijd (NIET mijn wekelijkse omvang). null betekent dat jij beslist op basis van de wedstrijdafstand.
@@ -461,7 +556,7 @@ Uitvoer-schema (geef precies deze vorm terug, niets anders):
           // Nieuwe plannen zetten "completed": false. Zodra ik een training vastleg vult de app de werkelijke waarden in:
           // "actualDistanceKm", "actualPace" ("mm:ss"), "durationMin" (getal), optioneel
           // "startTime" ("HH:mm"), optioneel "weather" {tempC, condition, ...} en optioneel
-          // "splits" [{km, pace, elevM}] — laat deze weg bij nieuwe plannen.
+          // "splits" [{km, pace, elevM}] - laat deze weg bij nieuwe plannen.
         }
       }
     }
@@ -478,8 +573,8 @@ Regels:
 - Gebruik mijn laatste lopen om conditie en tempo's te schatten. Zet elke training op "completed": false.
 - Als mijn doeltijd/-tempo niet is gegeven, leid dan een logische "goalPace"/"goalLabel" af uit mijn laatste lopen en de wedstrijdafstand (of vraag het me eerst).
 - Het id van elke training moet in de "workoutIds" van zijn week staan, en de "date" moet binnen die week vallen.
-- "previousPlans" is historie om van te leren, GEEN sjabloon. Geef in "plans" alleen het nieuwe plan terug — kopieer nooit een eerder plan, zijn weken of trainingen naar je uitvoer. Elk id dat je teruggeeft moet volledig nieuw en uniek zijn.
-- Geef het resultaat als een downloadbaar .json-BESTAND zodat ik het direct kan toevoegen. Als je geen bestand kunt maken, zet dan de VOLLEDIGE JSON in één \`\`\`json-codeblok, inclusief de allereerste { en de allerlaatste } — splits het nooit en laat geen tekens weg.
+- "previousPlans" is historie om van te leren, GEEN sjabloon. Geef in "plans" alleen het nieuwe plan terug - kopieer nooit een eerder plan, zijn weken of trainingen naar je uitvoer. Elk id dat je teruggeeft moet volledig nieuw en uniek zijn.
+- Geef het resultaat als een downloadbaar .json-BESTAND zodat ik het direct kan toevoegen. Als je geen bestand kunt maken, zet dan de VOLLEDIGE JSON in één \`\`\`json-codeblok, inclusief de allereerste { en de allerlaatste } - splits het nooit en laat geen tekens weg.
 - Stel eerst eventuele verduidelijkende vragen en geef daarna ALLEEN de JSON terug.`,
   },
 };

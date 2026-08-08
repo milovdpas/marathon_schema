@@ -1,12 +1,12 @@
-# 🏃 Marathon Tracker
+# 🏃 RacePilot
 
-A clean, mobile-first web app for tracking marathon training — built for a sub-3:30 goal on **October 11, 2026**, with an auto-generated 16-week plan that builds to a 30 km peak and works around real-life interruptions (vacations, a surf trip).
+A clean, mobile-first web app for planning and tracking endurance training. It covers marathon, ultra, backyard ultra and trail races today, with cycling, swimming and triathlon on the way (see [`docs/racepilot.md`](docs/racepilot.md)).
 
 No login required. Everything lives in your browser's **localStorage**. Optional Google Drive sync uses a thin Next.js backend (server-side OAuth) — there's no database. Deploys to Vercel.
 
 > Design language: **Strava × Notion** — calm surfaces, data-dense cards, an orange race-day accent, and full dark mode.
 
-> **Developers / AI agents:** start with [`docs/architecture.md`](docs/architecture.md) — the authoritative guide to the data model, state, flows, and conventions. This README is a user-facing overview and may lag behind newer features (multi-plan, the AI plan wizard, flexible periods, onboarding, Google Drive sync, English/Dutch i18n).
+> **Developers / AI agents:** start with [`docs/architecture.md`](docs/architecture.md) - the authoritative guide to the data model, state, flows, and conventions. This README is a user-facing overview and may lag behind newer features (multi-plan, the AI plan wizard, flexible periods, onboarding, Google Drive sync, English/Dutch i18n).
 
 ---
 
@@ -33,7 +33,7 @@ No login required. Everything lives in your browser's **localStorage**. Optional
 ## Features
 
 - **Dashboard** — countdown to race day, % through the training block, plan-completion %, weekly & monthly mileage (planned vs actual), upcoming and recently-completed workouts.
-- **Marathon plan** — all training weeks, grouped and collapsible, with a phase badge (Base / Build / Peak / Taper / Race / Reduced) and special-period labels. Mark complete, edit, add custom workouts.
+- **Training plan** - all training weeks, grouped and collapsible, with a phase badge (Base / Build / Peak / Taper / Race / Reduced) and special-period labels. Mark complete, edit, add custom workouts.
 - **Workout tracking** — date, type (Easy / Tempo / Interval / Long / Recovery), planned & actual distance, planned & actual pace, duration. Actual pace is auto-derived from distance + time.
 - **Statistics** — total distance, longest run, weighted average pace, runs completed, weekly mileage trend, and long-run progression (planned vs actual) charts.
 - **Calendar** — monthly grid with colored workout dots (faded = planned, solid = completed); tap a day to view, edit, or add workouts.

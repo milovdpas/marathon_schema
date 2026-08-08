@@ -67,17 +67,47 @@ export interface TrainingWeek {
   workoutIds: string[];
 }
 
+/**
+ * What the athlete does. A multi-select: plenty of people run trails *and*
+ * race triathlon. Drives which features the app offers — see `lib/athlete.ts`,
+ * which turns this into capabilities so the UI never branches on the raw list.
+ */
+export type AthleteType =
+  | "runner"
+  | "trail"
+  | "ultra"
+  | "triathlete"
+  | "cyclist"
+  | "swimmer";
+
+export const ATHLETE_TYPES: AthleteType[] = [
+  "runner",
+  "trail",
+  "ultra",
+  "triathlete",
+  "cyclist",
+  "swimmer",
+];
+
 export interface Preferences {
   theme: "light" | "dark" | "system";
   locale?: "en" | "nl";
   /** Whether the first-run onboarding has been shown. */
   onboardingSeen?: boolean;
+  /**
+   * Which sports the user trains for. Deliberately tri-state:
+   *   `undefined` — never asked, so existing users still get the prompt;
+   *   `[]`        — asked and declined, never ask again.
+   * A boolean companion flag can't express that, which is why there isn't one.
+   * Absent or empty means "show everything" (see `capabilitiesFor`).
+   */
+  athleteTypes?: AthleteType[];
+  /** Whether the one-time "add to home screen" prompt has been shown. */
+  installPromptSeen?: boolean;
   /** Weather feature opted in (needs geolocation + a configured server key). */
   weatherEnabled?: boolean;
   /** Show per-day weather in the calendar. */
   weatherCalendar?: boolean;
-  /** Whether the onboarding weather prompt has been shown. */
-  weatherOnboardingSeen?: boolean;
   /** Scan a Strava screenshot for per-km splits when logging a run. */
   splitScannerEnabled?: boolean;
   /** Whether the one-time split-scanner prompt has been shown. */

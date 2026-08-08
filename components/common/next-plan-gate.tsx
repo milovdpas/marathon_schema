@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useWhatsNewPending } from "@/components/common/whats-new-gate";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { todayISO } from "@/lib/date";
 import { raceWorkout } from "@/lib/plan/context";
@@ -30,15 +31,14 @@ export function NextPlanGate() {
   const plan = useActivePlan();
   const seen = useTrainingStore((s) => s.preferences.nextPlanPromptSeen);
   const onboardingSeen = useTrainingStore((s) => s.preferences.onboardingSeen);
-  const splitsSeen = useTrainingStore(
-    (s) => s.preferences.splitScannerOnboardingSeen,
-  );
   const setPreferences = useTrainingStore((s) => s.setPreferences);
+  // Structural rather than a hand-listed set of flags: a new announcement can
+  // be added to the what's-new gate without anyone remembering to edit this.
+  const whatsNewPending = useWhatsNewPending();
 
   if (!hydrated || !plan) return null;
-  // Never stack on top of an onboarding dialog, which can still be showing for
-  // returning users (the split-scanner prompt renders standalone).
-  if (!onboardingSeen || !splitsSeen) return null;
+  // Never stack on top of an announcement dialog.
+  if (!onboardingSeen || whatsNewPending) return null;
   if (seen?.includes(plan.id)) return null;
   // Race day must have arrived and the race itself must be logged.
   if (todayISO() < plan.raceDate) return null;
@@ -67,7 +67,7 @@ export function NextPlanGate() {
           <Button
             onClick={() => {
               dismiss();
-              router.push(`/plan/new?from=${plan.id}`);
+              router.push(`/app/plan/new?from=${plan.id}`);
             }}
           >
             <Flag className="size-4" /> {t("nextPlan.create")}

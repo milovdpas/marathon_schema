@@ -19,10 +19,15 @@
  *    anything auth- or user-specific
  */
 
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `shell-${VERSION}`;
 const ASSETS = `assets-${VERSION}`;
-const OFFLINE_FALLBACK = "/";
+// The app shell, not the site root: "/" is the marketing page and serving it
+// offline in place of the dashboard would be worse than an error.
+const OFFLINE_FALLBACK = "/app";
+
+const isAppShell = (pathname) =>
+  pathname === "/app" || pathname.startsWith("/app/");
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -63,8 +68,14 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const fresh = await fetch(request);
-          const cache = await caches.open(SHELL);
-          cache.put(OFFLINE_FALLBACK, fresh.clone());
+          // Only app pages may refresh the shell. Every /app/* route renders
+          // the same layout, so any of them is a valid stand-in for another —
+          // but caching the marketing page or /welcome under this key would
+          // hand an offline user the wrong page entirely.
+          if (isAppShell(url.pathname) && fresh.ok) {
+            const cache = await caches.open(SHELL);
+            cache.put(OFFLINE_FALLBACK, fresh.clone());
+          }
           return fresh;
         } catch {
           return (

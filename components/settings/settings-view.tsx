@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TrainingPrefsFields } from "@/components/common/training-prefs-fields";
 import { AppearanceCard } from "@/components/settings/appearance-card";
+import { AthleteCard } from "@/components/settings/athlete-card";
 import { CloudSyncCard } from "@/components/settings/cloud-sync-card";
 import { DataCard } from "@/components/settings/data-card";
+import { ExamplePlansCard } from "@/components/settings/example-plans-card";
 import { FeaturesCard } from "@/components/settings/features-card";
 import { InstallAppCard } from "@/components/settings/install-app-card";
 import { PlansCard } from "@/components/settings/plans-card";
@@ -32,6 +34,8 @@ export function SettingsView() {
         onDeleted={() => setStatus({ ok: true, msg: t("settings.planDeleted") })}
       />
 
+      <ExamplePlansCard />
+
       <RaceDetailsCard />
 
       {activePlan ? (
@@ -45,6 +49,8 @@ export function SettingsView() {
           />
         </Card>
       ) : null}
+
+      <AthleteCard />
 
       <FeaturesCard />
 

@@ -83,7 +83,7 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
         asNewPlan: draft.contextPlanIds.length > 0,
       });
       toast.success(t("wizard.created"));
-      router.push("/");
+      router.push("/app");
     } catch (e) {
       console.error("Plan import failed:", e);
       setError(t("wizard.completeError"));
@@ -123,7 +123,7 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
       <div className="flex items-center justify-between">
         <Button
           variant="ghost"
-          onClick={() => (step === 1 ? router.push("/") : setStep(step - 1))}
+          onClick={() => (step === 1 ? router.push("/app") : setStep(step - 1))}
         >
           <ArrowLeft className="size-4" /> {t("wizard.back")}
         </Button>

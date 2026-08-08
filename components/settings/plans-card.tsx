@@ -23,9 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PlanOptionLabel } from "@/components/settings/plan-option-label";
 import { useActivePlan } from "@/hooks/use-active-plan";
-import { isPlanFinished } from "@/lib/plan/context";
-import type { TrainingPlan } from "@/lib/types";
 import { useTrainingStore } from "@/store/use-training-store";
 
 /** Switch between plans, add one, or delete the active one. */
@@ -39,15 +38,12 @@ export function PlansCard({ onDeleted }: { onDeleted: () => void }) {
   const deletePlan = useTrainingStore((s) => s.deletePlan);
 
   const planList = Object.values(plans);
-  // Past races stay in the list; mark them so the active block stands out.
-  const planLabel = (p: TrainingPlan) =>
-    isPlanFinished(p) ? `${p.name} (${t("wizard.planFinished")})` : p.name;
 
   return (
     <Card className="gap-0 p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">{t("settings.plans")}</h3>
-        <Button size="sm" onClick={() => router.push("/plan/new")}>
+        <Button size="sm" onClick={() => router.push("/app/plan/new")}>
           <Plus className="size-4" /> {t("settings.addPlan")}
         </Button>
       </div>
@@ -63,14 +59,14 @@ export function PlansCard({ onDeleted }: { onDeleted: () => void }) {
           <SelectValue>
             {(value) => {
               const p = value ? plans[value as string] : undefined;
-              return p ? planLabel(p) : "";
+              return p ? <PlanOptionLabel plan={p} /> : "";
             }}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {planList.map((p) => (
             <SelectItem key={p.id} value={p.id}>
-              {planLabel(p)}
+              <PlanOptionLabel plan={p} />
             </SelectItem>
           ))}
         </SelectContent>
