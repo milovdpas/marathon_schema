@@ -83,7 +83,11 @@ export function OnboardingFlow() {
     if (features.drive) {
       // Full-page redirect. Everything above is already persisted, so the round
       // trip through Google is safe from here.
-      connect();
+      //
+      // The explicit target matters: `connect()` defaults to the current path,
+      // and coming back to /welcome would replay the flow the user has just
+      // finished.
+      connect(mode === "create" ? "/app/plan/new" : "/app");
       return;
     }
 

@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
-import { safeReturnTo } from "@/lib/server/api";
+import { redirectTo, safeReturnTo } from "@/lib/server/api";
 import {
   exchangeCode,
   fetchUserInfo,
@@ -13,9 +12,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const settingsError = NextResponse.redirect(
-    new URL("/settings?sync=error", url.origin),
-  );
+  // Relative, and pointing at the real settings path: `request.url`'s origin is
+  // the container's bind address behind a proxy, and /settings has been
+  // /app/settings since the routing move.
+  const settingsError = redirectTo("/app/settings?sync=error");
 
   if (!isOauthConfigured()) return settingsError;
 
@@ -42,11 +42,8 @@ export async function GET(request: Request) {
 
     // No refresh token returned and none stored — re-run consent to obtain one.
     if (!session.refreshToken) {
-      return NextResponse.redirect(
-        new URL(
-          `/api/auth/google/login?returnTo=${encodeURIComponent(returnTo)}`,
-          url.origin,
-        ),
+      return redirectTo(
+        `/api/auth/google/login?returnTo=${encodeURIComponent(returnTo)}`,
       );
     }
 
@@ -55,7 +52,7 @@ export async function GET(request: Request) {
     session.user = await fetchUserInfo(tokens.access_token!);
     await session.save();
 
-    return NextResponse.redirect(new URL(returnTo, url.origin));
+    return redirectTo(returnTo);
   } catch (e) {
     console.error("OAuth callback failed:", e);
     return settingsError;

@@ -10,6 +10,23 @@ import { NextResponse } from "next/server";
  * backslash as a slash and resolves it to `https://evil.com/` — an open
  * redirect handed a user who has just completed a real Google login.
  */
+/**
+ * A redirect to a path on this site, as a **relative** Location.
+ *
+ * Deliberately not `NextResponse.redirect`, which demands an absolute URL and
+ * would force us to name our own origin. Behind a reverse proxy the server has
+ * no reliable idea what that is: `request.url` is built from the container's
+ * bind address, so a self-hosted deploy sent users to `http://0.0.0.0:80/…`
+ * after signing in with Google. A relative Location sidesteps the question
+ * entirely — the browser resolves it against the URL it actually asked for.
+ *
+ * RFC 7231 has allowed relative Location since 2014 and every browser follows
+ * it. `safeReturnTo` already guarantees the path is same-origin.
+ */
+export function redirectTo(path: string): Response {
+  return new Response(null, { status: 302, headers: { Location: path } });
+}
+
 export function safeReturnTo(
   value: string | null | undefined,
   origin: string,

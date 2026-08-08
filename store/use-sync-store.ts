@@ -39,7 +39,12 @@ interface SyncState {
   error: string | null;
 
   init: () => Promise<void>;
-  connect: () => void;
+  /**
+   * Full-page redirect to Google. `returnTo` overrides where we come back to,
+   * which the welcome flow needs: it calls this from /welcome, and coming back
+   * to /welcome would replay the tour someone has just finished.
+   */
+  connect: (returnTo?: string) => void;
   disconnect: () => Promise<void>;
   syncNow: () => Promise<void>;
 }
@@ -205,12 +210,13 @@ export const useSyncStore = create<SyncState>()(
         if (session.connected) await refresh();
       },
 
-      connect: () => {
-        const returnTo =
-          typeof window !== "undefined"
+      connect: (returnTo) => {
+        const target =
+          returnTo ??
+          (typeof window !== "undefined"
             ? window.location.pathname + window.location.search
-            : "/";
-        window.location.href = loginUrl(returnTo);
+            : "/");
+        window.location.href = loginUrl(target);
       },
 
       disconnect: async () => {

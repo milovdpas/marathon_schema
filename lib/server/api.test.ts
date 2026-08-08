@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { driveErrorResponse, safeReturnTo } from "./api";
+import { driveErrorResponse, redirectTo, safeReturnTo } from "./api";
 
 const ORIGIN = "https://app.example";
 /** What the redirect will actually resolve to — the thing that matters. */
@@ -8,14 +8,14 @@ const resolved = (value: string | null | undefined) =>
 
 describe("safeReturnTo", () => {
   it("keeps a same-origin path, with query and hash", () => {
-    expect(safeReturnTo("/plan", ORIGIN)).toBe("/plan");
-    expect(safeReturnTo("/settings?sync=ok#data", ORIGIN)).toBe(
-      "/settings?sync=ok#data",
+    expect(safeReturnTo("/app/plan", ORIGIN)).toBe("/app/plan");
+    expect(safeReturnTo("/app/settings?sync=ok#data", ORIGIN)).toBe(
+      "/app/settings?sync=ok#data",
     );
   });
 
   it("reduces an absolute same-origin URL to its path", () => {
-    expect(safeReturnTo(`${ORIGIN}/stats`, ORIGIN)).toBe("/stats");
+    expect(safeReturnTo(`${ORIGIN}/app/stats`, ORIGIN)).toBe("/app/stats");
   });
 
   it("falls back to / for anything missing", () => {
@@ -76,5 +76,28 @@ describe("driveErrorResponse", () => {
     const res = driveErrorResponse("just a string");
     expect(res.status).toBe(500);
     spy.mockRestore();
+  });
+});
+
+describe("redirectTo", () => {
+  it("emits a RELATIVE Location, never an absolute one", () => {
+    // Behind a reverse proxy the server cannot know its own public origin:
+    // `request.url` is built from the container's bind address, which sent
+    // self-hosted users to http://0.0.0.0:80/... after signing in with Google.
+    // A relative Location lets the browser resolve it against the URL it
+    // actually requested.
+    const res = redirectTo("/app/settings?sync=error");
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location");
+    expect(location).toBe("/app/settings?sync=error");
+    expect(location?.startsWith("/")).toBe(true);
+    expect(location).not.toMatch(/^https?:/);
+    expect(location).not.toContain("0.0.0.0");
+  });
+
+  it("carries the whole path, query and all", () => {
+    expect(
+      redirectTo("/api/auth/google/login?returnTo=%2Fapp").headers.get("Location"),
+    ).toBe("/api/auth/google/login?returnTo=%2Fapp");
   });
 });
