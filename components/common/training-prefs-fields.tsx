@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useFormat } from "@/hooks/use-format";
 import { useWeekdayLabels } from "@/hooks/use-weekday-labels";
 import type { TrainingPrefs } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export function TrainingPrefsFields({
   onChange: (patch: Partial<TrainingPrefs>) => void;
 }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const weekdayLabels = useWeekdayLabels();
 
   const targetUnknown = prefs.targetDistanceKm === null;
@@ -147,9 +149,17 @@ export function TrainingPrefsFields({
               type="number"
               inputMode="decimal"
               step="1"
-              value={prefs.targetDistanceKm ?? ""}
+              value={
+                prefs.targetDistanceKm == null
+                  ? ""
+                  : fmt.distanceValue(prefs.targetDistanceKm, 0)
+              }
               onChange={(e) =>
-                onChange({ targetDistanceKm: Number(e.target.value) || 0 })
+                onChange({
+                  targetDistanceKm: fmt.toStoredDistance(
+                    Number(e.target.value) || 0,
+                  ),
+                })
               }
             />
           </div>

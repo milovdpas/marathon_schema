@@ -408,7 +408,12 @@ export const useTrainingStore = create<TrainingState>()(
       //      v12 also drops the write-only `weatherOnboardingSeen`. Leftover
       //      copies in stored blobs are harmless, and stripping them would
       //      rewrite every user's data for nothing.
-      version: 12,
+      // v13: additive — Preferences.country and Preferences.units. Nothing is
+      //      backfilled and nothing stored changes shape: every distance stays
+      //      in km, elevation in metres, temperature in °C and pace in seconds
+      //      per km. `units` is a display choice only (see lib/units.ts), and
+      //      absent means "follow the country", which is detected on first run.
+      version: 13,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,

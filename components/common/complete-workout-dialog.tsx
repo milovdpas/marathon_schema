@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatClock, formatPace, resolveLoggedRun } from "@/lib/pace";
+import { useFormat } from "@/hooks/use-format";
+import { formatClock, resolveLoggedRun } from "@/lib/pace";
 import type { Workout, WorkoutSplit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SplitScanField } from "@/components/common/split-scan-field";
@@ -35,6 +36,7 @@ export function CompleteWorkoutDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const updateWorkout = useTrainingStore((s) => s.updateWorkout);
 
   const [distance, setDistance] = useState("");
@@ -47,10 +49,12 @@ export function CompleteWorkoutDialog({
   const [wasOpen, setWasOpen] = useState(false);
   if (open && workout && !wasOpen) {
     setWasOpen(true);
-    setDistance(
-      String(workout.actualDistanceKm ?? workout.plannedDistanceKm ?? ""),
-    );
-    setPace(workout.actualPace ?? workout.plannedPace ?? "");
+    // Fields hold DISPLAY units throughout, and convert back on save. Two
+    // decimals is ~16 m on a marathon in miles, well below the precision anyone
+    // logs a run at; metric users convert by identity and never round at all.
+    const km = workout.actualDistanceKm ?? workout.plannedDistanceKm;
+    setDistance(km == null ? "" : fmt.distanceValue(km, 2));
+    setPace(fmt.paceValue(workout.actualPace ?? workout.plannedPace) || "");
     setDuration(formatClock(workout.durationMin));
     setStartTime(workout.startTime ?? "");
     setSplits(workout.splits ?? []);
@@ -60,6 +64,10 @@ export function CompleteWorkoutDialog({
 
   // distance + (duration OR pace) computes & locks the third field. The same
   // call drives what is displayed and what is saved, so they cannot disagree.
+  //
+  // Run entirely in display units: the solver only needs distance and pace to
+  // share a unit (min/mi × mi = minutes, just as min/km × km does), so nothing
+  // here has to know which system is active.
   const resolved = resolveLoggedRun({ distance, duration, pace });
   const paceComputed = resolved.computed === "pace";
   const durationComputed = resolved.computed === "duration";
@@ -70,9 +78,11 @@ export function CompleteWorkoutDialog({
     const { actualDistanceKm, durationMin, actualPace } = resolved;
     const start = startTime.trim() || undefined;
     updateWorkout(workout.id, {
-      actualDistanceKm,
+      // Back to canonical km + seconds-per-km on the way into the store.
+      actualDistanceKm:
+        actualDistanceKm == null ? undefined : fmt.toStoredDistance(actualDistanceKm),
       durationMin,
-      actualPace,
+      actualPace: actualPace == null ? undefined : fmt.toStoredPace(actualPace),
       startTime: start,
       splits: splits.length > 0 ? splits : undefined,
       completed: true,
@@ -93,14 +103,14 @@ export function CompleteWorkoutDialog({
           <div className="grid gap-4 py-1">
             <p className="text-xs text-muted-foreground">
               {t("completeWorkout.planned", {
-                km: workout.plannedDistanceKm,
-                pace: formatPace(workout.plannedPace).replace("/km", ""),
+                distance: fmt.distance(workout.plannedDistanceKm),
+                pace: fmt.pace(workout.plannedPace),
               })}
             </p>
 
             <div className="grid gap-1.5">
               <Label className="text-xs text-muted-foreground">
-                {t("workoutForm.distanceKm")}
+                {t("workoutForm.distance", { unit: fmt.distanceUnit })}
               </Label>
               <Input
                 type="number"
@@ -131,7 +141,7 @@ export function CompleteWorkoutDialog({
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs text-muted-foreground">
-                  {t("workoutForm.paceLabel")}
+                  {t("workoutForm.paceLabel", { unit: fmt.paceUnit })}
                 </Label>
                 <Input
                   placeholder="4:58"

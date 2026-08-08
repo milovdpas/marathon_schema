@@ -10,6 +10,7 @@ import { WorkoutRow } from "@/components/common/workout-row";
 import { Button } from "@/components/ui/button";
 import type { OffDay, WeatherSnapshot, Workout } from "@/lib/types";
 import { getDayWeather } from "@/lib/weather/client";
+import { useFormat } from "@/hooks/use-format";
 import { cn } from "@/lib/utils";
 import { useTrainingStore } from "@/store/use-training-store";
 import { useWeatherStore } from "@/store/use-weather-store";
@@ -52,6 +53,7 @@ export function DayDetail({
   className,
 }: DayDetailProps & { className?: string }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const items = dayItems(workouts, flexibleInWindow);
 
   // Day weather (when the feature is enabled — independent of the calendar toggle).
@@ -89,7 +91,7 @@ export function DayDetail({
           <WeatherIcon id={dayWeather.conditionId} className="size-5" />
           {dayWeather.tempC != null ? (
             <span className="text-sm font-semibold tabular-nums">
-              {Math.round(dayWeather.tempC)}°C
+              {fmt.temp(dayWeather.tempC)}
             </span>
           ) : null}
           {dayWeather.condition ? (

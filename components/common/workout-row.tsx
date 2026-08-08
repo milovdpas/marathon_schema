@@ -2,8 +2,8 @@
 
 import { CalendarRange, Check, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useFormat } from "@/hooks/use-format";
 import { formatDayLabel, formatRange } from "@/lib/date";
-import { formatPace } from "@/lib/pace";
 import type { Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { WorkoutTypeBadge } from "@/components/common/workout-type-badge";
@@ -22,6 +22,7 @@ export function WorkoutRow({
   className?: string;
 }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const { completed } = workout;
   const hasActual =
     workout.actualDistanceKm != null || workout.actualPace != null;
@@ -84,10 +85,12 @@ export function WorkoutRow({
         <p className="text-xs text-muted-foreground">
           {showDate ? <>{formatDayLabel(workout.date)} · </> : null}
           {hasActual && completed
-            ? `${workout.actualDistanceKm ?? workout.plannedDistanceKm} km · ${formatPace(
-                workout.actualPace ?? workout.plannedPace,
-              )}`
-            : `${workout.plannedDistanceKm} km · ${formatPace(workout.plannedPace)}`}
+            ? `${fmt.distance(
+                workout.actualDistanceKm ?? workout.plannedDistanceKm,
+              )} · ${fmt.pace(workout.actualPace ?? workout.plannedPace)}`
+            : `${fmt.distance(workout.plannedDistanceKm)} · ${fmt.pace(
+                workout.plannedPace,
+              )}`}
         </p>
       </div>
 

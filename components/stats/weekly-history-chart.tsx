@@ -12,15 +12,17 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslation } from "react-i18next";
+import { useFormat } from "@/hooks/use-format";
 import { fromISO } from "@/lib/date";
 import { getDateLocale } from "@/lib/date-locale";
 import type { WeekHistoryPoint } from "@/lib/plan/stats";
 
 export function WeeklyHistoryChart({ data }: { data: WeekHistoryPoint[] }) {
+  const fmt = useFormat();
   const { t } = useTranslation();
   const rows = data.map((d) => ({
-    planned: d.plannedKm,
-    actual: d.actualKm,
+    planned: fmt.distanceNumber(d.plannedKm),
+    actual: fmt.distanceNumber(d.actualKm),
     label: format(fromISO(d.weekStart), "d MMM", { locale: getDateLocale() }),
   }));
   // Give every week room; scroll horizontally when there are many.

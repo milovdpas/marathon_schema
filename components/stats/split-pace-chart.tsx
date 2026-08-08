@@ -9,7 +9,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useUnits } from "@/hooks/use-units";
 import { paceToSeconds, secondsToPace } from "@/lib/pace";
+import { paceSecondsFor } from "@/lib/units";
 import type { WorkoutSplit } from "@/lib/types";
 
 /**
@@ -17,8 +19,13 @@ import type { WorkoutSplit } from "@/lib/types";
  * seconds — sits higher) and ticks are formatted back to mm:ss.
  */
 export function SplitPaceChart({ splits }: { splits: WorkoutSplit[] }) {
+  const units = useUnits();
+  // The bars are per-kilometer splits either way (that is how they were
+  // scanned); only the pace they represent is converted.
+  const toDisplaySeconds = (sec: number | null) =>
+    sec == null ? null : paceSecondsFor(sec, units);
   const rows = splits
-    .map((s) => ({ label: String(s.km), sec: paceToSeconds(s.pace) }))
+    .map((s) => ({ label: String(s.km), sec: toDisplaySeconds(paceToSeconds(s.pace)) }))
     .filter((r): r is { label: string; sec: number } => r.sec != null);
   if (rows.length === 0) return null;
 

@@ -13,12 +13,15 @@ import { WizardStepper } from "@/components/wizard/wizard-stepper";
 import { BACKYARD_LOOP_KM } from "@/lib/plan/backyard";
 import { toISO } from "@/lib/date";
 import { canBeContext } from "@/lib/plan/context";
+import { useFormat } from "@/hooks/use-format";
 import { type Draft, buildPlanRequest } from "@/lib/plan/request";
 import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
+  const country = useTrainingStore((s) => s.preferences.country);
   const router = useRouter();
   const addPlanFromImport = useTrainingStore((s) => s.addPlanFromImport);
   const plans = useTrainingStore((s) => s.plans);
@@ -112,7 +115,11 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
         <StepAi
           // Built lazily so it always reflects the latest draft.
           requestJson={() =>
-            JSON.stringify(buildPlanRequest(draft, plans), null, 2)
+            JSON.stringify(
+              buildPlanRequest(draft, plans, { country, units: fmt.units }),
+              null,
+              2,
+            )
           }
           onComplete={complete}
           error={error}

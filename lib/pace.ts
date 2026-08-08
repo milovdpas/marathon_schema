@@ -1,4 +1,6 @@
-// Pace helpers. Paces are stored as "mm:ss" strings (per km).
+// Pace helpers. Paces are **stored** as "mm:ss" strings per km, always, in
+// every unit system — see lib/units.ts. Converting to min/mile happens at the
+// display edge, in `useFormat()`, never here.
 
 /** Parse "mm:ss" (or "m:ss") into total seconds. Returns null if invalid. */
 export function paceToSeconds(pace?: string | null): number | null {
@@ -17,12 +19,19 @@ export function secondsToPace(seconds?: number | null): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-/** Pace string formatted with the /km suffix, or em dash. */
-export function formatPace(pace?: string | null): string {
+/**
+ * A stored pace as a bare "mm:ss", with no unit suffix, or an em dash.
+ *
+ * Deliberately suffix-free: callers that want "4:58/km" go through
+ * `useFormat().pace()`, which knows the user's units. Baking "/km" in here is
+ * what forced `complete-workout-dialog` to `.replace("/km", "")` to get a value
+ * back out of it.
+ */
+export function formatPaceValue(pace?: string | null): string {
   if (!pace) return "—";
   const secs = paceToSeconds(pace);
   if (secs == null) return pace; // free-form fallback
-  return `${secondsToPace(secs)}/km`;
+  return secondsToPace(secs);
 }
 
 /** Parse a total time ("h:mm:ss", "mm:ss", or plain minutes) into minutes. */

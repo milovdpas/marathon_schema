@@ -5,6 +5,7 @@ import { Field } from "@/components/common/field";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useActivePlan } from "@/hooks/use-active-plan";
+import { useFormat } from "@/hooks/use-format";
 import {
   BACKYARD_LOOP_KM,
   backyardDistanceKm,
@@ -15,6 +16,7 @@ import { useTrainingStore } from "@/store/use-training-store";
 /** Edit the active plan's race metadata. The schedule itself isn't touched. */
 export function RaceDetailsCard() {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const plan = useActivePlan();
   const updatePlanMeta = useTrainingStore((s) => s.updatePlanMeta);
 
@@ -52,14 +54,16 @@ export function RaceDetailsCard() {
             }
           />
         ) : (
-          <Field label={t("settings.raceDistance")}>
+          <Field label={t("settings.raceDistance", { unit: fmt.distanceUnit })}>
             <Input
               type="number"
               inputMode="decimal"
               step="0.1"
-              value={plan.raceDistanceKm}
+              value={fmt.distanceValue(plan.raceDistanceKm, 2)}
               onChange={(e) =>
-                updatePlanMeta({ raceDistanceKm: Number(e.target.value) || 0 })
+                updatePlanMeta({
+                  raceDistanceKm: fmt.toStoredDistance(Number(e.target.value) || 0),
+                })
               }
             />
           </Field>
@@ -85,10 +89,12 @@ export function RaceDetailsCard() {
             onChange={(e) => updatePlanMeta({ goalLabel: e.target.value })}
           />
         </Field>
-        <Field label={t("settings.goalPace")}>
+        <Field label={t("settings.goalPace", { unit: fmt.paceUnit })}>
           <Input
-            value={plan.goalPace}
-            onChange={(e) => updatePlanMeta({ goalPace: e.target.value })}
+            value={fmt.paceValue(plan.goalPace)}
+            onChange={(e) =>
+              updatePlanMeta({ goalPace: fmt.toStoredPace(e.target.value) })
+            }
           />
         </Field>
       </div>

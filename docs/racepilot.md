@@ -39,12 +39,12 @@ constraint on every future slice rather than a marketing line.
 | # | slice | status | landed in |
 |---|---|---|---|
 | 1 | Rebrand + `/app/*` routing + full-page onboarding + athlete types + example-plan catalogue + SEO | **done** | see git log |
-| 2 | Units & country (km/mi), Settings toggle, AI context | not started | — |
+| 2 | Units & country (km/mi), Settings toggle, AI context | **done** | see git log |
 | 3 | Multi-sport workouts (`Workout.sport`), cycling / swimming / trail | not started | — |
 | 4 | Triathlon (multi-leg races, bricks, transitions) | not started | — |
 | 5 | Remaining example plans (cycling, swimming, triathlon) | blocked on 3 | — |
 
-Slice 1 is shipped. Slice 2 (units) is the next one to start.
+Slices 1 and 2 are shipped. Slice 3 (multi-sport) is next.
 
 ### Slice 1 — rebrand, routing, onboarding
 
@@ -60,14 +60,21 @@ Slice 1 is shipped. Slice 2 (units) is the next one to start.
 - An example-plan **catalogue** so each athlete type can get a relevant demo.
 - SEO: per-page metadata, sitemap, robots, OG image, Search Console.
 
-### Slice 2 — units & country
+### Slice 2 — units & country (done)
 
-Store canonical units forever (km, °C, metres) and convert only at display.
-Derive the country from `navigator.language`'s region subtag with an `Intl`
-timezone fallback; the user can always override it in Settings, and it is passed
-to the AI as context. ~45–50 display sites; input fields come last, because they
-are the only place a unit conversion can *corrupt* stored data through
-round-trip drift.
+Canonical storage forever: km, °C, metres, and pace as **seconds per km** — in
+every unit system. Conversion happens only at the display edge (`lib/units.ts`)
+and at input boundaries, so switching the toggle can never rewrite a plan. A
+browser test pins that: flipping to miles and back leaves `plans` byte-identical.
+
+The country comes from `navigator.language`'s region subtag with a small
+timezone fallback (`lib/region.ts`), never from IP or the weather feature's
+geolocation — either would contradict the first screen of onboarding. It is
+stored, editable, and passed to the AI.
+
+Every formatter lives behind one `useFormat()` hook, so a component asks for a
+formatted value rather than deciding whether to convert. The sites that hand-
+rolled `${km} km` were exactly the ones that would have silently stayed metric.
 
 ### Slice 3 — multi-sport workouts
 
@@ -139,6 +146,15 @@ those plans are literally unrepresentable until slice 3. They are not faked by
 relabelling running workouts: a demo whose job is to show the user their sport
 is worse than useless if it lies.
 
+**Units are display-only, and the wire format is always metric.** The AI
+plan-request sends `distanceKm` and min/km whatever the athlete sees, plus an
+`athlete.units` hint telling the coach how to *talk*. One canonical format means
+a plan written for a US runner imports cleanly for a Dutch one.
+
+**The UK defaults to metric.** Road signs are in miles, but British distance
+runners train and race in km (parkrun is 5K, track is metric). Overridable
+either way; the cost of being wrong is one switch.
+
 **The install prompt is a popup, not an onboarding step.** `useInstallApp()`
 only reaches `mode: "prompt"` once Chrome fires `beforeinstallprompt`, which
 often happens *after* the user has clicked through `/welcome`. As a step it
@@ -179,6 +195,15 @@ record why not.
   touch icon when the user adds it. Only the in-app mark and the browser tab
   favicon can change — and the favicon is invisible in `display: standalone`.
   Do not attempt a dynamic manifest.
+- **Workout titles are never converted.** "Tempo 9 km @ 4:30" is free text
+  authored with the plan, so an imperial user still reads km there. Rewriting it
+  would mean parsing and re-emitting someone's prose. The AI prompt now asks for
+  titles in the athlete's units instead, which fixes it at the source for
+  generated plans but not for the bundled example.
+- **Splits stay per kilometer.** They are scanned per km off a screenshot, so
+  only the pace and elevation convert. Re-bucketing them into miles would mean
+  inventing data points that were never measured.
+
 - **Dutch has no separate URLs.** `hreflang` needs locale routes and a
   per-request-safe i18n layer; today's is a process-level singleton that would
   race across concurrent renders. Revisit only if Search Console shows real

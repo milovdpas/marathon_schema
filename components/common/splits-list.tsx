@@ -1,10 +1,18 @@
 "use client";
 
+import { useFormat } from "@/hooks/use-format";
 import { paceToSeconds } from "@/lib/pace";
 import type { WorkoutSplit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-/** Strava-style per-km split rows: km · bar · pace · elevation. */
+/**
+ * Strava-style split rows: index · bar · pace · elevation.
+ *
+ * Splits are stored per kilometer whatever the user's units, because that is
+ * how they were scanned off the screenshot. Only the pace and elevation are
+ * converted — re-bucketing kilometer splits into miles would mean inventing
+ * data points that were never measured.
+ */
 export function SplitsList({
   splits,
   className,
@@ -12,6 +20,7 @@ export function SplitsList({
   splits: WorkoutSplit[];
   className?: string;
 }) {
+  const fmt = useFormat();
   if (splits.length === 0) return null;
 
   const secs = splits
@@ -33,7 +42,7 @@ export function SplitsList({
               {s.km}
             </span>
             <span className="w-9 shrink-0 font-medium tabular-nums">
-              {s.pace}
+              {fmt.paceValue(s.pace)}
             </span>
             <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
               <span
@@ -43,7 +52,9 @@ export function SplitsList({
             </span>
             {s.elevM != null ? (
               <span className="w-8 shrink-0 text-right tabular-nums text-muted-foreground">
-                {s.elevM > 0 ? `+${s.elevM}` : s.elevM}
+                {fmt.elevationNumber(s.elevM) > 0
+                  ? `+${fmt.elevationNumber(s.elevM)}`
+                  : fmt.elevationNumber(s.elevM)}
               </span>
             ) : null}
           </div>

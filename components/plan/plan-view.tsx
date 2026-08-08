@@ -17,6 +17,7 @@ import { overallStats } from "@/lib/plan/stats";
 import { type WeekPhase, type Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActivePlan } from "@/hooks/use-active-plan";
+import { useFormat } from "@/hooks/use-format";
 import { useTrainingStore } from "@/store/use-training-store";
 
 const PHASE_BADGE: Record<WeekPhase, string> = {
@@ -30,6 +31,7 @@ const PHASE_BADGE: Record<WeekPhase, string> = {
 
 export function PlanView() {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const router = useRouter();
   const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
@@ -77,7 +79,7 @@ export function PlanView() {
           <p className="mt-1 text-xs text-muted-foreground">
             {t("plan.finishedBody", {
               race: plan.raceName,
-              km: finishedStats.totalKm,
+              distance: fmt.distance(finishedStats.totalKm),
               runs: finishedStats.completedCount,
             })}
           </p>
@@ -146,7 +148,7 @@ export function PlanView() {
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {t("plan.weekMeta", {
                     range: formatRange(week.startDate, week.endDate),
-                    km: Math.round(planned),
+                    distance: fmt.distance(planned, 0),
                     done,
                     total: workouts.length,
                   })}

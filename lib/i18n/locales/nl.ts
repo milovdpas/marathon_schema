@@ -2,8 +2,6 @@ import type { Dict } from "./en";
 
 export const nl: Dict = {
   common: {
-    km: "km",
-    perKm: "/km",
     cancel: "Annuleren",
     save: "Opslaan",
     delete: "Verwijderen",
@@ -45,15 +43,15 @@ export const nl: Dict = {
     title: "Dashboard",
     subtitle: "Op weg naar de startstreep.",
     daysToGo: "dagen te gaan",
-    goalLine: "{{goal}} · {{pace}}/km",
-    goalLineBackyard: "{{goal}} · ronde van {{loop}} km",
+    goalLine: "{{goal}} · {{pace}}",
+    goalLineBackyard: "{{goal}} · ronde van {{loop}}",
     throughBlock: "Je bent <b>{{pct}}%</b> door je trainingsblok.",
     planComplete: "Plan voltooid",
     workoutsRatio: "{{done}}/{{total}} trainingen",
     totalDistance: "Totale afstand",
-    longest: "langste {{km}} km",
+    longest: "langste {{distance}}",
     thisWeek: "Deze week",
-    ofPlanned: "van {{km}} km gepland",
+    ofPlanned: "van {{distance}} gepland",
     thisMonth: "Deze maand",
     doneRatio: "{{done}}/{{total}} gedaan",
     upcoming: "Aankomende trainingen",
@@ -71,7 +69,7 @@ export const nl: Dict = {
     title: "Loop vastleggen",
     desc: "We hebben je geplande doel ingevuld - pas het aan naar wat je werkelijk liep.",
     confirm: "Vastleggen & voltooien",
-    planned: "Gepland: {{km}} km · {{pace}}/km",
+    planned: "Gepland: {{distance}} · {{pace}}",
   },
   plan: {
     title: "Trainingsplan",
@@ -79,12 +77,12 @@ export const nl: Dict = {
     addWorkout: "Training toevoegen",
     week: "Week {{n}}",
     thisWeek: "deze week",
-    weekMeta: "{{range}} · {{km}} km · {{done}}/{{total}} gedaan",
+    weekMeta: "{{range}} · {{distance}} · {{done}}/{{total}} gedaan",
     restWeek: "Rustweek - geen geplande trainingen.",
     pickDay: "Kies een dag",
     finishedTitle: "Plan afgerond 🏁",
     finishedBody:
-      "{{race}} zit erop: {{runs}} lopen, {{km}} km vastgelegd. Begin je volgende plan en neem deze training mee als context.",
+      "{{race}} zit erop: {{runs}} lopen, {{distance}} vastgelegd. Begin je volgende plan en neem deze training mee als context.",
     createNext: "Volgend plan maken",
   },
   workoutForm: {
@@ -98,8 +96,8 @@ export const nl: Dict = {
     type: "Type",
     titleLabel: "Titel",
     titlePlaceholder: "bijv. 6×800m intervallen",
-    distanceKm: "Afstand (km)",
-    paceLabel: "Tempo (mm:ss)",
+    distance: "Afstand ({{unit}})",
+    paceLabel: "Tempo (mm:ss {{unit}})",
     durationMin: "Duur (mm:ss)",
     computeHint: "Vul afstand + duur óf tempo in - de derde wordt automatisch berekend.",
     notes: "Notities",
@@ -153,7 +151,7 @@ export const nl: Dict = {
     title: "Statistieken",
     subtitle: "Je training, in cijfers.",
     totalDistance: "Totale afstand",
-    ofPlanned: "van {{km}} km gepland",
+    ofPlanned: "van {{distance}} gepland",
     longestRun: "Langste loop",
     avgPace: "Gem. tempo",
     runsCompleted: "Voltooide lopen",
@@ -164,7 +162,7 @@ export const nl: Dict = {
       "Elke vastgelegde loop per kalenderweek - inclusief lopen van vóór dit plan en uit je andere plannen.",
     splitPaces: "Tempo per kilometer",
     splitPacesSub:
-      "{{title}} · {{date}} - snelste {{fastest}}, langzaamste {{slowest}} per km.",
+      "{{title}} · {{date}} - snelste {{fastest}}, langzaamste {{slowest}}.",
     longRunProgression: "Opbouw lange duurloop",
     longRunHint: "Opbouw naar je piek, daarna afbouwen richting wedstrijddag.",
     planned: "Gepland",
@@ -184,14 +182,14 @@ export const nl: Dict = {
     trainingPrefs: "Trainingsvoorkeuren",
     planName: "Plannaam",
     raceName: "Wedstrijdnaam",
-    raceDistance: "Wedstrijdafstand (km)",
+    raceDistance: "Wedstrijdafstand ({{unit}})",
     startDate: "Startdatum",
     raceDate: "Wedstrijddatum",
     goalLabel: "Doel-label",
-    goalPace: "Doeltempo (mm:ss /km)",
+    goalPace: "Doeltempo (mm:ss {{unit}})",
     raceDateNote:
       "Het wijzigen van de wedstrijddatum werkt alleen de wedstrijdgegevens bij - gebruik de AI-plantools om het schema aan te passen.",
-    appearance: "Weergave",
+    appearance: "Weergave & eenheden",
     language: "Taal",
     themeLight: "Licht",
     themeDark: "Donker",
@@ -298,6 +296,17 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     iosStep1: "Tik op de deelknop in Safari.",
     iosStep2: "Scrol omlaag en kies \"Zet op beginscherm\".",
     iosStep3: "Tik op \"Voeg toe\" - RacePilot opent daarna als een gewone app.",
+  },
+  units: {
+    storedNote:
+      "Je training wordt altijd hetzelfde opgeslagen, dus dit verandert alleen wat je ziet.",
+    country: "Land",
+    countryUnset: "Niet ingesteld",
+    measure: "Afstand en tempo",
+    metric: "Kilometers",
+    imperial: "Mijlen",
+    followsCountry: "Volgt je land. Kies hierboven om dat te overschrijven.",
+    explicit: "Door jou ingesteld. Je land zou standaard {{country}} geven.",
   },
   athlete: {
     runner: "Hardloper",
@@ -435,7 +444,7 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     planNamePlaceholder: "bijv. Marathon van Berlijn",
     raceName: "Wedstrijdnaam",
     raceNamePlaceholder: "bijv. Marathon",
-    raceDistance: "Wedstrijdafstand",
+    raceDistance: "Wedstrijdafstand ({{unit}})",
     distanceCustom: "Aangepast (km)",
     raceDate: "Wedstrijddatum",
     startDate: "Wanneer start je dit plan?",
@@ -445,7 +454,7 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     goalTime: "Streeftijd",
     goalPace: "Streeftempo",
     goalTimePlaceholder: "bijv. 3:45:00",
-    goalPacePlaceholder: "bijv. 5:20 /km",
+    goalPacePlaceholder: "bijv. 5:20 {{unit}}",
     // Stap 2
     offDaysIntro:
       "Voeg vakanties, reizen of drukke periodes toe die je training beperken. De AI plant eromheen.",
@@ -457,22 +466,22 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     raceTypeBackyard: "Backyard ultra",
     raceTypeBackyardDesc:
       "Een ronde die je elk heel uur herhaalt, tot er één loper over is.",
-    loopKm: "Rondeafstand (km)",
+    loopKm: "Rondeafstand ({{unit}})",
     targetYards: "Doel in yards",
-    backyardDerived: "{{hours}} yards = {{hours}} uur · {{km}} km totaal",
+    backyardDerived: "{{hours}} yards = {{hours}} uur · {{distance}} totaal",
     previousPlans: "Eerdere plannen als context",
     previousPlansHint:
       "Voeg eerdere training toe zodat de AI ziet hoe je echt vooruit bent gegaan. Scheelt het handmatig invoeren van recente lopen.",
     planFinished: "afgerond",
     planInProgress: "loopt nog",
-    planRuns: "{{runs}} lopen · {{km}} km vastgelegd",
+    planRuns: "{{runs}} lopen · {{distance}} vastgelegd",
     showAllPlans: "Toon alle {{count}} plannen",
     showLess: "Toon minder",
     latestRuns: "Je laatste lopen",
     latestRunsHint:
       "Optioneel - geeft de AI een idee van je huidige conditie. Voeg een paar recente lopen toe.",
     addRun: "Loop toevoegen",
-    runDistance: "Afstand (km)",
+    runDistance: "Afstand ({{unit}})",
     runTimePlaceholder: "Totale tijd (bijv. 50:43)",
     daysPerWeek: "Trainingsdagen per week",
     trainingDaysQ: "Op welke dagen wil je trainen?",
@@ -508,6 +517,7 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
 Wat de velden in de bijgevoegde plan-aanvraag betekenen:
 - race.name: hoe het plan moet heten. race.raceName: de naam van de wedstrijd.
 - race.distanceKm: de wedstrijdafstand in kilometers.
+- athlete: waar ik ben en welke eenheden ik lees. ELK getal in dit verzoek is metrisch (km, min/km), ongeacht athlete.units - dat is het wire-formaat. Als athlete.units "imperial" is, schrijf dan de TITELS en NOTITIES van de trainingen in mijlen en min/mijl (1 mi = 1,609344 km), maar geef "plannedDistanceKm" en "plannedPace" nog steeds in kilometers en min/km in de JSON. Gebruik athlete.country voor seizoenen en typisch weer.
 - race.date: wedstrijddag (YYYY-MM-DD).
 - startDate: de datum waarop ik dit plan begin (YYYY-MM-DD). Bouw week 1 vanaf deze datum - ga NIET uit van de datum van vandaag.
 - race.type: "standard" (één aaneengesloten wedstrijd over een vaste afstand) of "backyard" (zie hieronder).

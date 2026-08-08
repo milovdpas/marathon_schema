@@ -8,6 +8,7 @@
 // stores a derived `raceDistanceKm` and these helpers translate at the edges.
 
 import type { TrainingPlan } from "@/lib/types";
+import { formatDistance, type UnitSystem } from "@/lib/units";
 
 /** The official backyard loop: 4.16667 miles. */
 export const BACKYARD_LOOP_KM = 6.706;
@@ -31,8 +32,12 @@ export function backyardDistanceKm(
  * How to describe a plan's target. A backyard is measured in yards, so "160.9
  * km" would be technically true but wrong to a runner: the goal is to still be
  * standing, not to cover a distance.
+ *
+ * `units` is required rather than defaulted: a silent metric default is exactly
+ * how a call site ends up showing kilometers to someone who set miles, and the
+ * compiler catching it is cheaper than spotting it on screen.
  */
-export function raceSizeLabel(plan: TrainingPlan): string {
+export function raceSizeLabel(plan: TrainingPlan, units: UnitSystem): string {
   if (isBackyard(plan) && plan.targetYards) return `${plan.targetYards} yards`;
-  return `${plan.raceDistanceKm} km`;
+  return formatDistance(plan.raceDistanceKm, units);
 }

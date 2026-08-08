@@ -1,5 +1,7 @@
-// Domain models for the marathon training tracker.
+// Domain models for the RacePilot training tracker.
 // Everything is persisted in localStorage via the Zustand store.
+
+import type { UnitSystem } from "@/lib/units";
 
 export type WorkoutType = "easy" | "tempo" | "interval" | "long" | "recovery";
 
@@ -102,6 +104,21 @@ export interface Preferences {
    * Absent or empty means "show everything" (see `capabilitiesFor`).
    */
   athleteTypes?: AthleteType[];
+  /**
+   * ISO 3166-1 alpha-2, detected from the browser locale on first run and
+   * editable in Settings. Used to pick a default unit system and passed to the
+   * AI as context, since a coach writing a plan should know where you are.
+   * Never derived from your IP or from the weather feature's location.
+   */
+  country?: string;
+  /**
+   * Which units to *display*. Absent means "follow the country".
+   *
+   * This never affects what is stored: distances stay in km, elevation in
+   * metres, temperature in °C and pace in seconds per km, whatever this says.
+   * See `lib/units.ts`.
+   */
+  units?: UnitSystem;
   /** Whether the one-time "add to home screen" prompt has been shown. */
   installPromptSeen?: boolean;
   /** Weather feature opted in (needs geolocation + a configured server key). */

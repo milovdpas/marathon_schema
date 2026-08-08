@@ -16,11 +16,13 @@ import { getDateLocale } from "@/lib/date-locale";
 import { BACKYARD_LOOP_KM, isBackyard } from "@/lib/plan/backyard";
 import type { Workout } from "@/lib/types";
 import { useActivePlan } from "@/hooks/use-active-plan";
+import { useFormat } from "@/hooks/use-format";
 import { useStats } from "@/hooks/use-stats";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function DashboardView() {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const plan = useActivePlan();
   const toggleComplete = useTrainingStore((s) => s.toggleComplete);
   const stats = useStats(plan);
@@ -77,11 +79,11 @@ export function DashboardView() {
               {isBackyard(plan)
                 ? t("dashboard.goalLineBackyard", {
                     goal: plan.goalLabel,
-                    loop: plan.loopKm ?? BACKYARD_LOOP_KM,
+                    loop: fmt.distance(plan.loopKm ?? BACKYARD_LOOP_KM, 2),
                   })
                 : t("dashboard.goalLine", {
                     goal: plan.goalLabel,
-                    pace: plan.goalPace,
+                    pace: fmt.pace(plan.goalPace),
                   })}
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight">
@@ -118,22 +120,26 @@ export function DashboardView() {
         />
         <StatCard
           label={t("dashboard.totalDistance")}
-          value={stats.overall.totalKm}
-          unit={t("common.km")}
-          sub={t("dashboard.longest", { km: stats.overall.longestRunKm })}
+          value={fmt.distanceNumber(stats.overall.totalKm)}
+          unit={fmt.distanceUnit}
+          sub={t("dashboard.longest", {
+            distance: fmt.distance(stats.overall.longestRunKm),
+          })}
           icon={<Footprints className="size-4" />}
         />
         <StatCard
           label={t("dashboard.thisWeek")}
-          value={stats.thisWeek.actualKm}
-          unit={t("common.km")}
-          sub={t("dashboard.ofPlanned", { km: stats.thisWeek.plannedKm })}
+          value={fmt.distanceNumber(stats.thisWeek.actualKm)}
+          unit={fmt.distanceUnit}
+          sub={t("dashboard.ofPlanned", {
+            distance: fmt.distance(stats.thisWeek.plannedKm),
+          })}
           icon={<Flame className="size-4" />}
         />
         <StatCard
           label={t("dashboard.thisMonth")}
-          value={stats.thisMonth.actualKm}
-          unit={t("common.km")}
+          value={fmt.distanceNumber(stats.thisMonth.actualKm)}
+          unit={fmt.distanceUnit}
           sub={t("dashboard.doneRatio", {
             done: stats.thisMonth.completed,
             total: stats.thisMonth.total,

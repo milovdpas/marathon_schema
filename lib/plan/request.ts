@@ -8,8 +8,10 @@ import { paceFromDistanceDuration, parseDurationToMinutes } from "@/lib/pace";
 import { buildPlanContext } from "@/lib/plan/context";
 import { backyardDistanceKm } from "@/lib/plan/backyard";
 import type { OffDay, RaceType, TrainingPlan, TrainingPrefs } from "@/lib/types";
+import { toStoredDistance, type UnitSystem } from "@/lib/units";
 
 export interface LatestRun {
+  /** As TYPED, in the user's display units. Converted by `buildPlanRequest`. */
   distanceKm: string;
   time: string; // total time, e.g. "50:43" or "1:05:30"
   date: string;
@@ -46,9 +48,25 @@ const WEEKDAY_KEYS = [
   "Sunday",
 ];
 
+/** Who is asking, so the coach can talk in their units and about their season. */
+export interface RequestAthlete {
+  country?: string;
+  units: UnitSystem;
+}
+
+/**
+ * The wire format is **always metric** — `distanceKm`, `pace` in min/km — no
+ * matter what the athlete sees on screen. One canonical format means a plan
+ * written for a US runner imports cleanly for a Dutch one, and the AI never has
+ * to guess which system a bare number is in.
+ *
+ * `athlete.units` is what tells the AI how to *talk*: a runner who set miles
+ * wants "8:00/mi" in the workout titles, computed from these metric numbers.
+ */
 export function buildPlanRequest(
   draft: Draft,
   plans: Record<string, TrainingPlan>,
+  athlete: RequestAthlete = { units: "metric" },
 ) {
   const isBackyard = draft.raceType === "backyard";
 
@@ -71,6 +89,14 @@ export function buildPlanRequest(
         : {}),
     },
     startDate: draft.startDate,
+    athlete: {
+      ...(athlete.country ? { country: athlete.country } : {}),
+      units: athlete.units,
+      // Explicit, because "km" appearing in a field name is not a promise the
+      // AI will honour unless we say so.
+      distanceUnit: "km",
+      paceUnit: "min/km",
+    },
     goal: isBackyard
       ? { type: "yards" as const, value: String(draft.targetYards) }
       : {
@@ -82,7 +108,12 @@ export function buildPlanRequest(
     latestRuns: draft.latestRuns
       .filter((r) => r.distanceKm)
       .map((r) => {
-        const distanceKm = Number(r.distanceKm) || 0;
+        // The only draft field held in display units — the rest of the wizard
+        // stores canonical km and converts at its inputs.
+        const distanceKm = toStoredDistance(
+          Number(r.distanceKm) || 0,
+          athlete.units,
+        );
         const durationMin = parseDurationToMinutes(r.time) ?? null;
         return {
           distanceKm,

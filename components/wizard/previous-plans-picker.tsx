@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useFormat } from "@/hooks/use-format";
 import { formatDayLabel } from "@/lib/date";
 import { raceSizeLabel } from "@/lib/plan/backyard";
 import { canBeContext, isPlanFinished } from "@/lib/plan/context";
@@ -26,6 +27,7 @@ export function PreviousPlansPicker({
   onChange: (ids: string[]) => void;
 }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const [expanded, setExpanded] = useState(false);
 
   // Only plans with real training in them; the demo plan and untouched plans
@@ -88,12 +90,12 @@ export function PreviousPlansPicker({
                   </span>
                 </span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  {p.raceName} · {raceSizeLabel(p)} · {formatDayLabel(p.raceDate)}
+                  {p.raceName} · {raceSizeLabel(p, fmt.units)} · {formatDayLabel(p.raceDate)}
                 </span>
                 <span className="block text-xs text-muted-foreground">
                   {t("wizard.planRuns", {
                     runs: stats.completedCount,
-                    km: stats.totalKm,
+                    distance: fmt.distance(stats.totalKm),
                   })}
                 </span>
               </span>

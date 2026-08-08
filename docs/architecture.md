@@ -86,7 +86,7 @@ The single source of truth. Shape: `{ plans: Record<id,TrainingPlan>, activePlan
 
 - **Active plan** is read via the `useActivePlan()` hook (`hooks/use-active-plan.ts`) — components select it, not `s.plan` (there is no `s.plan`).
 - **Actions:** plan mgmt (`addPlanFromImport`, `selectPlan`, `deletePlan`, `updatePlanMeta`, `updateTrainingPrefs`, `seedExamplePlan`, `addExamplePlan`, `initializePlan`), off days (`add/update/deleteOffDay`), workouts (`toggleComplete`, `updateWorkout`, `addWorkout`, `deleteWorkout`), data (`exportData`, `importData`, `applyRemote`), and `setPreferences`. Mutations bump `lastModified` (used for sync conflict resolution).
-- **persist**: key `marathon-training-v1`, **`version: 12`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan` (async — it dynamic-imports the example plan, and a module-level `seedInFlight` guard stops it racing the `useHydrated` safety net).
+- **persist**: key `marathon-training-v1`, **`version: 13`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan` (async — it dynamic-imports the example plan, and a module-level `seedInFlight` guard stops it racing the `useHydrated` safety net).
 - **Hydration**: `<HydrationGate>` (`hooks/use-hydrated.ts`) renders a skeleton until rehydrated, avoiding SSR/client mismatch. `useMounted()` is used where a value differs server vs client.
 
 ## Example plans — `lib/plan/examples.ts`
@@ -115,6 +115,31 @@ unrepresentable rather than unwritten, and faking them by relabelling running
 workouts would make the demo lie about the one thing it exists to show.
 
 `lib/plan-defaults.ts` keeps what survived the old generator: `DEFAULT_PLAN_META` (fallback metadata for partial imports and migrations), `DEFAULT_PLAN_ID`, `DEFAULT_TRAINING_PREFS`, `PLAN_VERSION`.
+
+## Units — `lib/units.ts` + `useFormat()`
+
+**Everything is stored metric, always**: distances in km, elevation in metres,
+temperature in °C, pace as seconds per km. `preferences.units` is a *display*
+choice and nothing more, so switching it can never rewrite training data (a
+browser test asserts `plans` is byte-identical after a round trip).
+
+- `lib/units.ts` is pure conversion + formatting. `lib/region.ts` derives a
+  default from `navigator.language`'s region subtag, with a small timezone
+  fallback — **never IP geolocation or the weather feature's coordinates**,
+  both of which would contradict the promise onboarding makes.
+- Components use **`useFormat()`** (`hooks/use-format.ts`) rather than
+  converting themselves: `fmt.distance(km)`, `fmt.pace(stored)`,
+  `fmt.temp(c)`, and `fmt.toStoredDistance` / `fmt.toStoredPace` on the way
+  back in. A site that hand-rolls `${km} km` is a site that silently stays
+  metric.
+- **Input fields hold display units** and convert on save. `resolveLoggedRun`
+  needs no unit awareness at all: it only requires distance and pace to share a
+  unit, and min/mi × mi = minutes exactly as min/km × km does.
+- `formatPace` was split into a bare `formatPaceValue` (no suffix) plus
+  `fmt.pace()`. Baking "/km" into the formatter is what forced
+  `complete-workout-dialog` to `.replace("/km", "")` to get a value back out.
+- Not converted, deliberately: **workout titles** (free text) and **split
+  bucketing** (scanned per km; re-bucketing would invent data).
 
 ## Key flows
 

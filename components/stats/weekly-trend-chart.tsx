@@ -11,13 +11,22 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslation } from "react-i18next";
+import { useFormat } from "@/hooks/use-format";
 import type { WeeklyMileage } from "@/lib/plan/stats";
 
 export function WeeklyTrendChart({ data }: { data: WeeklyMileage[] }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
+  // Converted here rather than in `lib/plan/stats.ts`: stats stay canonical km
+  // so every consumer (including the AI export) sees the same numbers.
+  const rows = data.map((d) => ({
+    ...d,
+    plannedKm: fmt.distanceNumber(d.plannedKm),
+    actualKm: fmt.distanceNumber(d.actualKm),
+  }));
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+      <BarChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid
           strokeDasharray="3 3"
           vertical={false}

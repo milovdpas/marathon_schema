@@ -11,6 +11,8 @@ import {
   Sun,
 } from "lucide-react";
 import type { WeatherSnapshot } from "@/lib/types";
+import { useUnits } from "@/hooks/use-units";
+import { toDisplayTemp } from "@/lib/units";
 import { cn } from "@/lib/utils";
 
 /** Render a colored lucide icon for an OpenWeatherMap condition id. */
@@ -41,6 +43,7 @@ export function WeatherBadge({
   snapshot: WeatherSnapshot;
   className?: string;
 }) {
+  const units = useUnits();
   return (
     <span
       title={snapshot.condition}
@@ -50,7 +53,7 @@ export function WeatherBadge({
       )}
     >
       <WeatherIcon id={snapshot.conditionId} className="size-3 shrink-0" />
-      {snapshot.tempC == null ? "" : `${Math.round(snapshot.tempC)}°`}
+      {snapshot.tempC == null ? "" : `${Math.round(toDisplayTemp(snapshot.tempC, units))}°`}
     </span>
   );
 }

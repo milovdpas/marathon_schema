@@ -7,6 +7,7 @@ import { PreviousPlansPicker } from "@/components/wizard/previous-plans-picker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useFormat } from "@/hooks/use-format";
 import { Label } from "@/components/ui/label";
 import type { Draft, LatestRun } from "@/lib/plan/request";
 import type { TrainingPlan, TrainingPrefs } from "@/lib/types";
@@ -26,6 +27,7 @@ export function StepTraining({
   onPrefsChange: (patch: Partial<TrainingPrefs>) => void;
 }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
 
   /** Patch one run in the list, leaving the others alone. */
   const updateRun = (i: number, patch: Partial<LatestRun>) =>
@@ -57,7 +59,7 @@ export function StepTraining({
               <Input
                 type="number"
                 inputMode="decimal"
-                placeholder={t("wizard.runDistance")}
+                placeholder={t("wizard.runDistance", { unit: fmt.distanceUnit })}
                 value={r.distanceKm}
                 onChange={(e) => updateRun(i, { distanceKm: e.target.value })}
               />

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { useActivePlan } from "@/hooks/use-active-plan";
+import { useFormat } from "@/hooks/use-format";
 import { useStats } from "@/hooks/use-stats";
 import { formatDayLabel } from "@/lib/date";
 import { latestSplitRun, weeklyHistory } from "@/lib/plan/stats";
@@ -26,6 +27,7 @@ import { useTrainingStore } from "@/store/use-training-store";
 
 export function StatsView() {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const plan = useActivePlan();
   const stats = useStats(plan);
   const plans = useTrainingStore((s) => s.plans);
@@ -49,21 +51,23 @@ export function StatsView() {
       <div className="grid grid-cols-2 gap-3">
         <StatCard
           label={t("stats.totalDistance")}
-          value={overall.totalKm}
-          unit={t("common.km")}
-          sub={t("stats.ofPlanned", { km: overall.plannedTotalKm })}
+          value={fmt.distanceNumber(overall.totalKm)}
+          unit={fmt.distanceUnit}
+          sub={t("stats.ofPlanned", {
+            distance: fmt.distance(overall.plannedTotalKm),
+          })}
           icon={<Route className="size-4" />}
         />
         <StatCard
           label={t("stats.longestRun")}
-          value={overall.longestRunKm}
-          unit={t("common.km")}
+          value={fmt.distanceNumber(overall.longestRunKm)}
+          unit={fmt.distanceUnit}
           icon={<Mountain className="size-4" />}
         />
         <StatCard
           label={t("stats.avgPace")}
-          value={overall.averagePace}
-          unit={t("common.perKm")}
+          value={fmt.paceValue(overall.averagePace)}
+          unit={fmt.paceUnit}
           icon={<Gauge className="size-4" />}
         />
         <StatCard
@@ -108,8 +112,8 @@ export function StatsView() {
             {t("stats.splitPacesSub", {
               title: splitRun.title,
               date: formatDayLabel(splitRun.date),
-              fastest: splitRun.fastestPace,
-              slowest: splitRun.slowestPace,
+              fastest: fmt.pace(splitRun.fastestPace),
+              slowest: fmt.pace(splitRun.slowestPace),
             })}
           </p>
           <SplitPaceChart splits={splitRun.splits} />

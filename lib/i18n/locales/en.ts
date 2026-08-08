@@ -1,7 +1,5 @@
 export const en = {
   common: {
-    km: "km",
-    perKm: "/km",
     cancel: "Cancel",
     save: "Save",
     delete: "Delete",
@@ -43,15 +41,15 @@ export const en = {
     title: "Dashboard",
     subtitle: "Your road to the start line.",
     daysToGo: "days to go",
-    goalLine: "{{goal}} · {{pace}}/km",
-    goalLineBackyard: "{{goal}} · {{loop}} km loop",
+    goalLine: "{{goal}} · {{pace}}",
+    goalLineBackyard: "{{goal}} · {{loop}} loop",
     throughBlock: "You're <b>{{pct}}%</b> through your training block.",
     planComplete: "Plan complete",
     workoutsRatio: "{{done}}/{{total}} workouts",
     totalDistance: "Total distance",
-    longest: "longest {{km}} km",
+    longest: "longest {{distance}}",
     thisWeek: "This week",
-    ofPlanned: "of {{km}} km planned",
+    ofPlanned: "of {{distance}} planned",
     thisMonth: "This month",
     doneRatio: "{{done}}/{{total}} done",
     upcoming: "Upcoming workouts",
@@ -69,7 +67,7 @@ export const en = {
     title: "Log this run",
     desc: "We pre-filled your planned target - adjust it to what you actually ran.",
     confirm: "Log & complete",
-    planned: "Planned: {{km}} km · {{pace}}/km",
+    planned: "Planned: {{distance}} · {{pace}}",
   },
   plan: {
     title: "Training plan",
@@ -77,12 +75,12 @@ export const en = {
     addWorkout: "Add workout",
     week: "Week {{n}}",
     thisWeek: "this week",
-    weekMeta: "{{range}} · {{km}} km · {{done}}/{{total}} done",
+    weekMeta: "{{range}} · {{distance}} · {{done}}/{{total}} done",
     restWeek: "Rest week - no scheduled runs.",
     pickDay: "Pick a day",
     finishedTitle: "Plan complete 🏁",
     finishedBody:
-      "{{race}} is behind you: {{runs}} runs, {{km}} km logged. Start your next plan and bring this training along as context.",
+      "{{race}} is behind you: {{runs}} runs, {{distance}} logged. Start your next plan and bring this training along as context.",
     createNext: "Create next plan",
   },
   workoutForm: {
@@ -96,8 +94,8 @@ export const en = {
     type: "Type",
     titleLabel: "Title",
     titlePlaceholder: "e.g. 6×800m intervals",
-    distanceKm: "Distance (km)",
-    paceLabel: "Pace (mm:ss)",
+    distance: "Distance ({{unit}})",
+    paceLabel: "Pace (mm:ss {{unit}})",
     durationMin: "Duration (mm:ss)",
     computeHint: "Fill in distance + either duration or pace - the third is calculated automatically.",
     notes: "Notes",
@@ -151,7 +149,7 @@ export const en = {
     title: "Statistics",
     subtitle: "Your training, by the numbers.",
     totalDistance: "Total distance",
-    ofPlanned: "of {{km}} km planned",
+    ofPlanned: "of {{distance}} planned",
     longestRun: "Longest run",
     avgPace: "Avg pace",
     runsCompleted: "Runs completed",
@@ -162,7 +160,7 @@ export const en = {
       "Every logged run by calendar week - including runs from before this plan and from your other plans.",
     splitPaces: "Split paces",
     splitPacesSub:
-      "{{title}} · {{date}} - fastest {{fastest}}, slowest {{slowest}} per km.",
+      "{{title}} · {{date}} - fastest {{fastest}}, slowest {{slowest}}.",
     longRunProgression: "Long-run progression",
     longRunHint: "Building toward your peak, then tapering for race day.",
     planned: "Planned",
@@ -182,13 +180,13 @@ export const en = {
     trainingPrefs: "Training preferences",
     planName: "Plan name",
     raceName: "Race name",
-    raceDistance: "Race distance (km)",
+    raceDistance: "Race distance ({{unit}})",
     startDate: "Start date",
     raceDate: "Race date",
     goalLabel: "Goal label",
-    goalPace: "Goal pace (mm:ss /km)",
+    goalPace: "Goal pace (mm:ss {{unit}})",
     raceDateNote: "Changing the race date updates race details only - use the AI plan tools to reshape the schedule.",
-    appearance: "Appearance",
+    appearance: "Display & units",
     language: "Language",
     themeLight: "Light",
     themeDark: "Dark",
@@ -295,6 +293,17 @@ JSON (paste below, or attach the exported .json file):
     iosStep1: "Tap the Share button in Safari.",
     iosStep2: "Scroll down and choose \"Add to Home Screen\".",
     iosStep3: "Tap \"Add\" - RacePilot then opens like a normal app.",
+  },
+  units: {
+    storedNote:
+      "Your training is always stored the same way, so this only changes what you see.",
+    country: "Country",
+    countryUnset: "Not set",
+    measure: "Distance and pace",
+    metric: "Kilometers",
+    imperial: "Miles",
+    followsCountry: "Following your country. Pick one above to override it.",
+    explicit: "Set by you. Your country would default to {{country}}.",
   },
   athlete: {
     runner: "Road runner",
@@ -421,7 +430,7 @@ JSON (paste below, or attach the exported .json file):
     planNamePlaceholder: "e.g. Berlin Marathon",
     raceName: "Race name",
     raceNamePlaceholder: "e.g. Marathon",
-    raceDistance: "Race distance",
+    raceDistance: "Race distance ({{unit}})",
     distanceCustom: "Custom (km)",
     raceDate: "Race date",
     startDate: "When do you start this plan?",
@@ -431,7 +440,7 @@ JSON (paste below, or attach the exported .json file):
     goalTime: "Target time",
     goalPace: "Target pace",
     goalTimePlaceholder: "e.g. 3:45:00",
-    goalPacePlaceholder: "e.g. 5:20 /km",
+    goalPacePlaceholder: "e.g. 5:20 {{unit}}",
     // Step 2
     offDaysIntro:
       "Add vacations, trips or busy periods that will limit your training. The AI will plan around them.",
@@ -443,22 +452,22 @@ JSON (paste below, or attach the exported .json file):
     raceTypeBackyard: "Backyard ultra",
     raceTypeBackyardDesc:
       "A loop repeated every hour, on the hour, until one runner is left.",
-    loopKm: "Loop distance (km)",
+    loopKm: "Loop distance ({{unit}})",
     targetYards: "Target yards",
-    backyardDerived: "{{hours}} yards = {{hours}} hours · {{km}} km total",
+    backyardDerived: "{{hours}} yards = {{hours}} hours · {{distance}} total",
     previousPlans: "Previous plans as context",
     previousPlansHint:
       "Attach earlier training so the AI can see how you actually progressed. Saves entering recent runs by hand.",
     planFinished: "finished",
     planInProgress: "in progress",
-    planRuns: "{{runs}} runs · {{km}} km logged",
+    planRuns: "{{runs}} runs · {{distance}} logged",
     showAllPlans: "Show all {{count}} plans",
     showLess: "Show less",
     latestRuns: "Your latest runs",
     latestRunsHint:
       "Optional - gives the AI a sense of your current fitness. Add a few recent runs.",
     addRun: "Add run",
-    runDistance: "Distance (km)",
+    runDistance: "Distance ({{unit}})",
     runTimePlaceholder: "Total time (e.g. 50:43)",
     daysPerWeek: "Training days per week",
     trainingDaysQ: "Which days do you want to train?",
@@ -494,6 +503,7 @@ JSON (paste below, or attach the exported .json file):
 What the attached plan-request fields mean:
 - race.name: what to call the plan. race.raceName: the race's name.
 - race.distanceKm: the race distance in kilometers.
+- athlete: where I am and which units I read. EVERY number in this request is metric (km, min/km) regardless of athlete.units - that is the wire format. If athlete.units is "imperial", write the plan's workout TITLES and NOTES in miles and min/mile (1 mi = 1.609344 km), but still emit "plannedDistanceKm" and "plannedPace" as kilometers and min/km in the JSON. Use athlete.country for seasons and typical weather.
 - race.date: race day (YYYY-MM-DD).
 - startDate: the date I'll begin this plan (YYYY-MM-DD). Build week 1 from this date - do NOT assume today's date.
 - race.type: "standard" (one continuous race over a set distance) or "backyard" (see below).

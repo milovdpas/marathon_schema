@@ -5,6 +5,7 @@ import { Field } from "@/components/common/field";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFormat } from "@/hooks/use-format";
 import { type AthleteCapabilities, capabilitiesFor } from "@/lib/athlete";
 import { BACKYARD_LOOP_KM, backyardDistanceKm } from "@/lib/plan/backyard";
 import type { Draft } from "@/lib/plan/request";
@@ -34,6 +35,7 @@ function presetsFor(caps: AthleteCapabilities) {
 /** Everything about the race itself: name, format, distance, dates, goal. */
 export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
   const { t } = useTranslation();
+  const fmt = useFormat();
   const athleteTypes = useTrainingStore((s) => s.preferences.athleteTypes);
   const caps = capabilitiesFor(athleteTypes);
   const isBackyard = draft.raceType === "backyard";
@@ -99,14 +101,18 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
       {isBackyard ? (
         <div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label={t("wizard.loopKm")}>
+            <Field label={t("wizard.loopKm", { unit: fmt.distanceUnit })}>
               <Input
                 type="number"
                 inputMode="decimal"
                 step="0.001"
-                value={draft.loopKm}
+                value={fmt.distanceValue(draft.loopKm, 3)}
                 onChange={(e) =>
-                  set("loopKm", Number(e.target.value) || BACKYARD_LOOP_KM)
+                  set(
+                    "loopKm",
+                    fmt.toStoredDistance(Number(e.target.value)) ||
+                      BACKYARD_LOOP_KM,
+                  )
                 }
               />
             </Field>
@@ -126,14 +132,16 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
           <p className="mt-1.5 text-xs text-muted-foreground">
             {t("wizard.backyardDerived", {
               hours: draft.targetYards,
-              km: backyardDistanceKm(draft.loopKm, draft.targetYards),
+              distance: fmt.distance(
+                backyardDistanceKm(draft.loopKm, draft.targetYards),
+              ),
             })}
           </p>
         </div>
       ) : (
         <div>
           <Label className="text-xs text-muted-foreground">
-            {t("wizard.raceDistance")}
+            {t("wizard.raceDistance", { unit: fmt.distanceUnit })}
           </Label>
           <div className="mt-1.5 flex flex-wrap gap-2">
             {presets.map((p) => (
@@ -158,8 +166,10 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
             step="0.1"
             className="mt-2"
             aria-label={t("wizard.distanceCustom")}
-            value={draft.raceDistanceKm}
-            onChange={(e) => set("raceDistanceKm", Number(e.target.value) || 0)}
+            value={fmt.distanceValue(draft.raceDistanceKm, 2)}
+            onChange={(e) =>
+              set("raceDistanceKm", fmt.toStoredDistance(Number(e.target.value) || 0))
+            }
           />
         </div>
       )}
@@ -215,10 +225,22 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
             placeholder={
               draft.goalType === "time"
                 ? t("wizard.goalTimePlaceholder")
-                : t("wizard.goalPacePlaceholder")
+                : t("wizard.goalPacePlaceholder", { unit: fmt.paceUnit })
             }
-            value={draft.goalValue}
-            onChange={(e) => set("goalValue", e.target.value)}
+            // A finish TIME is unit-free; only a pace needs converting.
+            value={
+              draft.goalType === "pace"
+                ? fmt.paceValue(draft.goalValue)
+                : draft.goalValue
+            }
+            onChange={(e) =>
+              set(
+                "goalValue",
+                draft.goalType === "pace"
+                  ? fmt.toStoredPace(e.target.value)
+                  : e.target.value,
+              )
+            }
           />
         ) : null}
       </div>
