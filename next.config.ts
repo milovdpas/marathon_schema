@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /**
+   * Emit a self-contained server bundle in `.next/standalone`, so the runtime
+   * image can drop `node_modules` entirely. Required by the Dockerfile; on
+   * Vercel it is simply ignored.
+   */
+  output: "standalone",
+
+  /**
    * The app used to live at the site root; it now lives under /app so that "/"
    * can be an indexable marketing page. These keep old bookmarks, home-screen
    * shortcuts and any existing inbound links working.

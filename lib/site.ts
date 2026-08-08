@@ -9,21 +9,43 @@ export const SITE_TAGLINE = "Plan your race, track your training";
 export const APP_PATH = "/app";
 
 /**
- * The canonical origin, with no trailing slash.
+ * Whether the deployment has been *told* its own public origin.
  *
- * `VERCEL_URL` is a per-deployment hostname, so it is the *fallback*, not the
- * answer: using it for canonicals would point every preview at itself and
- * production at whichever deployment happened to build the page.
+ * `NEXT_PUBLIC_SITE_URL` is the answer everywhere except Vercel, which can
+ * supply its own production hostname. Self-hosting without it is the one case
+ * worth guarding: nothing crashes, the site just quietly advertises
+ * `http://localhost:3000` as its canonical URL.
  */
-export const SITE_URL = (
+const explicitOrigin =
   process.env.NEXT_PUBLIC_SITE_URL ??
   (process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : undefined) ??
+    : undefined);
+
+/**
+ * The canonical origin, with no trailing slash.
+ *
+ * `VERCEL_URL` is a per-deployment hostname, so it is only a last-resort
+ * fallback: using it for canonicals would point every preview at itself.
+ */
+export const SITE_URL = (
+  explicitOrigin ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ??
   "http://localhost:3000"
 ).replace(/\/$/, "");
 
-/** True only on the production deployment — preview builds must not be indexed. */
+/**
+ * Whether this deployment may be indexed.
+ *
+ * Two ways to fail, both covered: a Vercel preview (a real public URL that
+ * would compete with production for the same terms), and any deployment that
+ * doesn't know its own origin — indexing a site whose canonical URLs say
+ * `localhost` is worse than not being indexed at all, so this fails closed.
+ *
+ * Self-hosted: set `NEXT_PUBLIC_SITE_URL` to go live. Leave it unset on a
+ * staging box and that box stays out of the index for free.
+ */
 export const IS_PRODUCTION_DEPLOY =
-  process.env.VERCEL_ENV === undefined || process.env.VERCEL_ENV === "production";
+  Boolean(explicitOrigin) &&
+  process.env.VERCEL_ENV !== "preview" &&
+  process.env.VERCEL_ENV !== "development";

@@ -1,0 +1,27 @@
+services:
+  app:
+    image: ${DOCKERHUB_USERNAME}/racepilot:latest
+    container_name: racepilot # nginx proxies to this name
+    restart: unless-stopped
+    # Runtime secrets: OAuth client, session key, weather key. Rsynced by the
+    # deploy workflow, never baked into the image. Only the Route Handlers read
+    # these, and those are dynamic, so a value change needs a restart, not a
+    # rebuild — unlike NEXT_PUBLIC_SITE_URL, which is a build arg.
+    env_file:
+      - .env
+    expose:
+      - "80" # internal only — the shared proxy handles ingress
+    networks:
+      - web
+    healthcheck:
+      # 127.0.0.1 rather than the usual localhost — the Node server binds
+      # IPv4-only, and BusyBox wget tries ::1 first. See the Dockerfile.
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  web:
+    external: true

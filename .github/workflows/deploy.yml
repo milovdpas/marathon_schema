@@ -1,0 +1,98 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Cheap (a few seconds) and it runs before anything is published, so a
+      # red build never reaches Docker Hub or the VPS.
+      - name: Verify
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          # Build-time, not runtime: NEXT_PUBLIC_* is inlined into the bundle
+          # and "/", "/privacy", sitemap.xml and robots.txt are prerendered
+          # here, so the canonical origin is baked into the image. Changing the
+          # domain means a rebuild.
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ vars.SITE_URL }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/racepilot:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/racepilot:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Transfer deployment files to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p /opt/apps/racepilot"
+
+          # Runtime environment. These are read by the Route Handlers at
+          # request time, so they live here rather than in the image — a
+          # rotated key needs a restart, not a rebuild.
+          #
+          # Every one is optional: with none of them set the app still works,
+          # it just has no Drive sync and no weather. That is what makes it
+          # safe to write them unconditionally.
+          {
+            printf 'DOCKERHUB_USERNAME=%s\n' '${{ secrets.DOCKERHUB_USERNAME }}'
+            printf 'GOOGLE_CLIENT_ID=%s\n' '${{ secrets.GOOGLE_CLIENT_ID }}'
+            printf 'GOOGLE_CLIENT_SECRET=%s\n' '${{ secrets.GOOGLE_CLIENT_SECRET }}'
+            printf 'GOOGLE_REDIRECT_URI=%s\n' '${{ vars.SITE_URL }}/api/auth/google/callback'
+            printf 'SESSION_SECRET=%s\n' '${{ secrets.SESSION_SECRET }}'
+            printf 'OPENWEATHER_API_KEY=%s\n' '${{ secrets.OPENWEATHER_API_KEY }}'
+          } > deploy.env
+
+          rsync -avz -e "ssh -o StrictHostKeyChecking=accept-new" \
+            docker-compose.prod.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/apps/racepilot/docker-compose.yml
+          rsync -avz -e "ssh -o StrictHostKeyChecking=accept-new" \
+            deploy.env \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/apps/racepilot/.env
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            cd /opt/apps/racepilot
+            docker compose pull
+            docker compose up -d
+            docker compose ps
+          ENDSSH
