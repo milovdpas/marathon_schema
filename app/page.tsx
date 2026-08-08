@@ -27,7 +27,7 @@ const RACE_TYPES = [
   { emoji: "🏃", name: "Marathon", body: "Road blocks from 10K to the full distance, built around the days you can actually train." },
   { emoji: "♾️", name: "Ultra", body: "Back-to-back long runs and the volume that gets you to 50K, 100K and beyond." },
   { emoji: "🔁", name: "Backyard ultra", body: "The yard-by-yard format, planned in loops and hours instead of a finish time." },
-  { emoji: "🏔️", name: "Trail", body: "Elevation-first weeks, with the climbing tracked alongside the kilometres." },
+  { emoji: "🏔️", name: "Trail", body: "Elevation-first weeks, with the climbing tracked alongside the kilometers." },
 ];
 
 const FEATURES = [
@@ -37,7 +37,7 @@ const FEATURES = [
   },
   {
     title: "Log a run in seconds",
-    body: "Distance, duration and pace solve for each other, so you only ever type the two you know. Upload your Strava splits screenshot and every kilometre is read off it on your device.",
+    body: "Distance, duration and pace solve for each other, so you only ever type the two you know. Upload your Strava splits screenshot and every kilometer is read off it on your device.",
   },
   {
     title: "A calendar that fits a phone",
@@ -45,7 +45,7 @@ const FEATURES = [
   },
   {
     title: "Numbers that mean something",
-    body: "Weekly volume, long-run progression, pace trends and per-kilometre splits, for the block you're in rather than a lifetime average.",
+    body: "Weekly volume, long-run progression, pace trends and per-kilometer splits, for the block you're in rather than a lifetime average.",
   },
 ];
 
@@ -91,7 +91,7 @@ export default function LandingPage() {
 
         <section className="mt-12 md:mt-16">
           <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-            Plan your race. Track every kilometre.
+            Plan your race. Track every kilometer.
           </h1>
           <p className="mt-4 max-w-xl text-lg text-muted-foreground">
             {SITE_NAME} is a free training planner for marathon, ultra, trail

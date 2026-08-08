@@ -64,7 +64,7 @@ function safeNotes(notes?: string): string | undefined {
 }
 
 /**
- * `[{km:1,pace:"4:50",elevM:1}, …]` costs ~65 bytes per kilometre, which on a
+ * `[{km:1,pace:"4:50",elevM:1}, …]` costs ~65 bytes per kilometer, which on a
  * fully-scanned block runs to six figures. The km is just the index, so store
  * paces as a flat array and only carry elevation when it isn't all flat.
  */

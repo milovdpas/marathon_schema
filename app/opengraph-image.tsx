@@ -73,7 +73,7 @@ export default function OpengraphImage() {
             }}
           >
             <div>Plan your race.</div>
-            <div>Track every kilometre.</div>
+            <div>Track every kilometer.</div>
           </div>
           <div style={{ fontSize: 32, color: "#a1a1aa" }}>
             Marathon · Ultra · Backyard · Trail. Free, no account.

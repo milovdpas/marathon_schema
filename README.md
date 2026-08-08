@@ -44,7 +44,7 @@ No login required. Everything lives in your browser's **localStorage**. Optional
 ## The training plan
 
 A new install seeds a real, worked example: an exported 17-week marathon block
-with ~17 logged runs, per-kilometre splits, weather and off-day periods. It
+with ~17 logged runs, per-kilometer splits, weather and off-day periods. It
 lives in [`lib/plan/example-plan.json`](lib/plan/example-plan.json) and is
 loaded by [`lib/plan/example-plan.ts`](lib/plan/example-plan.ts), which rebases
 every date onto the

@@ -105,7 +105,7 @@ filtering on `type === "long"`. "Tempo" means the same thing on a bike, so the
 two axes multiply rather than merge: sport picks the icon, intensity picks the
 colour, and the badge doesn't grow.
 
-**One canonical pace unit.** Seconds per kilometre, for every sport, converted
+**One canonical pace unit.** Seconds per kilometer, for every sport, converted
 at display: min/100m is (min/km) ÷ 10 and km/h is 3600 ÷ (s/km). Storing each
 sport's idiomatic unit would mean every stat, chart and merge helper learning
 three representations.

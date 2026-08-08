@@ -17,7 +17,7 @@ describe("parsePartialKm", () => {
     expect(parsePartialKm(" 0.3 km ")).toBe(0.3);
   });
 
-  it("rejects anything that isn't a partial kilometre", () => {
+  it("rejects anything that isn't a partial kilometer", () => {
     expect(parsePartialKm("1")).toBeNull(); // a whole km, not a remainder
     expect(parsePartialKm("12")).toBeNull();
     expect(parsePartialKm("1.5")).toBeNull(); // >= 1
