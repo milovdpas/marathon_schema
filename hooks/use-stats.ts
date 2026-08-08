@@ -10,7 +10,7 @@ import {
   recentCompleted,
   upcomingWorkouts,
   weeklyMileage,
-} from "@/lib/stats";
+} from "@/lib/plan/stats";
 import type { TrainingPlan } from "@/lib/types";
 
 /** Memoized derived statistics for the current plan. */

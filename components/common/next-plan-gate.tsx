@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { todayISO } from "@/lib/date";
-import { raceWorkout } from "@/lib/plan-context";
+import { raceWorkout } from "@/lib/plan/context";
 import { useTrainingStore } from "@/store/use-training-store";
 
 /**

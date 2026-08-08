@@ -19,5 +19,5 @@ Quick orientation:
   - Persisted-shape changes require **bumping the persist `version` + an additive `migrate`** in `use-training-store.ts` (currently v11).
   - Pages are thin server components rendering a `"use client"` view inside `<HydrationGate>`.
   - Sticky offsets and z-index are **CSS variables in `app/globals.css`** (`--h-topbar`, `--stick-under-viewbar`, `--z-sticky`, …), consumed as `top-(--stick-under-viewbar)`. Don't reintroduce pixel literals — they silently detach when a bar's height changes.
-  - The bundled example plan (`lib/example-plan.json`) is a scrubbed real export. **This repo is public:** raw exports carry home coordinates, so `marathon-plans-*.json` is gitignored and `scripts/scrub-example-plan.mjs` strips `lat`/`lon` and `preferences`.
+  - The bundled example plan (`lib/plan/example-plan.json`) is a scrubbed real export. **This repo is public:** raw exports carry home coordinates, so `marathon-plans-*.json` is gitignored and `scripts/scrub-example-plan.mjs` strips `lat`/`lon` and `preferences`.
 - **Verify:** keep `npm run build`, `npm run lint` and `npm test` green (`npm run typecheck` is the fast inner loop). Pure logic in `lib/` gets a `*.test.ts`; components are covered by browser smoke instead. Browser smoke via `playwright-core` + system Chrome (`channel: "chrome"`); see `docs/architecture.md` → "Build & verify".

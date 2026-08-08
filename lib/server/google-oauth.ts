@@ -1,7 +1,7 @@
 import "server-only";
 import type { IronSession } from "iron-session";
 import type { SessionData } from "./session";
-import type { SyncUser } from "@/lib/drive-types";
+import type { SyncUser } from "@/lib/drive/types";
 
 const SCOPES =
   "openid email profile https://www.googleapis.com/auth/drive.appdata";

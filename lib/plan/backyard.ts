@@ -7,7 +7,7 @@
 // The rest of the app only understands "race distance", so a backyard plan
 // stores a derived `raceDistanceKm` and these helpers translate at the edges.
 
-import type { TrainingPlan } from "./types";
+import type { TrainingPlan } from "@/lib/types";
 
 /** The official backyard loop: 4.16667 miles. */
 export const BACKYARD_LOOP_KM = 6.706;

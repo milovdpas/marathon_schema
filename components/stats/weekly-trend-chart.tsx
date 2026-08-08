@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslation } from "react-i18next";
-import type { WeeklyMileage } from "@/lib/stats";
+import type { WeeklyMileage } from "@/lib/plan/stats";
 
 export function WeeklyTrendChart({ data }: { data: WeeklyMileage[] }) {
   const { t } = useTranslation();

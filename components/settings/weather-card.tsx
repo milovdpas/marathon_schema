@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useMounted } from "@/hooks/use-mounted";
-import { enableWeather } from "@/lib/weather-sync";
+import { enableWeather } from "@/lib/weather/sync";
 import { useTrainingStore } from "@/store/use-training-store";
 import { useWeatherStore } from "@/store/use-weather-store";
 

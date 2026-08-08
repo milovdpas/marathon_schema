@@ -4,7 +4,7 @@ import { isSameMonth } from "date-fns";
 import { CalendarBarTracks } from "@/components/calendar/calendar-bar-tracks";
 import { CalendarDayCell } from "@/components/calendar/calendar-day-cell";
 import { Card } from "@/components/ui/card";
-import { type BarEvent, placeBars } from "@/lib/calendar-layout";
+import { type BarEvent, placeBars } from "@/lib/calendar/layout";
 import { toISO } from "@/lib/date";
 import type { WeatherSnapshot, Workout } from "@/lib/types";
 

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { fetchWeatherStatus } from "@/lib/weather";
-import { pruneExpired } from "@/lib/weather-cache";
+import { fetchWeatherStatus } from "@/lib/weather/client";
+import { pruneExpired } from "@/lib/weather/cache";
 
 interface Coords {
   lat: number;

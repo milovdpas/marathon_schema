@@ -18,7 +18,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const OUT = "lib/example-plan.json";
+const OUT = "lib/plan/example-plan.json";
 
 const input = process.argv[2];
 if (!input) {

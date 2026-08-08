@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { SplitsList } from "@/components/common/splits-list";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { scanSplits } from "@/lib/split-scanner";
+import { scanSplits } from "@/lib/scanner/split-scanner";
 import type { WorkoutSplit } from "@/lib/types";
 import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";

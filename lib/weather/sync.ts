@@ -1,7 +1,7 @@
 // Glue between logging a workout and the weather client. Fire-and-forget — it
 // never blocks a save, and no-ops unless weather is enabled + configured.
-import { getCurrentLocation, getDayWeather } from "@/lib/weather";
-import { coordKey, readCache } from "@/lib/weather-cache";
+import { getCurrentLocation, getDayWeather } from "@/lib/weather/client";
+import { coordKey, readCache } from "@/lib/weather/cache";
 import { useTrainingStore } from "@/store/use-training-store";
 import { useWeatherStore } from "@/store/use-weather-store";
 

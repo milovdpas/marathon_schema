@@ -5,8 +5,8 @@ import { Field } from "@/components/common/field";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BACKYARD_LOOP_KM, backyardDistanceKm } from "@/lib/backyard";
-import type { Draft } from "@/lib/plan-request";
+import { BACKYARD_LOOP_KM, backyardDistanceKm } from "@/lib/plan/backyard";
+import type { Draft } from "@/lib/plan/request";
 import { cn } from "@/lib/utils";
 import type { SetDraft } from "@/components/wizard/steps/types";
 

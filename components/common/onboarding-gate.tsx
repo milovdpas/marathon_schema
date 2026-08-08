@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { OnboardingStep } from "@/components/common/onboarding-step";
 import { SplitsExample } from "@/components/common/splits-example";
-import { enableWeather } from "@/lib/weather-sync";
+import { enableWeather } from "@/lib/weather/sync";
 import { useSyncStore } from "@/store/use-sync-store";
 import { useTrainingStore } from "@/store/use-training-store";
 import { useWeatherStore } from "@/store/use-weather-store";

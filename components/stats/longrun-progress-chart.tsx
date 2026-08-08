@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslation } from "react-i18next";
-import type { LongRunPoint } from "@/lib/stats";
+import type { LongRunPoint } from "@/lib/plan/stats";
 
 export function LongRunProgressChart({ data }: { data: LongRunPoint[] }) {
   const { t } = useTranslation();

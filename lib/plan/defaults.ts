@@ -4,7 +4,7 @@
 // The demo plan itself is no longer generated from rules — it's a real
 // exported block loaded by `lib/example-plan.ts`.
 
-import type { TrainingPrefs } from "./types";
+import type { TrainingPrefs } from "@/lib/types";
 
 /** Schema version stamped into exported plans. */
 export const PLAN_VERSION = 1;

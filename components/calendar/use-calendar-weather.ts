@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { chunkWeeks, toISO } from "@/lib/date";
 import type { WeatherSnapshot } from "@/lib/types";
-import { getWeekWeather } from "@/lib/weather";
+import { getWeekWeather } from "@/lib/weather/client";
 import { useTrainingStore } from "@/store/use-training-store";
 import { useWeatherStore } from "@/store/use-weather-store";
 

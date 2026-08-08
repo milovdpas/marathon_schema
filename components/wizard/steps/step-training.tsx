@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Draft, LatestRun } from "@/lib/plan-request";
+import type { Draft, LatestRun } from "@/lib/plan/request";
 import type { TrainingPlan, TrainingPrefs } from "@/lib/types";
 import type { SetDraft } from "@/components/wizard/steps/types";
 

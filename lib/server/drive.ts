@@ -1,5 +1,5 @@
 import "server-only";
-import type { DriveFileMeta } from "@/lib/drive-types";
+import type { DriveFileMeta } from "@/lib/drive/types";
 
 const FILE_NAME = "marathon-tracker.json";
 

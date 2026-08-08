@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Draft, buildPlanRequest } from "./plan-request";
-import { makePlan, makeWorkout } from "./test-factories";
+import { type Draft, buildPlanRequest } from "@/lib/plan/request";
+import { makePlan, makeWorkout } from "@/lib/test/factories";
 
 const draft = (patch: Partial<Draft> = {}): Draft => ({
   name: "Autumn block",

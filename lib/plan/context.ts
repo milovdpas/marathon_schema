@@ -2,10 +2,10 @@
 // next one: a summary plus the runs actually logged (unrun planned workouts say
 // nothing about fitness, and dropping them keeps the payload manageable).
 
-import { todayISO } from "./date";
-import { distanceRun, effectivePace, overallStats, weeklyMileage } from "./stats";
-import type { TrainingPlan, Workout, WorkoutSplit } from "./types";
-import { isLogged } from "./workout";
+import { todayISO } from "@/lib/date";
+import { distanceRun, effectivePace, overallStats, weeklyMileage } from "@/lib/plan/stats";
+import type { TrainingPlan, Workout, WorkoutSplit } from "@/lib/types";
+import { isLogged } from "@/lib/plan/workout";
 
 /** A plan is done once its race day has passed. */
 export function isPlanFinished(plan: TrainingPlan): boolean {

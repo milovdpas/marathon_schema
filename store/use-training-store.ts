@@ -1,19 +1,19 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { deriveStartTime, paceFromDistanceDuration } from "@/lib/pace";
-import { loadExamplePlan } from "@/lib/example-plan";
+import { loadExamplePlan } from "@/lib/plan/example-plan";
 import {
   DEFAULT_PLAN_META,
   DEFAULT_TRAINING_PREFS,
-} from "@/lib/plan-defaults";
-import { parseImport, serializeExport, STORAGE_KEY } from "@/lib/storage";
+} from "@/lib/plan/defaults";
+import { parseImport, serializeExport, STORAGE_KEY } from "@/lib/plan/storage";
 import { newId } from "@/lib/id";
 import {
   findMatchingPlanId,
   mergeLoggedWorkouts,
   rekeyCollidingWorkouts,
   weekIndexForDate,
-} from "@/lib/plan-merge";
+} from "@/lib/plan/merge";
 import type {
   OffDay,
   PlanMeta,

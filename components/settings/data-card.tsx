@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
-import { downloadJSON } from "@/lib/storage";
+import { downloadJSON } from "@/lib/plan/storage";
 import { cn } from "@/lib/utils";
 import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";

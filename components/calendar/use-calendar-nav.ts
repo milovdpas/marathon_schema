@@ -3,7 +3,7 @@
 import { format } from "date-fns";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { stepAnchor, visibleDays } from "@/lib/calendar-range";
+import { stepAnchor, visibleDays } from "@/lib/calendar/range";
 import { chunkWeeks, formatRange, toISO } from "@/lib/date";
 import { dateLocaleFor } from "@/lib/date-locale";
 import type { CalendarViewMode } from "@/lib/types";

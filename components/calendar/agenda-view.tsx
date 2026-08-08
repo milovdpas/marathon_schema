@@ -10,7 +10,7 @@ import { fromISO, offDayForDate, todayISO } from "@/lib/date";
 import { dateLocaleFor } from "@/lib/date-locale";
 import type { OffDay, WeatherSnapshot, Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { groupByDate, isLogged } from "@/lib/workout";
+import { groupByDate, isLogged } from "@/lib/plan/workout";
 
 interface AgendaDay {
   iso: string;

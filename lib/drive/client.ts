@@ -2,7 +2,7 @@
 // backend (server-side OAuth with refresh tokens); this module just calls the
 // same-origin /api routes. No Google SDK, no tokens in the browser.
 
-import type { DriveFileMeta, SyncUser } from "@/lib/drive-types";
+import type { DriveFileMeta, SyncUser } from "@/lib/drive/types";
 
 export type { DriveFileMeta, SyncUser };
 

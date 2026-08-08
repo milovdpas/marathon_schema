@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { fromISO } from "@/lib/date";
 import { getDateLocale } from "@/lib/date-locale";
-import type { WeekHistoryPoint } from "@/lib/stats";
+import type { WeekHistoryPoint } from "@/lib/plan/stats";
 
 export function WeeklyHistoryChart({ data }: { data: WeekHistoryPoint[] }) {
   const { t } = useTranslation();

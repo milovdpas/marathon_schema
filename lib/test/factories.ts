@@ -1,7 +1,7 @@
 // Minimal builders for tests. Kept out of *.test.ts so several suites can
 // share them; not imported by any app code.
 
-import type { TrainingPlan, TrainingWeek, Workout } from "./types";
+import type { TrainingPlan, TrainingWeek, Workout } from "@/lib/types";
 
 export function makeWorkout(patch: Partial<Workout> & { id: string }): Workout {
   return {

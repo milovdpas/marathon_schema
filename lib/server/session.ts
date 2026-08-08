@@ -1,7 +1,7 @@
 import "server-only";
 import { getIronSession, type IronSession, type SessionOptions } from "iron-session";
 import { cookies } from "next/headers";
-import type { SyncUser } from "@/lib/drive-types";
+import type { SyncUser } from "@/lib/drive/types";
 
 /** What we keep in the encrypted session cookie. No id_token (keeps it small). */
 export interface SessionData {

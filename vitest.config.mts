@@ -8,7 +8,9 @@ export default defineConfig({
       // `server-only` throws outside a React Server Component. The modules
       // under lib/server import it as a guard against being pulled into the
       // client bundle; under test we just need them to load.
-      "server-only": fileURLToPath(new URL("./lib/test-server-only.ts", import.meta.url)),
+      "server-only": fileURLToPath(
+        new URL("./lib/test/server-only-stub.ts", import.meta.url),
+      ),
     },
   },
   test: {

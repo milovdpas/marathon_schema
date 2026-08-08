@@ -1,8 +1,8 @@
 // Small shared predicates and indexes over a plan's workouts.
 
 import { eachDayOfInterval } from "date-fns";
-import { fromISO, toISO } from "./date";
-import type { Workout } from "./types";
+import { fromISO, toISO } from "@/lib/date";
+import type { Workout } from "@/lib/types";
 
 /**
  * A workout the user has actually run. Note `actualDistanceKm: 0` counts as

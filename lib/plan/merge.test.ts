@@ -4,8 +4,8 @@ import {
   mergeLoggedWorkouts,
   rekeyCollidingWorkouts,
   weekIndexForDate,
-} from "./plan-merge";
-import { makePlan, makeWeek, makeWorkout } from "./test-factories";
+} from "@/lib/plan/merge";
+import { makePlan, makeWeek, makeWorkout } from "@/lib/test/factories";
 
 describe("findMatchingPlanId", () => {
   it("matches on plan id before looking at workouts", () => {

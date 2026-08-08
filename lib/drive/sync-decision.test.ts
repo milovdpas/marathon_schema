@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideSync } from "./sync-decision";
+import { decideSync } from "@/lib/drive/sync-decision";
 
 const remote = (modifiedTime: string, id = "file-1") => ({ id, modifiedTime });
 const T1 = "2026-08-01T10:00:00.000Z";

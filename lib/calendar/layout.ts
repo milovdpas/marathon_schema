@@ -4,7 +4,7 @@
 // so they render as bars above the day cells. Overlapping bars are packed into
 // as few rows ("tracks") as possible.
 
-import type { OffDay, Workout, WorkoutType } from "./types";
+import type { OffDay, Workout, WorkoutType } from "@/lib/types";
 
 /** A multi-day period rendered as a spanning bar (off day or flexible workout). */
 export interface BarEvent {

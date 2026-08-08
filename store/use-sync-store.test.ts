@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DriveFileMeta } from "@/lib/drive-types";
+import type { DriveFileMeta } from "@/lib/drive/types";
 
 // A memory localStorage, installed before the stores are imported — both use
 // zustand's persist, which reads it while the module is evaluating.
@@ -30,9 +30,9 @@ class DriveAuthError extends Error {
   }
 }
 
-vi.mock("@/lib/google-drive", () => ({ ...drive, DriveAuthError }));
+vi.mock("@/lib/drive/client", () => ({ ...drive, DriveAuthError }));
 // The example plan is dynamically imported when a store seeds; not needed here.
-vi.mock("@/lib/example-plan", () => ({ loadExamplePlan: vi.fn() }));
+vi.mock("@/lib/plan/example-plan", () => ({ loadExamplePlan: vi.fn() }));
 
 const { useSyncStore } = await import("./use-sync-store");
 const { useTrainingStore } = await import("./use-training-store");

@@ -33,7 +33,7 @@ import {
   type WorkoutType,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { attachWeather } from "@/lib/weather-sync";
+import { attachWeather } from "@/lib/weather/sync";
 import { useTrainingStore } from "@/store/use-training-store";
 
 interface FormState {

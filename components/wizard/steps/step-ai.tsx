@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
-import { downloadJSON } from "@/lib/storage";
+import { downloadJSON } from "@/lib/plan/storage";
 
 /**
  * Hand the plan request to an AI, then bring its answer back. Owns only the

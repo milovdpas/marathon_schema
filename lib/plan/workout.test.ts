@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { makeWorkout } from "./test-factories";
-import { flexibleWindowIndex, groupByDate, isLogged } from "./workout";
+import { makeWorkout } from "@/lib/test/factories";
+import { flexibleWindowIndex, groupByDate, isLogged } from "@/lib/plan/workout";
 
 describe("isLogged", () => {
   it("is true when completed", () => {

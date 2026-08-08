@@ -8,7 +8,7 @@ import {
   readTzOffset,
   writeCache,
   writeTzOffset,
-} from "@/lib/weather-cache";
+} from "@/lib/weather/cache";
 
 const DAY_MS = 86_400_000;
 

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { WorkoutTypeDot } from "@/components/common/workout-type-badge";
 import { WORKOUT_TYPES } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { enableWeather } from "@/lib/weather-sync";
+import { enableWeather } from "@/lib/weather/sync";
 import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";
 import { useWeatherStore } from "@/store/use-weather-store";

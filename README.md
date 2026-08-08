@@ -45,8 +45,9 @@ No login required. Everything lives in your browser's **localStorage**. Optional
 
 A new install seeds a real, worked example: an exported 17-week marathon block
 with ~17 logged runs, per-kilometre splits, weather and off-day periods. It
-lives in [`lib/example-plan.json`](lib/example-plan.json) and is loaded by
-[`lib/example-plan.ts`](lib/example-plan.ts), which rebases every date onto the
+lives in [`lib/plan/example-plan.json`](lib/plan/example-plan.json) and is
+loaded by [`lib/plan/example-plan.ts`](lib/plan/example-plan.ts), which rebases
+every date onto the
 current week (in whole weeks, so weekdays and the Sunday race survive) — the
 demo never rots into a race that finished months ago.
 
@@ -57,7 +58,7 @@ node scripts/scrub-example-plan.mjs marathon-plans-YYYY-MM-DD.json
 ```
 
 That strips the `preferences` block and the home coordinates every weather
-snapshot carries, and writes `lib/example-plan.json`. Raw exports are
+snapshot carries, and writes `lib/plan/example-plan.json`. Raw exports are
 gitignored — **never commit one**, this repo is public.
 
 Want a different plan for yourself? Create one in the app (**Settings → Add
@@ -175,19 +176,18 @@ components/
   layout/            # nav, theme provider/toggle
   common/            # shared widgets (workout row, stat card, progress ring, …)
   dashboard|plan|calendar|stats|settings/   # per-page views
-lib/
+lib/                 # primitives at the root, domains in folders
   types.ts           # domain models
-  plan-defaults.ts   # fallback plan metadata for imports/migrations
-  example-plan.json  # the bundled demo plan (scrubbed export)
-  example-plan.ts    # loads it and rebases its dates onto this week
-  calendar-layout.ts # spanning-bar packing for the calendar grid
-  calendar-range.ts  # which days each calendar view shows
-  workout.ts         # isLogged / groupByDate / flexible-window index
-  date.ts            # ISO helpers, week ranges, off-day lookup
-  pace.ts            # pace parsing / formatting / derivation
-  stats.ts           # derived statistics (pure functions)
-  storage.ts         # export / import + migration hook
-  google-drive.ts    # client-side Google Drive sync (GIS + Drive REST)
+  utils.ts  date.ts  date-locale.ts  pace.ts  id.ts
+  plan/              # context, defaults, merge, request, stats, workout,
+                     #   backyard, storage, example-plan(+.json)
+  calendar/          # layout (spanning bars), range (visible days per view)
+  weather/           # client, cache, sync
+  drive/             # client, types, sync-decision (newest-wins)
+  scanner/           # split-scanner (on-device OCR)
+  server/            # server-only: session, google-oauth, drive, api
+  i18n/              # en/nl dictionaries
+  test/              # factories + the server-only stub
 store/
   use-training-store.ts   # Zustand store + localStorage persistence
   use-sync-store.ts       # Google Drive sync state + auto-push

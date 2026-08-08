@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveLoggedRun } from "./pace";
+import { resolveLoggedRun } from "@/lib/pace";
 
 const run = (distance: string, duration: string, pace: string) =>
   resolveLoggedRun({ distance, duration, pace });

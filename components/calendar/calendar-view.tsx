@@ -18,10 +18,10 @@ import { WorkoutFormDialog } from "@/components/plan/workout-form-dialog";
 import { Card } from "@/components/ui/card";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useWeekdayLabels } from "@/hooks/use-weekday-labels";
-import { buildBarEvents } from "@/lib/calendar-layout";
+import { buildBarEvents } from "@/lib/calendar/layout";
 import { offDayForDate, toISO } from "@/lib/date";
 import type { Workout } from "@/lib/types";
-import { flexibleWindowIndex, groupByDate } from "@/lib/workout";
+import { flexibleWindowIndex, groupByDate } from "@/lib/plan/workout";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function CalendarView() {

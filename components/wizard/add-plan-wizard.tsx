@@ -10,10 +10,10 @@ import { StepOffDays } from "@/components/wizard/steps/step-off-days";
 import { StepRace } from "@/components/wizard/steps/step-race";
 import { StepTraining } from "@/components/wizard/steps/step-training";
 import { WizardStepper } from "@/components/wizard/wizard-stepper";
-import { BACKYARD_LOOP_KM } from "@/lib/backyard";
+import { BACKYARD_LOOP_KM } from "@/lib/plan/backyard";
 import { toISO } from "@/lib/date";
-import { canBeContext } from "@/lib/plan-context";
-import { type Draft, buildPlanRequest } from "@/lib/plan-request";
+import { canBeContext } from "@/lib/plan/context";
+import { type Draft, buildPlanRequest } from "@/lib/plan/request";
 import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";
 

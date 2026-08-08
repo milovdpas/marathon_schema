@@ -4,10 +4,10 @@
 // versioned contract, so it's the part most likely to need a test when the
 // schema bumps.
 
-import { paceFromDistanceDuration, parseDurationToMinutes } from "./pace";
-import { buildPlanContext } from "./plan-context";
-import { backyardDistanceKm } from "./backyard";
-import type { OffDay, RaceType, TrainingPlan, TrainingPrefs } from "./types";
+import { paceFromDistanceDuration, parseDurationToMinutes } from "@/lib/pace";
+import { buildPlanContext } from "@/lib/plan/context";
+import { backyardDistanceKm } from "@/lib/plan/backyard";
+import type { OffDay, RaceType, TrainingPlan, TrainingPrefs } from "@/lib/types";
 
 export interface LatestRun {
   distanceKm: string;

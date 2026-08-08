@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { stepAnchor, visibleDays } from "./calendar-range";
-import { chunkWeeks, toISO } from "./date";
+import { stepAnchor, visibleDays } from "@/lib/calendar/range";
+import { chunkWeeks, toISO } from "@/lib/date";
 
 // A Wednesday, mid-month.
 const ANCHOR = new Date(2026, 7, 12); // 2026-08-12

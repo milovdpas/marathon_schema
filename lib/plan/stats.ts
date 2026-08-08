@@ -1,7 +1,7 @@
 import { isWithinInterval, parseISO, startOfWeek } from "date-fns";
-import { toISO } from "./date";
-import { averagePace, paceToSeconds, secondsToPace } from "./pace";
-import type { TrainingPlan, Workout, WorkoutSplit } from "./types";
+import { toISO } from "@/lib/date";
+import { averagePace, paceToSeconds, secondsToPace } from "@/lib/pace";
+import type { TrainingPlan, Workout, WorkoutSplit } from "@/lib/types";
 
 /** All workouts as a flat array, sorted by date. */
 export function allWorkouts(plan: TrainingPlan): Workout[] {

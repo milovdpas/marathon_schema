@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useActivePlan } from "@/hooks/use-active-plan";
-import { isPlanFinished } from "@/lib/plan-context";
+import { isPlanFinished } from "@/lib/plan/context";
 import type { TrainingPlan } from "@/lib/types";
 import { useTrainingStore } from "@/store/use-training-store";
 

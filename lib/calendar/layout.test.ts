@@ -4,8 +4,8 @@ import {
   buildBarEvents,
   placeBars,
   trackCount,
-} from "./calendar-layout";
-import { makeWorkout } from "./test-factories";
+} from "@/lib/calendar/layout";
+import { makeWorkout } from "@/lib/test/factories";
 
 // Mon 2026-06-22 → Sun 2026-06-28.
 const WEEK = [

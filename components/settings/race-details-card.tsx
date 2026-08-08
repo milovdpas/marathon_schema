@@ -9,7 +9,7 @@ import {
   BACKYARD_LOOP_KM,
   backyardDistanceKm,
   isBackyard,
-} from "@/lib/backyard";
+} from "@/lib/plan/backyard";
 import { useTrainingStore } from "@/store/use-training-store";
 
 /** Edit the active plan's race metadata. The schedule itself isn't touched. */

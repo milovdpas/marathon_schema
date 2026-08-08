@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
-import { getDateLocale } from "./date-locale";
-import type { OffDay } from "./types";
+import { getDateLocale } from "@/lib/date-locale";
+import type { OffDay } from "@/lib/types";
 
 /** Canonical ISO (yyyy-mm-dd) string for a Date, in local time. */
 export function toISO(date: Date): string {

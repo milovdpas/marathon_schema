@@ -1,6 +1,6 @@
-import { newId } from "./id";
-import { DEFAULT_PLAN_META, PLAN_VERSION } from "./plan-defaults";
-import type { Preferences, TrainingPlan } from "./types";
+import { newId } from "@/lib/id";
+import { DEFAULT_PLAN_META, PLAN_VERSION } from "@/lib/plan/defaults";
+import type { Preferences, TrainingPlan } from "@/lib/types";
 
 export const STORAGE_KEY = "marathon-training-v1";
 

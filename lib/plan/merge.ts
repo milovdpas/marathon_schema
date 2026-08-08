@@ -5,9 +5,9 @@
 // logged training permanently — there is no backend to restore from — which is
 // why this logic lives on its own and is tested.
 
-import { newId } from "./id";
-import type { TrainingPlan, Workout } from "./types";
-import { isLogged } from "./workout";
+import { newId } from "@/lib/id";
+import type { TrainingPlan, Workout } from "@/lib/types";
+import { isLogged } from "@/lib/plan/workout";
 
 /** Find the week (by date range) that a given ISO date belongs to. */
 export function weekIndexForDate(plan: TrainingPlan, date: string): number {

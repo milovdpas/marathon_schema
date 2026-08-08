@@ -1,7 +1,7 @@
 "use client";
 
 import { TYPE_STYLE } from "@/components/common/workout-type-badge";
-import { type PlacedBar, trackCount } from "@/lib/calendar-layout";
+import { type PlacedBar, trackCount } from "@/lib/calendar/layout";
 import { cn } from "@/lib/utils";
 
 /** The spanning bars for one week: off-day periods and flexible windows. */

@@ -10,8 +10,8 @@ import {
   logout as apiLogout,
   updateFile,
   type SyncUser,
-} from "@/lib/google-drive";
-import { decideSync } from "@/lib/sync-decision";
+} from "@/lib/drive/client";
+import { decideSync } from "@/lib/drive/sync-decision";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export type SyncStatus =

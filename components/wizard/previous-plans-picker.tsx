@@ -4,9 +4,9 @@ import { Check } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDayLabel } from "@/lib/date";
-import { raceSizeLabel } from "@/lib/backyard";
-import { canBeContext, isPlanFinished } from "@/lib/plan-context";
-import { overallStats } from "@/lib/stats";
+import { raceSizeLabel } from "@/lib/plan/backyard";
+import { canBeContext, isPlanFinished } from "@/lib/plan/context";
+import { overallStats } from "@/lib/plan/stats";
 import type { TrainingPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
 

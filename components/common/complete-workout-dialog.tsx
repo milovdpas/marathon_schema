@@ -18,7 +18,7 @@ import type { Workout, WorkoutSplit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SplitScanField } from "@/components/common/split-scan-field";
 import { TimeField } from "@/components/common/time-field";
-import { attachWeather } from "@/lib/weather-sync";
+import { attachWeather } from "@/lib/weather/sync";
 import { useTrainingStore } from "@/store/use-training-store";
 
 /**

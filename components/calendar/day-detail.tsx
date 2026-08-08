@@ -9,7 +9,7 @@ import { SplitsList } from "@/components/common/splits-list";
 import { WorkoutRow } from "@/components/common/workout-row";
 import { Button } from "@/components/ui/button";
 import type { OffDay, WeatherSnapshot, Workout } from "@/lib/types";
-import { getDayWeather } from "@/lib/weather";
+import { getDayWeather } from "@/lib/weather/client";
 import { cn } from "@/lib/utils";
 import { useTrainingStore } from "@/store/use-training-store";
 import { useWeatherStore } from "@/store/use-weather-store";

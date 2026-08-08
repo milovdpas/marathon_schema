@@ -13,7 +13,7 @@ import { SupportCard } from "@/components/settings/support-card";
 import { WeatherCard } from "@/components/settings/weather-card";
 import { Card } from "@/components/ui/card";
 import { useActivePlan } from "@/hooks/use-active-plan";
-import { DEFAULT_TRAINING_PREFS } from "@/lib/plan-defaults";
+import { DEFAULT_TRAINING_PREFS } from "@/lib/plan/defaults";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function SettingsView() {

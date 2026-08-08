@@ -21,7 +21,7 @@ import { Card } from "@/components/ui/card";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";
 import { formatDayLabel } from "@/lib/date";
-import { latestSplitRun, weeklyHistory } from "@/lib/stats";
+import { latestSplitRun, weeklyHistory } from "@/lib/plan/stats";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function StatsView() {

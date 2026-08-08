@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type ElevEntry, parsePartialKm, resolveElevations } from "./split-scanner";
+import { type ElevEntry, parsePartialKm, resolveElevations } from "@/lib/scanner/split-scanner";
 
 describe("parsePartialKm", () => {
   it("accepts a real fraction", () => {

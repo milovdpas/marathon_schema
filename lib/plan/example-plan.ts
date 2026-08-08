@@ -5,10 +5,10 @@
 // demo never rots into a race that finished months ago.
 
 import { addDays, differenceInCalendarDays, startOfWeek } from "date-fns";
-import { fromISO, toISO } from "./date";
-import { DEFAULT_PLAN_ID } from "./plan-defaults";
-import { normalizeBundle } from "./storage";
-import type { TrainingPlan, Workout } from "./types";
+import { fromISO, toISO } from "@/lib/date";
+import { DEFAULT_PLAN_ID } from "@/lib/plan/defaults";
+import { normalizeBundle } from "@/lib/plan/storage";
+import type { TrainingPlan, Workout } from "@/lib/types";
 
 const DAY_MS = 86_400_000;
 
@@ -102,7 +102,7 @@ function shiftPlan(plan: TrainingPlan, days: number): TrainingPlan {
  * for.
  */
 export async function loadExamplePlan(now: Date = new Date()): Promise<TrainingPlan> {
-  const bundle = (await import("./example-plan.json")).default;
+  const bundle = (await import("@/lib/plan/example-plan.json")).default;
 
   // Only the plan. The export's `preferences` would mark onboarding as seen
   // and switch on weather + the split scanner for someone who never asked.

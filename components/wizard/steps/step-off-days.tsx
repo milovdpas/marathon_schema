@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatRange } from "@/lib/date";
 import { newId } from "@/lib/id";
-import type { Draft } from "@/lib/plan-request";
+import type { Draft } from "@/lib/plan/request";
 import type { SetDraft } from "@/components/wizard/steps/types";
 
 const BLANK = { title: "", start: "", end: "", note: "" };

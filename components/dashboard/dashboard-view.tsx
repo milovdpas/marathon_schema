@@ -13,7 +13,7 @@ import { WorkoutRow } from "@/components/common/workout-row";
 import { Card } from "@/components/ui/card";
 import { fromISO, startOfToday } from "@/lib/date";
 import { getDateLocale } from "@/lib/date-locale";
-import { BACKYARD_LOOP_KM, isBackyard } from "@/lib/backyard";
+import { BACKYARD_LOOP_KM, isBackyard } from "@/lib/plan/backyard";
 import type { Workout } from "@/lib/types";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useStats } from "@/hooks/use-stats";

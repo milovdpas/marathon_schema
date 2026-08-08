@@ -10,7 +10,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import type { CalendarViewMode } from "./types";
+import type { CalendarViewMode } from "@/lib/types";
 
 const MONDAY = { weekStartsOn: 1 } as const;
 
