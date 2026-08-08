@@ -6,11 +6,11 @@ import { TrainingPrefsFields } from "@/components/common/training-prefs-fields";
 import { AppearanceCard } from "@/components/settings/appearance-card";
 import { CloudSyncCard } from "@/components/settings/cloud-sync-card";
 import { DataCard } from "@/components/settings/data-card";
+import { FeaturesCard } from "@/components/settings/features-card";
+import { InstallAppCard } from "@/components/settings/install-app-card";
 import { PlansCard } from "@/components/settings/plans-card";
 import { RaceDetailsCard } from "@/components/settings/race-details-card";
-import { SplitScannerCard } from "@/components/settings/split-scanner-card";
 import { SupportCard } from "@/components/settings/support-card";
-import { WeatherCard } from "@/components/settings/weather-card";
 import { Card } from "@/components/ui/card";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { DEFAULT_TRAINING_PREFS } from "@/lib/plan/defaults";
@@ -46,22 +46,15 @@ export function SettingsView() {
         </Card>
       ) : null}
 
-      <AppearanceCard />
+      <FeaturesCard />
 
       <CloudSyncCard />
 
-      <section className="space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold">{t("features.title")}</h3>
-          <p className="text-xs text-muted-foreground">
-            {t("features.subtitle")}
-          </p>
-        </div>
-        <WeatherCard />
-        <SplitScannerCard />
-      </section>
-
       <DataCard status={status} onStatus={setStatus} />
+
+      <AppearanceCard />
+
+      <InstallAppCard />
 
       <SupportCard />
     </div>

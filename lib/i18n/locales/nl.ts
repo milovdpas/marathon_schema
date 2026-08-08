@@ -289,6 +289,14 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
       "Locatietoegang geweigerd — sta het toe in je browser om weer te gebruiken.",
     locationUnavailable: "Kon je locatie niet ophalen. Probeer opnieuw.",
   },
+  install: {
+    title: "App installeren",
+    body: "Zet Marathon op je beginscherm, zodat de app schermvullend opent zonder browserbalken. Hij blijft ook werken zonder verbinding.",
+    action: "App installeren",
+    iosStep1: "Tik op de deelknop in Safari.",
+    iosStep2: "Scrol omlaag en kies \"Zet op beginscherm\".",
+    iosStep3: "Tik op \"Voeg toe\" — Marathon opent daarna als een gewone app.",
+  },
   features: {
     title: "Functies",
     subtitle: "Optionele extra's die je kunt inschakelen.",

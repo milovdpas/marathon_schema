@@ -7,6 +7,7 @@ import { SyncInitializer } from "@/components/common/sync-initializer";
 import { Toaster } from "@/components/common/toaster";
 import { AppLogo } from "@/components/layout/app-logo";
 import { AppNav } from "@/components/layout/app-nav";
+import { ServiceWorker } from "@/components/layout/service-worker";
 import { I18nProvider } from "@/components/layout/i18n-provider";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -55,6 +56,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <I18nProvider>
+          <ServiceWorker />
           <SyncInitializer />
           <OnboardingGate />
           <NextPlanGate />

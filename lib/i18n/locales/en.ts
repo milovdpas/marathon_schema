@@ -286,6 +286,14 @@ JSON (paste below, or attach the exported .json file):
       "Location access was denied — allow it in your browser to use weather.",
     locationUnavailable: "Couldn't get your location. Try again.",
   },
+  install: {
+    title: "Install the app",
+    body: "Add Marathon to your home screen so it opens like a normal app, full screen and without browser chrome. It also keeps working without a signal.",
+    action: "Install app",
+    iosStep1: "Tap the Share button in Safari.",
+    iosStep2: "Scroll down and choose \"Add to Home Screen\".",
+    iosStep3: "Tap \"Add\" — Marathon then opens like a normal app.",
+  },
   features: {
     title: "Features",
     subtitle: "Optional extras you can switch on.",

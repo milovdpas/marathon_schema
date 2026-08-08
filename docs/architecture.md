@@ -91,6 +91,17 @@ store/                    use-training-store, use-sync-store
 docs/                     this guide, roadmap.md (planned features), ai-plan-coach.md (deferred design)
 ```
 
+## Installable web app (PWA)
+
+`app/manifest.ts` + `public/sw.js` make the tracker installable to a phone home screen, and `components/settings/install-app-card.tsx` offers it in Settings.
+
+- **Icons must be PNG.** `public/icons/{icon-192,icon-512,icon-maskable-512}.png`, regenerated from `app/icon.svg` by `scripts/build-icons.mjs`. An SVG entry with `sizes: "any"` looks like a perfect match to Chrome's icon picker, but it can't rasterize one for a WebAPK — it then reports `no-acceptable-icon`, stops looking, and "Install" silently degrades to a home-screen shortcut. `app/icon.svg` stays the tab favicon via `<link rel="icon">`, which is a separate mechanism.
+- **The maskable variant** bleeds its background to every edge and keeps the runner inside the middle 80%, because launchers crop to a circle or squircle.
+- **The install button is Chromium-only.** We capture `beforeinstallprompt`, `preventDefault()` it so Chrome's own infobar can't appear mid-run, and call `prompt()` from the button. Chrome then logs *"Banner not shown: beforeinstallpromptevent.preventDefault() called"* — that is the intended handshake, not an error. iOS has no equivalent API and Safari has repeatedly declined to add one, so `useInstallApp()` detects iOS and the card shows the Share → Add to Home Screen steps instead. The card renders nothing once installed.
+- **The service worker is for offline, not installability.** Chrome installs the app with or without one — measured both ways. `public/sw.js` is deliberately conservative: network-first for navigations so a deploy goes live immediately, cache-first only for content-hashed `/_next/static/`, and it never touches `/api/`. It isn't registered in development, where it fights hot reload.
+
+**Testing installability:** Playwright's `newContext` is incognito-like and Chrome refuses to install in incognito, which masks every other error — use `launchPersistentContext` with `--bypass-app-banner-engagement-checks`, against `next start` rather than `next dev`. CDP `Page.getInstallabilityErrors` gives Chrome's own verdict.
+
 ## Build & verify
 
 - `npm install` then `npm run dev`. `npm run build` (Vercel-ready), `npm run lint` — **keep both green** (lint runs `react-hooks` rules stricter than build; avoid `setState`-in-effect — use the render-time reset or `useMounted`).
