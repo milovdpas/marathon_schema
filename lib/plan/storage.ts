@@ -1,6 +1,12 @@
 import { newId } from "@/lib/id";
 import { DEFAULT_PLAN_META, PLAN_VERSION } from "@/lib/plan/defaults";
-import type { Preferences, TrainingPlan } from "@/lib/types";
+import { toSport } from "@/lib/sport";
+import {
+  WORKOUT_TYPES,
+  type Preferences,
+  type TrainingPlan,
+  type Workout,
+} from "@/lib/types";
 
 export const STORAGE_KEY = "marathon-training-v1";
 
@@ -109,6 +115,40 @@ function isValidPlanShape(p: unknown): p is TrainingPlan {
   );
 }
 
+/**
+ * Force every workout's enums into range.
+ *
+ * `type` and `sport` are both used to index static style maps, so an
+ * AI-authored plan naming a workout "threshold" or a sport "triathlon" would
+ * take the whole calendar down with an undefined lookup. Coercing here is the
+ * fix rather than a guard at each of the five index sites: this is the one
+ * boundary every foreign plan crosses, and after it the types are true.
+ */
+function normalizeWorkouts(
+  raw: Record<string, Workout> | undefined,
+): Record<string, Workout> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, Workout> = {};
+  for (const [id, w] of Object.entries(raw)) {
+    if (!w || typeof w !== "object") continue;
+    out[id] = {
+      ...w,
+      type: WORKOUT_TYPES.includes(w.type) ? w.type : "easy",
+      // An absent sport is left absent ON PURPOSE. It does not mean "unknown",
+      // it means "inherit the plan's sport" — and `workoutSport()` already
+      // resolves absent+absent to running, so every pre-multi-sport workout
+      // reads as a run without being rewritten.
+      //
+      // Stamping "run" here instead would be actively wrong: a cycling plan
+      // declares `plan.sport: "bike"` once and lets its sessions inherit it, so
+      // stamping would silently turn every imported cycling plan into running.
+      // A *present* value is still coerced, since that one can be nonsense.
+      ...(w.sport === undefined ? {} : { sport: toSport(w.sport) }),
+    };
+  }
+  return out;
+}
+
 /** Ensure a raw plan object has all required PlanMeta + id fields. */
 function normalizePlan(
   raw: TrainingPlan,
@@ -134,6 +174,8 @@ function normalizePlan(
     version: raw.version ?? PLAN_VERSION,
     createdAt: raw.createdAt ?? new Date().toISOString(),
     offDays: Array.isArray(raw.offDays) ? raw.offDays : [],
+    ...(raw.sport === undefined ? {} : { sport: toSport(raw.sport) }),
+    workouts: normalizeWorkouts(raw.workouts),
   };
 }
 

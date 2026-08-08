@@ -413,7 +413,12 @@ export const useTrainingStore = create<TrainingState>()(
       //      in km, elevation in metres, temperature in °C and pace in seconds
       //      per km. `units` is a display choice only (see lib/units.ts), and
       //      absent means "follow the country", which is detected on first run.
-      version: 13,
+      // v14: additive — Workout.sport and PlanMeta.sport. Deliberately NOT
+      //      backfilled: absent on a workout means "the plan's sport" and
+      //      absent on a plan means running, which every plan written before
+      //      multi-sport was. Stamping "run" everywhere would rewrite every
+      //      user's data to say what the default already says.
+      version: 14,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         plans: state.plans,

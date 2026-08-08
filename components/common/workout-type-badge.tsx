@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { SportIcon } from "@/components/common/sport-icon";
+import type { Sport } from "@/lib/sport";
 import { type WorkoutType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -43,9 +45,15 @@ export const TYPE_STYLE: Record<
 
 export function WorkoutTypeBadge({
   type,
+  sport,
   className,
 }: {
   type: WorkoutType;
+  /**
+   * Pass only on a plan that mixes sports (`isMultiSport`). A running icon on
+   * every session of a running plan is noise.
+   */
+  sport?: Sport;
   className?: string;
 }) {
   const style = TYPE_STYLE[type];
@@ -59,7 +67,11 @@ export function WorkoutTypeBadge({
         className,
       )}
     >
-      <span className={cn("size-1.5 rounded-full", style.dot)} />
+      {sport ? (
+        <SportIcon sport={sport} className="size-3 text-current" />
+      ) : (
+        <span className={cn("size-1.5 rounded-full", style.dot)} />
+      )}
       {t(`workoutType.${type}`)}
     </span>
   );

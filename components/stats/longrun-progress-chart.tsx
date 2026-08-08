@@ -19,8 +19,8 @@ export function LongRunProgressChart({ data }: { data: LongRunPoint[] }) {
   const fmt = useFormat();
   const rows = data.map((d) => ({
     ...d,
-    planned: d.planned == null ? d.planned : fmt.distanceNumber(d.planned),
-    actual: d.actual == null ? d.actual : fmt.distanceNumber(d.actual),
+    planned: fmt.distanceNumber(d.planned),
+    actual: d.actual == null ? null : fmt.distanceNumber(d.actual),
   }));
   return (
     <ResponsiveContainer width="100%" height={260}>

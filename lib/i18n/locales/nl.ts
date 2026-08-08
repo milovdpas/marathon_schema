@@ -24,6 +24,14 @@ export const nl: Dict = {
     settings: "Instellingen",
     theme: "Thema",
   },
+  sport: {
+    run: "Lopen",
+    bike: "Fietsen",
+    swim: "Zwemmen",
+    runPlural: "Hardlopen",
+    bikePlural: "Fietsen",
+    swimPlural: "Zwemmen",
+  },
   workoutType: {
     easy: "Rustige duurloop",
     tempo: "Tempo",
@@ -94,6 +102,7 @@ export const nl: Dict = {
     modeLog: "Loggen",
     date: "Datum",
     type: "Type",
+    sport: "Sport",
     titleLabel: "Titel",
     titlePlaceholder: "bijv. 6×800m intervallen",
     distance: "Afstand ({{unit}})",
@@ -163,6 +172,10 @@ export const nl: Dict = {
     splitPaces: "Tempo per kilometer",
     splitPacesSub:
       "{{title}} · {{date}} - snelste {{fastest}}, langzaamste {{slowest}}.",
+    bySport: "Per sport",
+    bySportSub: "Afstand is per sport; tijd is het enige totaal dat iets zegt als ze door elkaar lopen.",
+    totalTime: "Totale tijd",
+    hours: "{{h}}u {{m}}m",
     longRunProgression: "Opbouw lange duurloop",
     longRunHint: "Opbouw naar je piek, daarna afbouwen richting wedstrijddag.",
     planned: "Gepland",
@@ -336,15 +349,22 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
     trailDesc: "Twaalf weken heuvels en lange dagen op de trails.",
     ultra: "100 km ultraplan",
     ultraDesc: "Zestien weken opgebouwd rond lange duurlopen op elkaar.",
+    cycling: "Fietsplan",
+    cyclingDesc: "Twaalf weken opbouw naar een rit van 120 km, in km/u.",
+    swimming: "Zwemplan",
+    swimmingDesc: "Tien weken in het bad, tempo per 100 m.",
+    triathlon: "Triatlonplan",
+    triathlonDesc: "Twaalf weken zwemmen, fietsen en lopen, met wekelijkse bricks.",
     backyard: "Backyard-ultraplan",
     backyardDesc: "Veertien weken rondjes trainen richting 20 yards.",
     addTitle: "Probeer een voorbeeldplan",
     addBody:
       "Voorbeeldplannen zijn andermans training, puur om te bekijken. Ze worden nooit als context gebruikt als een AI jouw plan schrijft.",
-    showAll: "Toon alle sporten",
+    showAll: "Toon {{count}} meer",
+    showFewer: "Toon minder",
     added: "Toegevoegd",
     comingSoon:
-      "Nog geen voorbeeldplan voor {{sports}}. Die komen zodra RacePilot fiets- en zwemtrainingen kan inplannen, en dat is de volgende grote stap.",
+      "Nog geen voorbeeldplan voor {{sports}}. Meerdere sporten in één wedstrijd vragen gekoppelde wedstrijddagtrainingen, en dat is de volgende grote stap.",
   },
   welcome: {
     continue: "Verder",
@@ -460,6 +480,7 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
       "Voeg vakanties, reizen of drukke periodes toe die je training beperken. De AI plant eromheen.",
     calendarSoon: "Verbind Google Agenda (binnenkort)",
     // Stap 3
+    sportQ: "Voor welke sport is dit plan?",
     raceTypeQ: "Wat voor wedstrijd is het?",
     raceTypeStandard: "Gewone wedstrijd",
     raceTypeStandardDesc: "Een vaste afstand die je één keer loopt, zoals een 10K of marathon.",
@@ -517,6 +538,8 @@ JSON (plak hieronder, of voeg het geëxporteerde .json-bestand toe):
 Wat de velden in de bijgevoegde plan-aanvraag betekenen:
 - race.name: hoe het plan moet heten. race.raceName: de naam van de wedstrijd.
 - race.distanceKm: de wedstrijdafstand in kilometers.
+- race.sport: "run", "bike" of "swim". Schrijf trainingen voor DIE sport: een intervaltraining op de fiets is interval op de fiets, geen looptraining. Zet "sport" alleen op een training als die afwijkt van race.sport (bijv. een fietstraining in een loopplan); laat het anders weg, dan erft hij.
+- BELANGRIJK: "plannedPace" is ALTIJD minuten en seconden per KILOMETER, voor elke sport, want zo slaat de app het op. Een rit van 30 km/u is dus "2:00" en 1:45/100m zwemmen is "17:30". Geef in dat veld geen km/u of per-100m. In de TITEL van de training mag dat uiteraard wel.
 - athlete: waar ik ben en welke eenheden ik lees. ELK getal in dit verzoek is metrisch (km, min/km), ongeacht athlete.units - dat is het wire-formaat. Als athlete.units "imperial" is, schrijf dan de TITELS en NOTITIES van de trainingen in mijlen en min/mijl (1 mi = 1,609344 km), maar geef "plannedDistanceKm" en "plannedPace" nog steeds in kilometers en min/km in de JSON. Gebruik athlete.country voor seizoenen en typisch weer.
 - race.date: wedstrijddag (YYYY-MM-DD).
 - startDate: de datum waarop ik dit plan begin (YYYY-MM-DD). Bouw week 1 vanaf deze datum - ga NIET uit van de datum van vandaag.

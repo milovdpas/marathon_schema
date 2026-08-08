@@ -12,6 +12,7 @@ import { addDays, startOfWeek } from "date-fns";
 import { toISO } from "@/lib/date";
 import { paceToSeconds, secondsToPace } from "@/lib/pace";
 import { PLAN_VERSION } from "@/lib/plan/defaults";
+import type { Sport } from "@/lib/sport";
 import type {
   TrainingPlan,
   TrainingPrefs,
@@ -23,8 +24,10 @@ import type {
 
 /** One recurring session in the template week. */
 export interface SessionTemplate {
-  /** 0 = Monday … 6 = Sunday. */
+  /** 0 = Monday … 6 = Sunday. Repeat a day for a brick (bike straight to run). */
   day: number;
+  /** Omit to inherit the plan's sport; set it for a multi-sport block. */
+  sport?: Sport;
   type: WorkoutType;
   title: string;
   /** Distance in the plan's first week; scaled by the weekly ramp. */
@@ -36,6 +39,8 @@ export interface SessionTemplate {
 export interface ExampleSpec {
   id: string;
   name: string;
+  /** The plan's sport. Workouts inherit it, so sessions needn't repeat it. */
+  sport?: Sport;
   raceName: string;
   raceDistanceKm: number;
   goalPace: string;
@@ -47,8 +52,11 @@ export interface ExampleSpec {
   weeks: number;
   /** How many of those weeks are already behind the athlete. */
   pastWeeks: number;
-  /** The race session itself, which replaces the template on the final Sunday. */
-  raceSession: Omit<SessionTemplate, "day">;
+  /**
+   * Race day, replacing the template on the final Sunday. An array because a
+   * triathlon is three legs run back to back.
+   */
+  raceSessions: Omit<SessionTemplate, "day">[];
   sessions: SessionTemplate[];
   trainingPrefs: TrainingPrefs;
 }
@@ -102,6 +110,14 @@ export function buildExamplePlan(
   const weeks: TrainingWeek[] = [];
   const workouts: Record<string, Workout> = {};
 
+  // The two shortest non-Sunday sessions, kept in race week as shakeouts.
+  const raceWeekKeep = new Set(
+    [...spec.sessions]
+      .filter((s) => s.day !== 6)
+      .sort((a, b) => a.km - b.km)
+      .slice(0, 2),
+  );
+
   for (let i = 0; i < spec.weeks; i++) {
     const monday = addDays(firstMonday, 7 * i);
     const weekNumber = i + 1;
@@ -113,14 +129,18 @@ export function buildExamplePlan(
       // Race day replaces whatever the template had on the final Sunday.
       if (isRaceWeek && s.day === 6) continue;
       // Race week is a taper: only the two shortest shakeouts survive.
-      if (isRaceWeek && s.km > 12) continue;
+      // Chosen by rank, not by an absolute distance — a 25 km recovery spin is
+      // a shakeout for a cyclist and a hard week for a swimmer.
+      if (isRaceWeek && !raceWeekKeep.has(s)) continue;
 
       const date = toISO(addDays(monday, s.day));
-      const id = `${spec.id}-w${weekNumber}-d${s.day}`;
+      // The index keeps a brick's two sessions on the same day distinct.
+      const id = `${spec.id}-w${weekNumber}-d${s.day}-${spec.sessions.indexOf(s)}`;
       workouts[id] = logIfPast(
         {
           id,
           date,
+          ...(s.sport ? { sport: s.sport } : {}),
           type: s.type,
           title: s.title,
           weekNumber,
@@ -134,19 +154,25 @@ export function buildExamplePlan(
     }
 
     if (isRaceWeek) {
-      const id = `${spec.id}-race`;
       const date = toISO(addDays(monday, 6));
-      workouts[id] = {
-        id,
-        date,
-        type: spec.raceSession.type,
-        title: spec.raceSession.title,
-        weekNumber,
-        plannedDistanceKm: spec.raceSession.km,
-        plannedPace: spec.raceSession.pace,
-        completed: false,
-      };
-      workoutIds.push(id);
+      spec.raceSessions.forEach((leg, legIndex) => {
+        const id =
+          spec.raceSessions.length > 1
+            ? `${spec.id}-race-${legIndex}`
+            : `${spec.id}-race`;
+        workouts[id] = {
+          id,
+          date,
+          ...(leg.sport ? { sport: leg.sport } : {}),
+          type: leg.type,
+          title: leg.title,
+          weekNumber,
+          plannedDistanceKm: leg.km,
+          plannedPace: leg.pace,
+          completed: false,
+        };
+        workoutIds.push(id);
+      });
     }
 
     weeks.push({
@@ -170,6 +196,7 @@ export function buildExamplePlan(
     startDate: toISO(firstMonday),
     goalPace: spec.goalPace,
     goalLabel: spec.goalLabel,
+    ...(spec.sport ? { sport: spec.sport } : {}),
     ...(spec.raceType ? { raceType: spec.raceType } : {}),
     ...(spec.loopKm ? { loopKm: spec.loopKm } : {}),
     ...(spec.targetYards ? { targetYards: spec.targetYards } : {}),

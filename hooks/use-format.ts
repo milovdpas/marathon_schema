@@ -4,12 +4,19 @@ import { useMemo } from "react";
 import { useUnits } from "@/hooks/use-units";
 import { paceToSeconds, secondsToPace } from "@/lib/pace";
 import {
+  DEFAULT_SPORT,
+  displayToStoredPace,
+  formatSpeed,
+  speedUnit,
+  storedPaceToDisplay,
+  type Sport,
+} from "@/lib/sport";
+import {
   distanceUnit,
   elevationUnit,
   formatDistance,
   formatDistanceValue,
   formatTemp,
-  paceSecondsFor,
   paceSecondsToStored,
   paceUnit,
   toDisplayDistance,
@@ -33,10 +40,17 @@ export interface Format {
   /** Stored km -> a number, for charts. */
   distanceNumber: (km: number) => number;
 
-  /** Stored pace (per km) -> "8:00" (no unit). */
-  paceValue: (pace?: string | null) => string;
-  /** Stored pace (per km) -> "8:00/mi". */
-  pace: (pace?: string | null) => string;
+  /**
+   * Stored pace (per km) -> the value this sport shows, with no unit.
+   * "8:00" running, "32.5" cycling, "1:45" swimming.
+   */
+  paceValue: (pace?: string | null, sport?: Sport) => string;
+  /** Stored pace (per km) -> "8:00/mi", "32.5 km/h", "1:45/100m". */
+  pace: (pace?: string | null, sport?: Sport) => string;
+  /** The unit label for a sport: "/km", "km/h", "/100m". */
+  speedUnitFor: (sport: Sport) => string;
+  /** A typed speed, in a sport's own convention -> stored per-km pace. */
+  toStoredPaceFor: (input: string, sport: Sport) => string | undefined;
 
   /** Stored metres -> "328 ft". */
   elevation: (m: number) => string;
@@ -75,20 +89,21 @@ export function useFormat(): Format {
       distanceNumber: (km) =>
         Math.round(toDisplayDistance(km, units) * 10) / 10,
 
-      paceValue: (pace) => {
-        if (!pace) return "—";
-        const secs = paceToSeconds(pace);
-        // Free-form text the parser doesn't recognise is passed through rather
-        // than mangled — converting something we can't read would invent data.
-        if (secs == null) return pace;
-        return secondsToPace(paceSecondsFor(secs, units));
-      },
-      pace: (pace) => {
+      // Sport defaults to running, so every existing call site keeps working
+      // and only multi-sport surfaces have to pass one.
+      paceValue: (pace, sport = DEFAULT_SPORT) =>
+        // Free-form text the parser can't read is passed through rather than
+        // mangled: converting something we don't understand would invent data.
+        storedPaceToDisplay(pace, sport, units) || "—",
+      pace: (pace, sport = DEFAULT_SPORT) => {
         if (!pace) return "—";
         const secs = paceToSeconds(pace);
         if (secs == null) return pace;
-        return `${secondsToPace(paceSecondsFor(secs, units))}${paceUnit(units)}`;
+        return formatSpeed(secs, sport, units);
       },
+      speedUnitFor: (sport) => speedUnit(sport, units),
+      toStoredPaceFor: (input, sport) =>
+        displayToStoredPace(input, sport, units),
 
       elevation: (m) => `${toDisplayElevation(m, units)} ${elevationUnit(units)}`,
       elevationNumber: (m) => toDisplayElevation(m, units),

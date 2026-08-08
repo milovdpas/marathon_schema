@@ -7,17 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   athleteTypesWithoutExample,
-  EXAMPLE_PLANS,
   examplesFor,
 } from "@/lib/plan/examples";
 import { useTrainingStore } from "@/store/use-training-store";
 
+/** How many to show before collapsing the rest. */
+const VISIBLE = 3;
+
 /**
- * The demo plans, offered by what the user says they train for.
+ * The demo plans for the sports this athlete actually does.
  *
- * The "show all sports" escape hatch is not decoration: capability filtering
- * would otherwise trap someone who took up trail running and never went back to
- * update their profile, and a filter with no way past it reads as a bug.
+ * There is deliberately **no way to reach another sport's plans from here**.
+ * The lever for that is "Your sports" directly above: adding cycling there is
+ * both the honest way to say "I cycle" and what makes a cycling demo appear.
+ * A second, sport-specific escape hatch in this card would be a quieter way of
+ * doing the same thing, and would leave the two controls disagreeing.
+ *
+ * The "show all" button is only about length: pick every sport and there are
+ * seven demos, which buries everything below it.
  */
 export function ExamplePlansCard() {
   const { t } = useTranslation();
@@ -29,10 +36,10 @@ export function ExamplePlansCard() {
   const [busy, setBusy] = useState<string | null>(null);
 
   const matching = examplesFor(athleteTypes);
-  const entries = showAll || matching.length === 0 ? EXAMPLE_PLANS : matching;
-  // Bike and swim have no demo until `Workout.sport` exists, so adding
-  // "cyclist" to your profile currently changes nothing here. Say that, rather
-  // than leaving the list looking broken.
+  const entries = showAll ? matching : matching.slice(0, VISIBLE);
+  const hidden = matching.length - entries.length;
+
+  // Empty when an athlete type has been added before its demo exists.
   const pending = athleteTypesWithoutExample(athleteTypes);
 
   return (
@@ -69,9 +76,7 @@ export function ExamplePlansCard() {
                   disabled={busy !== null}
                   onClick={() => {
                     setBusy(entry.key);
-                    void addExamplePlan(entry.key).finally(() =>
-                      setBusy(null),
-                    );
+                    void addExamplePlan(entry.key).finally(() => setBusy(null));
                   }}
                 >
                   <Plus className="size-4" /> {t("common.add")}
@@ -90,14 +95,14 @@ export function ExamplePlansCard() {
         </p>
       ) : null}
 
-      {!showAll && matching.length > 0 && matching.length < EXAMPLE_PLANS.length ? (
+      {hidden > 0 || showAll ? (
         <Button
           variant="ghost"
           size="sm"
           className="mt-2 self-start"
-          onClick={() => setShowAll(true)}
+          onClick={() => setShowAll((v) => !v)}
         >
-          {t("examples.showAll")}
+          {showAll ? t("examples.showFewer") : t("examples.showAll", { count: hidden })}
         </Button>
       ) : null}
     </Card>

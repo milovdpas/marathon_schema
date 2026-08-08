@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { makeWorkout } from "@/lib/test/factories";
-import { flexibleWindowIndex, groupByDate, isLogged } from "@/lib/plan/workout";
+import {
+  flexibleWindowIndex,
+  groupByDate,
+  isLogged,
+  isMultiSport,
+  planSports,
+  workoutSport,
+} from "@/lib/plan/workout";
+import type { Sport } from "@/lib/sport";
+import type { TrainingPlan } from "@/lib/types";
 
 describe("isLogged", () => {
   it("is true when completed", () => {
@@ -73,5 +82,61 @@ describe("flexibleWindowIndex", () => {
       });
     const map = flexibleWindowIndex([flex("a"), flex("b")]);
     expect(map.get("2026-06-27")!.map((w) => w.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("workoutSport", () => {
+  const plan = (sport?: Sport) => ({ sport }) as TrainingPlan;
+
+  it("reads a workout with no sport, in a plan with no sport, as a run", () => {
+    // Every workout written before multi-sport lands here, which is why none
+    // of them needed backfilling.
+    expect(workoutSport({}, plan())).toBe("run");
+    expect(workoutSport({}, null)).toBe("run");
+  });
+
+  it("inherits the plan's sport when the workout doesn't name one", () => {
+    // The reason an absent sport is NOT stamped as "run" at import: a cycling
+    // plan says "bike" once and every session follows.
+    expect(workoutSport({}, plan("bike"))).toBe("bike");
+    expect(workoutSport({}, plan("swim"))).toBe("swim");
+  });
+
+  it("lets a workout override its plan, for cross-training", () => {
+    expect(workoutSport({ sport: "bike" }, plan("run"))).toBe("bike");
+  });
+});
+
+describe("planSports", () => {
+  const build = (sports: (Sport | undefined)[], planSport?: Sport) =>
+    ({
+      sport: planSport,
+      workouts: Object.fromEntries(
+        sports.map((s, i) => [String(i), { sport: s }]),
+      ),
+    }) as unknown as TrainingPlan;
+
+  it("reports one sport for a plain running plan", () => {
+    expect(planSports(build([undefined, undefined]))).toEqual(["run"]);
+    expect(isMultiSport(build([undefined, undefined]))).toBe(false);
+  });
+
+  it("notices a single cross-training session", () => {
+    const plan = build([undefined, "bike"]);
+    expect(planSports(plan)).toEqual(["run", "bike"]);
+    expect(isMultiSport(plan)).toBe(true);
+  });
+
+  it("returns them in a stable order, not insertion order", () => {
+    // Otherwise the stat cards reshuffle as sessions get logged.
+    expect(planSports(build(["swim", "bike", "run"]))).toEqual([
+      "run",
+      "bike",
+      "swim",
+    ]);
+  });
+
+  it("falls back to the plan's sport when it has no workouts yet", () => {
+    expect(planSports(build([], "bike"))).toEqual(["bike"]);
   });
 });

@@ -5,7 +5,9 @@ import { Field } from "@/components/common/field";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SportIcon } from "@/components/common/sport-icon";
 import { useFormat } from "@/hooks/use-format";
+import { SPORTS } from "@/lib/sport";
 import { type AthleteCapabilities, capabilitiesFor } from "@/lib/athlete";
 import { BACKYARD_LOOP_KM, backyardDistanceKm } from "@/lib/plan/backyard";
 import type { Draft } from "@/lib/plan/request";
@@ -42,10 +44,13 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
 
   // A road runner has no use for the backyard format, and until they say
   // otherwise every user has been shown a card they will never click.
-  const raceTypes = caps.ultraFormats
-    ? (["standard", "backyard"] as const)
-    : (["standard"] as const);
+  const raceTypes =
+    caps.ultraFormats && draft.sport === "run"
+      ? (["standard", "backyard"] as const)
+      : (["standard"] as const);
   const presets = presetsFor(caps);
+  // Only the sports this athlete says they do, in canonical order.
+  const offeredSports = SPORTS.filter((sp) => caps.sports.has(sp));
 
   return (
     <Card className="gap-0 space-y-3 p-4">
@@ -63,6 +68,34 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
           onChange={(e) => set("raceName", e.target.value)}
         />
       </Field>
+
+      {/* Which sport the race is. Also the default for every workout in the
+          plan, so a cycling plan needn't stamp each session. Hidden when the
+          athlete only does one sport: nothing to choose. */}
+      <div className={cn(offeredSports.length < 2 && "hidden")}>
+        <Label className="text-xs text-muted-foreground">
+          {t("wizard.sportQ")}
+        </Label>
+        <div className="mt-1.5 grid grid-cols-3 gap-2">
+          {offeredSports.map((sp) => (
+            <button
+              key={sp}
+              type="button"
+              aria-pressed={draft.sport === sp}
+              onClick={() => set("sport", sp)}
+              className={cn(
+                "flex items-center justify-center gap-1.5 rounded-lg border py-2 text-sm font-medium transition-colors",
+                draft.sport === sp
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "hover:bg-accent",
+              )}
+            >
+              <SportIcon sport={sp} className="text-current" />
+              {t(`sport.${sp}`)}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Race format decides what the distance and goal fields mean. With only
           one format left there is nothing to choose, so the picker goes. */}
@@ -225,19 +258,21 @@ export function StepRace({ draft, set }: { draft: Draft; set: SetDraft }) {
             placeholder={
               draft.goalType === "time"
                 ? t("wizard.goalTimePlaceholder")
-                : t("wizard.goalPacePlaceholder", { unit: fmt.paceUnit })
+                : t("wizard.goalPacePlaceholder", {
+                    unit: fmt.speedUnitFor(draft.sport),
+                  })
             }
             // A finish TIME is unit-free; only a pace needs converting.
             value={
               draft.goalType === "pace"
-                ? fmt.paceValue(draft.goalValue)
+                ? fmt.paceValue(draft.goalValue, draft.sport)
                 : draft.goalValue
             }
             onChange={(e) =>
               set(
                 "goalValue",
                 draft.goalType === "pace"
-                  ? fmt.toStoredPace(e.target.value)
+                  ? (fmt.toStoredPaceFor(e.target.value, draft.sport) ?? "")
                   : e.target.value,
               )
             }

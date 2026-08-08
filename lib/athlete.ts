@@ -84,3 +84,14 @@ export function capabilitiesFor(
 export function showsSport(caps: AthleteCapabilities, sport: Sport): boolean {
   return caps.sports.has(sport);
 }
+
+/**
+ * The athlete's sport, when they only do one.
+ *
+ * Used to default a new plan. Without it a cyclist would get a running plan
+ * *and* no picker to change it with, since the picker hides itself when there
+ * is only one sport to choose.
+ */
+export function soleSport(caps: AthleteCapabilities): Sport | undefined {
+  return caps.sports.size === 1 ? [...caps.sports][0] : undefined;
+}

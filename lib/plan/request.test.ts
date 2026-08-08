@@ -5,6 +5,7 @@ import { makePlan, makeWorkout } from "@/lib/test/factories";
 const draft = (patch: Partial<Draft> = {}): Draft => ({
   name: "Autumn block",
   raceName: "Marathon",
+  sport: "run",
   raceDistanceKm: 42.2,
   raceDate: "2026-10-11",
   startDate: "2026-06-22",

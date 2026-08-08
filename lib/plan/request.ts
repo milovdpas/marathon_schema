@@ -8,6 +8,7 @@ import { paceFromDistanceDuration, parseDurationToMinutes } from "@/lib/pace";
 import { buildPlanContext } from "@/lib/plan/context";
 import { backyardDistanceKm } from "@/lib/plan/backyard";
 import type { OffDay, RaceType, TrainingPlan, TrainingPrefs } from "@/lib/types";
+import type { Sport } from "@/lib/sport";
 import { toStoredDistance, type UnitSystem } from "@/lib/units";
 
 export interface LatestRun {
@@ -21,6 +22,8 @@ export interface LatestRun {
 export interface Draft {
   name: string;
   raceName: string;
+  /** The sport the race is, and the default for every workout in the plan. */
+  sport: Sport;
   raceDistanceKm: number;
   raceDate: string;
   startDate: string;
@@ -77,6 +80,7 @@ export function buildPlanRequest(
     race: {
       name: draft.name.trim(),
       raceName: draft.raceName.trim(),
+      sport: draft.sport,
       type: draft.raceType,
       // For a backyard the distance is derived, so downstream code that only
       // knows about "race distance" still gets a sensible number.

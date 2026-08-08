@@ -86,7 +86,7 @@ The single source of truth. Shape: `{ plans: Record<id,TrainingPlan>, activePlan
 
 - **Active plan** is read via the `useActivePlan()` hook (`hooks/use-active-plan.ts`) — components select it, not `s.plan` (there is no `s.plan`).
 - **Actions:** plan mgmt (`addPlanFromImport`, `selectPlan`, `deletePlan`, `updatePlanMeta`, `updateTrainingPrefs`, `seedExamplePlan`, `addExamplePlan`, `initializePlan`), off days (`add/update/deleteOffDay`), workouts (`toggleComplete`, `updateWorkout`, `addWorkout`, `deleteWorkout`), data (`exportData`, `importData`, `applyRemote`), and `setPreferences`. Mutations bump `lastModified` (used for sync conflict resolution).
-- **persist**: key `marathon-training-v1`, **`version: 13`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan` (async — it dynamic-imports the example plan, and a module-level `seedInFlight` guard stops it racing the `useHydrated` safety net).
+- **persist**: key `marathon-training-v1`, **`version: 14`**, `partialize` persists `{plans, activePlanId, preferences, lastModified}`. The **`migrate`** fn is additive & idempotent — bump the version and backfill new fields without touching workouts (see how `offDays`, `raceDistanceKm`, `onboardingSeen` were added). `onRehydrateStorage` sets `hydrated` + calls `initializePlan` (async — it dynamic-imports the example plan, and a module-level `seedInFlight` guard stops it racing the `useHydrated` safety net).
 - **Hydration**: `<HydrationGate>` (`hooks/use-hydrated.ts`) renders a skeleton until rehydrated, avoiding SSR/client mismatch. `useMounted()` is used where a value differs server vs client.
 
 ## Example plans — `lib/plan/examples.ts`
@@ -115,6 +115,28 @@ unrepresentable rather than unwritten, and faking them by relabelling running
 workouts would make the demo lie about the one thing it exists to show.
 
 `lib/plan-defaults.ts` keeps what survived the old generator: `DEFAULT_PLAN_META` (fallback metadata for partial imports and migrations), `DEFAULT_PLAN_ID`, `DEFAULT_TRAINING_PREFS`, `PLAN_VERSION`.
+
+## Sports — `lib/sport.ts`
+
+`Sport` (`run`/`bike`/`swim`) is **orthogonal to `WorkoutType`**, which is an
+intensity axis: a tempo effort is a tempo effort on a bike. Sport picks the
+icon, intensity picks the colour, so the two multiply instead of becoming a
+15-entry enum.
+
+- **Resolution:** `workoutSport(workout, plan)` — absent on a workout means the
+  plan's sport, absent on a plan means running. Nothing was backfilled, and an
+  absent sport is never stamped at import: a cycling plan declares
+  `plan.sport: "bike"` once and its sessions inherit it.
+- **Pace is stored as seconds per km for every sport.** Display converts:
+  runners see min/km, cyclists see **km/h** (faster is a bigger number — the
+  single inversion in the system, pinned by a test), swimmers see min/100m or
+  min/100yd. `fmt.pace(stored, sport)` is the only correct way to render one;
+  calling it without a sport silently shows running units, which is exactly the
+  bug the browser smoke test caught twice.
+- `isMultiSport(plan)` gates sport labelling and the stats breakdown, so a
+  running plan isn't decorated with running icons.
+- **Enums are coerced at the import boundary** (`normalizePlan`), not guarded at
+  each of the five sites that index `TYPE_STYLE`.
 
 ## Units — `lib/units.ts` + `useFormat()`
 

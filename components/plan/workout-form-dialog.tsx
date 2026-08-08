@@ -28,17 +28,23 @@ import { TimeField } from "@/components/common/time-field";
 import { formatClock, num, resolveLoggedRun } from "@/lib/pace";
 import {
   WORKOUT_TYPES,
+  type TrainingPlan,
   type Workout,
   type WorkoutSplit,
   type WorkoutType,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { SportIcon } from "@/components/common/sport-icon";
+import { useActivePlan } from "@/hooks/use-active-plan";
 import { useFormat, type Format } from "@/hooks/use-format";
+import { workoutSport } from "@/lib/plan/workout";
+import { DEFAULT_SPORT, SPORTS, type Sport } from "@/lib/sport";
 import { attachWeather } from "@/lib/weather/sync";
 import { useTrainingStore } from "@/store/use-training-store";
 
 interface FormState {
   date: string;
+  sport: Sport;
   type: WorkoutType;
   title: string;
   plannedDistanceKm: string;
@@ -57,6 +63,7 @@ interface FormState {
 function blankForm(defaultDate: string): FormState {
   return {
     date: defaultDate,
+    sport: DEFAULT_SPORT,
     type: "easy",
     title: "",
     plannedDistanceKm: "",
@@ -78,18 +85,27 @@ function blankForm(defaultDate: string): FormState {
  * DISPLAY units; `handleSave` converts back to canonical km + seconds-per-km.
  * The two boundaries are here and there, and nowhere else.
  */
-function fromWorkout(w: Workout, fmt: Format): FormState {
+function fromWorkout(
+  w: Workout,
+  fmt: Format,
+  plan: TrainingPlan | null,
+): FormState {
   return {
     date: w.date,
+    sport: workoutSport(w, plan),
     type: w.type,
     title: w.title,
     plannedDistanceKm:
       w.plannedDistanceKm == null ? "" : fmt.distanceValue(w.plannedDistanceKm, 2),
-    plannedPace: w.plannedPace ? fmt.paceValue(w.plannedPace) : "",
+    plannedPace: w.plannedPace
+      ? fmt.paceValue(w.plannedPace, workoutSport(w, plan))
+      : "",
     actualDistanceKm:
       w.actualDistanceKm == null ? "" : fmt.distanceValue(w.actualDistanceKm, 2),
     durationMin: formatClock(w.durationMin),
-    actualPace: w.actualPace ? fmt.paceValue(w.actualPace) : "",
+    actualPace: w.actualPace
+      ? fmt.paceValue(w.actualPace, workoutSport(w, plan))
+      : "",
     startTime: w.startTime ?? "",
     notes: w.notes ?? "",
     completed: w.completed,
@@ -112,6 +128,7 @@ export function WorkoutFormDialog({
 }) {
   const { t } = useTranslation();
   const fmt = useFormat();
+  const plan = useActivePlan();
   const updateWorkout = useTrainingStore((s) => s.updateWorkout);
   const addWorkout = useTrainingStore((s) => s.addWorkout);
   const deleteWorkout = useTrainingStore((s) => s.deleteWorkout);
@@ -128,7 +145,11 @@ export function WorkoutFormDialog({
   const [wasOpen, setWasOpen] = useState(false);
   if (open && !wasOpen) {
     setWasOpen(true);
-    setForm(workout ? fromWorkout(workout, fmt) : blankForm(defaultDate ?? ""));
+    setForm(
+      workout
+        ? fromWorkout(workout, fmt, plan)
+        : { ...blankForm(defaultDate ?? ""), sport: plan?.sport ?? DEFAULT_SPORT },
+    );
     setMode(workout?.completed ? "log" : "plan");
     setSplits(workout?.splits ?? []);
   } else if (!open && wasOpen) {
@@ -166,7 +187,10 @@ export function WorkoutFormDialog({
             : fmt.toStoredDistance(actualDistanceKm),
         durationMin,
         actualPace:
-          actualPace == null ? undefined : fmt.toStoredPace(actualPace),
+          actualPace == null
+            ? undefined
+            : fmt.toStoredPaceFor(actualPace, form.sport),
+        sport: form.sport,
         startTime: form.startTime.trim() || undefined,
         splits: splits.length > 0 ? splits : undefined,
         notes: form.notes.trim() || undefined,
@@ -185,8 +209,9 @@ export function WorkoutFormDialog({
         title,
         plannedDistanceKm: fmt.toStoredDistance(num(form.plannedDistanceKm) ?? 0),
         plannedPace: form.plannedPace.trim()
-          ? fmt.toStoredPace(form.plannedPace.trim())
+          ? fmt.toStoredPaceFor(form.plannedPace.trim(), form.sport)
           : undefined,
+        sport: form.sport,
         completed: false,
         flexible: flexible || undefined,
         windowStart: flexible ? form.windowStart || undefined : undefined,
@@ -265,6 +290,30 @@ export function WorkoutFormDialog({
             </Select>
           </Field>
 
+          {/* Sport and type are separate axes: a tempo effort is a tempo
+              effort on a bike too. */}
+          <Field label={t("workoutForm.sport")}>
+            <div className="grid grid-cols-3 gap-2">
+              {SPORTS.map((sp) => (
+                <button
+                  key={sp}
+                  type="button"
+                  aria-pressed={form.sport === sp}
+                  onClick={() => set("sport", sp)}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 rounded-lg border py-2 text-sm font-medium transition-colors",
+                    form.sport === sp
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "hover:bg-accent",
+                  )}
+                >
+                  <SportIcon sport={sp} className="text-current" />
+                  {t(`sport.${sp}`)}
+                </button>
+              ))}
+            </div>
+          </Field>
+
           <Field label={t("workoutForm.titleLabel")}>
             <Input
               placeholder={t("workoutForm.titlePlaceholder")}
@@ -322,7 +371,7 @@ export function WorkoutFormDialog({
                     onChange={(e) => set("plannedDistanceKm", e.target.value)}
                   />
                 </Field>
-                <Field label={t("workoutForm.paceLabel", { unit: fmt.paceUnit })}>
+                <Field label={t("workoutForm.paceLabel", { unit: fmt.speedUnitFor(form.sport) })}>
                   <Input
                     placeholder="4:58"
                     value={form.plannedPace}
@@ -361,7 +410,7 @@ export function WorkoutFormDialog({
                     onChange={(e) => set("durationMin", e.target.value)}
                   />
                 </Field>
-                <Field label={t("workoutForm.paceLabel", { unit: fmt.paceUnit })}>
+                <Field label={t("workoutForm.paceLabel", { unit: fmt.speedUnitFor(form.sport) })}>
                   <Input
                     placeholder="4:58"
                     readOnly={paceComputed}

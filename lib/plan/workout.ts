@@ -2,7 +2,8 @@
 
 import { eachDayOfInterval } from "date-fns";
 import { fromISO, toISO } from "@/lib/date";
-import type { Workout } from "@/lib/types";
+import { DEFAULT_SPORT, SPORTS, type Sport } from "@/lib/sport";
+import type { TrainingPlan, Workout } from "@/lib/types";
 
 /**
  * A workout the user has actually run. Note `actualDistanceKm: 0` counts as
@@ -49,4 +50,39 @@ export function flexibleWindowIndex(
     }
   }
   return map;
+}
+
+/**
+ * Which sport a workout is, resolved through its plan.
+ *
+ * The chain exists so nothing needed backfilling when multi-sport landed: a
+ * workout with no `sport` inherits the plan's, and a plan with no `sport` is a
+ * running plan — which every plan written before this was.
+ */
+export function workoutSport(
+  workout: Pick<Workout, "sport">,
+  plan?: Pick<TrainingPlan, "sport"> | null,
+): Sport {
+  return workout.sport ?? plan?.sport ?? DEFAULT_SPORT;
+}
+
+/**
+ * Every sport this plan actually contains, in canonical order.
+ *
+ * The UI shows a sport icon only when this has more than one entry: a running
+ * icon on every session of a running plan is noise, and the answer changes by
+ * itself as soon as someone logs a cross-training ride.
+ */
+export function planSports(plan: TrainingPlan): Sport[] {
+  const found = new Set<Sport>();
+  for (const w of Object.values(plan.workouts)) {
+    found.add(workoutSport(w, plan));
+  }
+  if (found.size === 0) found.add(plan.sport ?? DEFAULT_SPORT);
+  return SPORTS.filter((s) => found.has(s));
+}
+
+/** Whether this plan mixes sports, and therefore needs sport labelling. */
+export function isMultiSport(plan: TrainingPlan): boolean {
+  return planSports(plan).length > 1;
 }

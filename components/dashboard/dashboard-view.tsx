@@ -17,6 +17,8 @@ import { BACKYARD_LOOP_KM, isBackyard } from "@/lib/plan/backyard";
 import type { Workout } from "@/lib/types";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useFormat } from "@/hooks/use-format";
+import { isMultiSport } from "@/lib/plan/workout";
+import { DEFAULT_SPORT } from "@/lib/sport";
 import { useStats } from "@/hooks/use-stats";
 import { useTrainingStore } from "@/store/use-training-store";
 
@@ -76,14 +78,19 @@ export function DashboardView() {
             <p className="text-sm font-medium text-primary">
               {/* "/km" is baked into goalLine, which reads wrong for a
                   backyard goal expressed in yards. */}
-              {isBackyard(plan)
+              {isMultiSport(plan)
+                ? // No single pace exists across three sports, and rendering
+                  // one leg's target in another leg's units is worse than
+                  // saying nothing: 1:52/km reads as an impossible run.
+                  plan.goalLabel
+                : isBackyard(plan)
                 ? t("dashboard.goalLineBackyard", {
                     goal: plan.goalLabel,
                     loop: fmt.distance(plan.loopKm ?? BACKYARD_LOOP_KM, 2),
                   })
                 : t("dashboard.goalLine", {
                     goal: plan.goalLabel,
-                    pace: fmt.pace(plan.goalPace),
+                    pace: fmt.pace(plan.goalPace, plan.sport ?? DEFAULT_SPORT),
                   })}
             </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight">

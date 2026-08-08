@@ -40,11 +40,11 @@ constraint on every future slice rather than a marketing line.
 |---|---|---|---|
 | 1 | Rebrand + `/app/*` routing + full-page onboarding + athlete types + example-plan catalogue + SEO | **done** | see git log |
 | 2 | Units & country (km/mi), Settings toggle, AI context | **done** | see git log |
-| 3 | Multi-sport workouts (`Workout.sport`), cycling / swimming / trail | not started | — |
+| 3 | Multi-sport workouts (`Workout.sport`), cycling / swimming / trail | **done** | see git log |
 | 4 | Triathlon (multi-leg races, bricks, transitions) | not started | — |
-| 5 | Remaining example plans (cycling, swimming, triathlon) | blocked on 3 | — |
+| 5 | ~~Remaining example plans~~ | **done** (shipped with 3) | see git log |
 
-Slices 1 and 2 are shipped. Slice 3 (multi-sport) is next.
+Slices 1, 2 and 3 are shipped. Slice 4 (triathlon) is next, and is the last thing standing between the app and the seven race types on the landing page.
 
 ### Slice 1 — rebrand, routing, onboarding
 
@@ -76,17 +76,35 @@ Every formatter lives behind one `useFormat()` hook, so a component asks for a
 formatted value rather than deciding whether to convert. The sites that hand-
 rolled `${km} km` were exactly the ones that would have silently stayed metric.
 
-### Slice 3 — multi-sport workouts
+### Slice 3 — multi-sport workouts (done)
 
-`Workout.sport` (`"run" | "bike" | "swim"`), **orthogonal to `Workout.type`**.
-Stats gain a per-sport breakdown and a total time.
+`Workout.sport` and `PlanMeta.sport`, both optional, both resolved through
+`workoutSport(workout, plan)`: absent on a workout means the plan's sport,
+absent on a plan means running. Nothing was backfilled, because absent already
+says what every pre-multi-sport workout meant.
+
+Each sport shows speed in its own convention, which is a fact about the sport
+rather than a preference: runners read min/km, **cyclists read km/h** (and
+faster is a *bigger* number, the one inversion in the whole system), swimmers
+read min/100m or min/100yd. All of it converts from the same stored
+seconds-per-km.
+
+Stats gain a per-sport breakdown and `totalTimeMin`. Distance stays per sport
+on purpose — 40 km on a bike and 10 km running are not 50 km of anything — and
+time is the only figure that survives being added across them.
+
+Cycling and swimming example plans landed with it, so the Settings catalogue no
+longer promises sports it can't show.
 
 ### Slice 4 — triathlon
 
-`RaceType` gains `"multisport"`, `PlanMeta.legs[]` carries per-leg distances and
-transition times, and race day becomes **three linked workouts** sharing a
-`raceGroupId` rather than one workout containing legs. Bricks fall out of the
-same model for free.
+Most of a triathlon plan already works: sessions name their own sport, bricks
+are two workouts on one day, and the demo ships today. What is left is the
+*race* itself. `RaceType` gains `"multisport"`, `PlanMeta.legs[]` carries per-leg
+distances and transition times, and race day's three workouts become formally
+linked by a `raceGroupId`. That linkage is what fixes `raceWorkout()`, which
+currently returns the longest workout on race day — the bike leg — while its
+only caller is asking "is the race finished?".
 
 ---
 
@@ -136,9 +154,14 @@ meaningful — the first type picked becomes `primary` and drives the app's mark
 so `["cyclist","runner"]` and `["runner","cyclist"]` must not share a cache
 entry. A test pins this; it was wrong first time round.
 
-**Unknown profile shows everything.** `capabilitiesFor(undefined)` and
-`capabilitiesFor([])` both enable every capability. Never hide a feature from
-someone who hasn't told us anything about themselves.
+**Unknown profile shows every *feature*, but only running *plans*.**
+`capabilitiesFor(undefined)` and `capabilitiesFor([])` enable every capability,
+because hiding functionality from someone who told us nothing makes the app look
+broken. `examplesFor` deliberately does the opposite and treats an unset profile
+as a runner: offering a swimmer's plan to someone who has never swum is clutter,
+not a missing feature. There is deliberately **no** cross-sport escape hatch in
+the demo list — the lever is "Your sports" directly above it, so the two
+controls can't disagree about what you do.
 
 **Example plans for bike / swim / tri are blocked, not forgotten.** An example
 plan is data in the current schema, and `Workout` has no `sport` field yet — so
@@ -195,6 +218,22 @@ record why not.
   touch icon when the user adds it. Only the in-app mark and the browser tab
   favicon can change — and the favicon is invisible in `display: standalone`.
   Do not attempt a dynamic manifest.
+- **The triathlon demo's race day is three workouts on one date**, not one
+  workout with legs. Every consumer already understands a workout and none of
+  them would know how to sum legs. Slice 4 links them formally and adds
+  transitions; until then `raceWorkout()` still picks the longest leg (the
+  bike), which is the bug that slice fixes.
+- **The long-run chart draws a planned 0 but not a future 0.** A week with no
+  long run planned is real information (cutback, taper, race week), so the
+  dashed line drops to the axis. The orange "actual" line reports 0 only once a
+  week is behind you; while it is ahead it stays null, or every plan would
+  appear to flatline from today onward.
+- **Splits are running-only.** The scanner reads a Strava run screenshot, and
+  `SplitPaceChart` labels its bars per kilometer. A bike or swim session simply
+  has no splits.
+- **Trail is not its own race type.** It is a running plan; the trail demo uses
+  `raceType: "standard"` and leans on elevation. If terrain ever needs to change
+  behaviour rather than framing, that is when to add a field.
 - **Workout titles are never converted.** "Tempo 9 km @ 4:30" is free text
   authored with the plan, so an imperial user still reads km there. Rewriting it
   would mean parsing and re-emitting someone's prose. The AI prompt now asks for

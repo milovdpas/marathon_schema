@@ -14,6 +14,8 @@ import { BACKYARD_LOOP_KM } from "@/lib/plan/backyard";
 import { toISO } from "@/lib/date";
 import { canBeContext } from "@/lib/plan/context";
 import { useFormat } from "@/hooks/use-format";
+import { capabilitiesFor, soleSport } from "@/lib/athlete";
+import { DEFAULT_SPORT } from "@/lib/sport";
 import { type Draft, buildPlanRequest } from "@/lib/plan/request";
 import { toast } from "@/store/use-toast-store";
 import { useTrainingStore } from "@/store/use-training-store";
@@ -22,6 +24,8 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
   const { t } = useTranslation();
   const fmt = useFormat();
   const country = useTrainingStore((s) => s.preferences.country);
+  const athleteTypes = useTrainingStore((s) => s.preferences.athleteTypes);
+  const caps = capabilitiesFor(athleteTypes);
   const router = useRouter();
   const addPlanFromImport = useTrainingStore((s) => s.addPlanFromImport);
   const plans = useTrainingStore((s) => s.plans);
@@ -44,6 +48,8 @@ export function AddPlanWizard({ fromPlanId }: { fromPlanId?: string }) {
     return {
       name: "",
       raceName: "Marathon",
+      // The plan's sport, and the default for every workout in it.
+      sport: from?.sport ?? soleSport(caps) ?? DEFAULT_SPORT,
       raceDistanceKm: 42.2,
       raceDate: "",
       startDate: toISO(new Date()),

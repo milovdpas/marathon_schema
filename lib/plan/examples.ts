@@ -3,16 +3,22 @@
 // A new user who picks "just look around" gets the demo that matches what they
 // said they train for, and can add the others later from Settings.
 //
-// Cycling, swimming and triathlon demos are deliberately absent: an example
-// plan is data in the current schema, and `Workout` has no `sport` field yet,
-// so they are unrepresentable rather than unwritten. Faking them by relabelling
-// running workouts would make the demo lie about the one thing it exists to
-// show. See docs/racepilot.md.
+// All seven race types now have one. The triathlon demo models race day as
+// three workouts on the same date rather than one workout with legs: every
+// consumer already understands a workout, and none of them would know how to
+// sum legs. Formally linking them, plus transitions, is slice 4.
 
 import { DEFAULT_PLAN_ID } from "@/lib/plan/defaults";
 import type { AthleteType, TrainingPlan } from "@/lib/types";
 
-export type ExamplePlanKey = "marathon" | "trail" | "ultra" | "backyard";
+export type ExamplePlanKey =
+  | "marathon"
+  | "trail"
+  | "ultra"
+  | "backyard"
+  | "cycling"
+  | "swimming"
+  | "triathlon";
 
 export interface ExamplePlanEntry {
   key: ExamplePlanKey;
@@ -66,6 +72,39 @@ export const EXAMPLE_PLANS: readonly ExamplePlanEntry[] = [
       ),
   },
   {
+    key: "cycling",
+    id: "example-cycling",
+    labelKey: "examples.cycling",
+    descriptionKey: "examples.cyclingDesc",
+    athleteTypes: ["cyclist"],
+    load: () =>
+      import("@/lib/plan/example-specs").then((m) =>
+        m.buildGeneratedExample("cycling"),
+      ),
+  },
+  {
+    key: "swimming",
+    id: "example-swimming",
+    labelKey: "examples.swimming",
+    descriptionKey: "examples.swimmingDesc",
+    athleteTypes: ["swimmer"],
+    load: () =>
+      import("@/lib/plan/example-specs").then((m) =>
+        m.buildGeneratedExample("swimming"),
+      ),
+  },
+  {
+    key: "triathlon",
+    id: "example-triathlon",
+    labelKey: "examples.triathlon",
+    descriptionKey: "examples.triathlonDesc",
+    athleteTypes: ["triathlete"],
+    load: () =>
+      import("@/lib/plan/example-specs").then((m) =>
+        m.buildGeneratedExample("triathlon"),
+      ),
+  },
+  {
     key: "backyard",
     id: "example-backyard",
     labelKey: "examples.backyard",
@@ -91,23 +130,32 @@ export function isExamplePlanId(id: string): boolean {
 
 /**
  * The demos worth offering this athlete: the entries that name one of their
- * types. An unknown or empty profile gets all of them rather than none, the
- * same rule `capabilitiesFor` follows.
+ * types.
  *
- * Can legitimately return `[]` — a cyclist has no demo yet. Callers must handle
- * that rather than reading it as "no profile".
+ * An unknown or empty profile is treated as **a runner**, not as "show
+ * everything". That is a deliberate departure from `capabilitiesFor`, and the
+ * two are answering different questions: hiding a *feature* from someone who
+ * told us nothing would make the app look broken, whereas offering a swimmer's
+ * plan to someone who has never swum is just clutter. Running is also what an
+ * unset profile means everywhere else — `DEFAULT_SPORT`, an absent plan sport.
+ *
+ * "Show all sports" in Settings is the escape hatch, so nothing is unreachable.
+ *
+ * Callers must still handle `[]`: an athlete type added before its demo will
+ * land here with nothing to offer.
  */
 export function examplesFor(types?: readonly AthleteType[]): ExamplePlanEntry[] {
-  if (!types?.length) return [...EXAMPLE_PLANS];
+  const effective: readonly AthleteType[] = types?.length ? types : ["runner"];
   return EXAMPLE_PLANS.filter((e) =>
-    e.athleteTypes.some((t) => types.includes(t)),
+    e.athleteTypes.some((t) => effective.includes(t)),
   );
 }
 
 /**
- * The athlete's own types that no demo covers yet — bike and swim, until
- * `Workout.sport` exists. Worth surfacing: a picker that silently gains nothing
- * when you add "cyclist" reads as broken rather than as not-built-yet.
+ * The athlete's own types that no demo covers yet — empty today, and kept
+ * because the next athlete type added will land here before its demo does. A
+ * picker that silently gains nothing when you add a sport reads as broken
+ * rather than as not-built-yet.
  */
 export function athleteTypesWithoutExample(
   types?: readonly AthleteType[],
@@ -123,9 +171,8 @@ export function athleteTypesWithoutExample(
  * user identifies with most, not merely the first they're eligible for (a trail
  * runner shouldn't be handed the marathon block).
  *
- * Triathletes, cyclists and swimmers fall through to the marathon plan until
- * slice 3 gives their sports a demo. That's the least bad option: the
- * alternative is an app with nothing in it on first run.
+ * Every athlete type has a demo now, so the marathon fallback only catches a
+ * profile we don't recognise at all.
  */
 export function defaultExampleFor(
   types?: readonly AthleteType[],

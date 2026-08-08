@@ -22,6 +22,14 @@ export const en = {
     settings: "Settings",
     theme: "Theme",
   },
+  sport: {
+    run: "Run",
+    bike: "Bike",
+    swim: "Swim",
+    runPlural: "Running",
+    bikePlural: "Cycling",
+    swimPlural: "Swimming",
+  },
   workoutType: {
     easy: "Easy Run",
     tempo: "Tempo",
@@ -92,6 +100,7 @@ export const en = {
     modeLog: "Log",
     date: "Date",
     type: "Type",
+    sport: "Sport",
     titleLabel: "Title",
     titlePlaceholder: "e.g. 6×800m intervals",
     distance: "Distance ({{unit}})",
@@ -161,6 +170,10 @@ export const en = {
     splitPaces: "Split paces",
     splitPacesSub:
       "{{title}} · {{date}} - fastest {{fastest}}, slowest {{slowest}}.",
+    bySport: "By sport",
+    bySportSub: "Distance is per sport; time is the only total that means anything when they mix.",
+    totalTime: "Total time",
+    hours: "{{h}}h {{m}}m",
     longRunProgression: "Long-run progression",
     longRunHint: "Building toward your peak, then tapering for race day.",
     planned: "Planned",
@@ -332,15 +345,22 @@ JSON (paste below, or attach the exported .json file):
     trailDesc: "Twelve weeks of hills and long days on the trails.",
     ultra: "100 km ultra plan",
     ultraDesc: "Sixteen weeks built on back-to-back long runs.",
+    cycling: "Cycling plan",
+    cyclingDesc: "Twelve weeks building to a 120 km ride, in km/h.",
+    swimming: "Swimming plan",
+    swimmingDesc: "Ten weeks in the pool, paced per 100 m.",
+    triathlon: "Triathlon plan",
+    triathlonDesc: "Twelve weeks of swim, bike and run, with weekly bricks.",
     backyard: "Backyard ultra plan",
     backyardDesc: "Fourteen weeks of loop practice for a 20-yard goal.",
     addTitle: "Try an example plan",
     addBody:
       "Example plans are someone else's training, there to explore. They're never used as context when an AI writes yours.",
-    showAll: "Show all sports",
+    showAll: "Show {{count}} more",
+    showFewer: "Show fewer",
     added: "Added",
     comingSoon:
-      "No example plan for {{sports}} yet. Those sports arrive once RacePilot can plan bike and swim sessions, which is the next big step.",
+      "No example plan for {{sports}} yet. Multi-sport races need linked race-day sessions, which is the next big step.",
   },
   welcome: {
     continue: "Continue",
@@ -446,6 +466,7 @@ JSON (paste below, or attach the exported .json file):
       "Add vacations, trips or busy periods that will limit your training. The AI will plan around them.",
     calendarSoon: "Connect Google Calendar (coming soon)",
     // Step 3
+    sportQ: "Which sport is this plan for?",
     raceTypeQ: "What kind of race is it?",
     raceTypeStandard: "Standard race",
     raceTypeStandardDesc: "A set distance you run once, like a 10K or marathon.",
@@ -503,6 +524,8 @@ JSON (paste below, or attach the exported .json file):
 What the attached plan-request fields mean:
 - race.name: what to call the plan. race.raceName: the race's name.
 - race.distanceKm: the race distance in kilometers.
+- race.sport: "run", "bike" or "swim". Write sessions for THAT sport: an interval session on a bike is intervals on a bike, not a run. Set "sport" on a workout only when it differs from race.sport (e.g. a cross-training ride in a running plan); leave it off otherwise and it inherits.
+- IMPORTANT: "plannedPace" is ALWAYS minutes and seconds per KILOMETER, for every sport, because that is how the app stores it. So a 30 km/h ride is "2:00" and a 1:45/100m swim is "17:30". Do not emit km/h or per-100m in that field. You may of course write km/h or per-100m inside the workout TITLE, where it reads naturally.
 - athlete: where I am and which units I read. EVERY number in this request is metric (km, min/km) regardless of athlete.units - that is the wire format. If athlete.units is "imperial", write the plan's workout TITLES and NOTES in miles and min/mile (1 mi = 1.609344 km), but still emit "plannedDistanceKm" and "plannedPace" as kilometers and min/km in the JSON. Use athlete.country for seasons and typical weather.
 - race.date: race day (YYYY-MM-DD).
 - startDate: the date I'll begin this plan (YYYY-MM-DD). Build week 1 from this date - do NOT assume today's date.

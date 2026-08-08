@@ -2,7 +2,9 @@
 
 import { CalendarRange, Check, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useActivePlan } from "@/hooks/use-active-plan";
 import { useFormat } from "@/hooks/use-format";
+import { isMultiSport, workoutSport } from "@/lib/plan/workout";
 import { formatDayLabel, formatRange } from "@/lib/date";
 import type { Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -23,6 +25,11 @@ export function WorkoutRow({
 }) {
   const { t } = useTranslation();
   const fmt = useFormat();
+  const plan = useActivePlan();
+  const sport = workoutSport(workout, plan);
+  // Labelled only when the plan actually mixes sports; otherwise the icon just
+  // repeats what every other row already says.
+  const showSport = plan ? isMultiSport(plan) : false;
   const { completed } = workout;
   const hasActual =
     workout.actualDistanceKm != null || workout.actualPace != null;
@@ -55,7 +62,10 @@ export function WorkoutRow({
         {/* One line of pills. The flexible pill is the only one that can
             shrink, and it truncates rather than wrapping the row. */}
         <div className="flex min-w-0 items-center gap-2">
-          <WorkoutTypeBadge type={workout.type} />
+          <WorkoutTypeBadge
+            type={workout.type}
+            sport={showSport ? sport : undefined}
+          />
           {workout.flexible && workout.windowStart && workout.windowEnd ? (
             /* Just the window: spelling out "Flexible" as well pushed the pill
                past the available width and truncated it to "Flexibl…". The
@@ -87,9 +97,10 @@ export function WorkoutRow({
           {hasActual && completed
             ? `${fmt.distance(
                 workout.actualDistanceKm ?? workout.plannedDistanceKm,
-              )} · ${fmt.pace(workout.actualPace ?? workout.plannedPace)}`
+              )} · ${fmt.pace(workout.actualPace ?? workout.plannedPace, sport)}`
             : `${fmt.distance(workout.plannedDistanceKm)} · ${fmt.pace(
                 workout.plannedPace,
+                sport,
               )}`}
         </p>
       </div>

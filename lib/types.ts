@@ -1,6 +1,7 @@
 // Domain models for the RacePilot training tracker.
 // Everything is persisted in localStorage via the Zustand store.
 
+import type { Sport } from "@/lib/sport";
 import type { UnitSystem } from "@/lib/units";
 
 export type WorkoutType = "easy" | "tempo" | "interval" | "long" | "recovery";
@@ -37,6 +38,15 @@ export type WeekPhase =
 export interface Workout {
   id: string;
   date: string; // ISO yyyy-mm-dd — anchors the calendar + week grouping
+  /**
+   * Which sport this session is. **Orthogonal to `type`**, which is intensity:
+   * a tempo effort is a tempo effort on a bike too.
+   *
+   * Absent means the plan's sport, and a plan with no sport means running —
+   * so every workout written before multi-sport keeps its meaning with no
+   * backfill. Resolve it with `workoutSport(workout, plan)`.
+   */
+  sport?: Sport;
   type: WorkoutType;
   title: string; // e.g. "6×800m @ 4:10" or "Long run"
   weekNumber: number;
@@ -50,7 +60,7 @@ export interface Workout {
   startTime?: string;
   /** Weather captured for this workout (when the weather feature is on). */
   weather?: WeatherSnapshot;
-  /** Per-kilometer splits (from the screenshot scanner). */
+  /** Per-kilometer splits (from the screenshot scanner). Running only. */
   splits?: WorkoutSplit[];
   completed: boolean;
   isCustom?: boolean;
@@ -152,6 +162,12 @@ export type RaceType = "standard" | "backyard";
 /** Editable per-plan metadata (race + goal), independent of the schedule. */
 export interface PlanMeta {
   name: string; // "Milo's Marathon"
+  /**
+   * The sport the race itself is. Also the default for workouts that don't
+   * name one, so a cycling plan doesn't have to stamp every session. Absent
+   * means running.
+   */
+  sport?: Sport;
   raceName: string; // "Marathon"
   raceDistanceKm: number; // 42.2 — for a backyard plan, targetYards × loopKm
   raceDate: string; // "2026-10-11"

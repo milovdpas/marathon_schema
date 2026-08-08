@@ -7,6 +7,7 @@ import { NoPlanState } from "@/components/common/no-plan-state";
 import { StatCard } from "@/components/common/stat-card";
 import { LongRunProgressChart } from "@/components/stats/longrun-progress-chart";
 import { SplitPaceChart } from "@/components/stats/split-pace-chart";
+import { SportBreakdown } from "@/components/stats/sport-breakdown";
 import { WeeklyHistoryChart } from "@/components/stats/weekly-history-chart";
 import { WeeklyTrendChart } from "@/components/stats/weekly-trend-chart";
 import {
@@ -22,7 +23,7 @@ import { useActivePlan } from "@/hooks/use-active-plan";
 import { useFormat } from "@/hooks/use-format";
 import { useStats } from "@/hooks/use-stats";
 import { formatDayLabel } from "@/lib/date";
-import { latestSplitRun, weeklyHistory } from "@/lib/plan/stats";
+import { latestSplitRun, statsBySport, weeklyHistory } from "@/lib/plan/stats";
 import { useTrainingStore } from "@/store/use-training-store";
 
 export function StatsView() {
@@ -45,6 +46,7 @@ export function StatsView() {
   const { overall } = stats;
   // Most recent run that has scanned splits (null until one is scanned).
   const splitRun = latestSplitRun(plan);
+  const bySport = statsBySport(plan);
 
   return (
     <div className="space-y-5">
@@ -77,6 +79,8 @@ export function StatsView() {
           icon={<Timer className="size-4" />}
         />
       </div>
+
+      <SportBreakdown stats={bySport} />
 
       <Card className="p-4">
         <div className="mb-3 flex items-center justify-between">
@@ -112,8 +116,9 @@ export function StatsView() {
             {t("stats.splitPacesSub", {
               title: splitRun.title,
               date: formatDayLabel(splitRun.date),
-              fastest: fmt.pace(splitRun.fastestPace),
-              slowest: fmt.pace(splitRun.slowestPace),
+              // Splits come from the run scanner, so they are always run paces.
+              fastest: fmt.pace(splitRun.fastestPace, "run"),
+              slowest: fmt.pace(splitRun.slowestPace, "run"),
             })}
           </p>
           <SplitPaceChart splits={splitRun.splits} />

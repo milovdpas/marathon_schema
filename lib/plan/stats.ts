@@ -1,7 +1,14 @@
 import { isWithinInterval, parseISO, startOfWeek } from "date-fns";
-import { toISO } from "@/lib/date";
+import { toISO, todayISO } from "@/lib/date";
 import { averagePace, paceToSeconds, secondsToPace } from "@/lib/pace";
-import type { TrainingPlan, Workout, WorkoutSplit } from "@/lib/types";
+import { workoutSport } from "@/lib/plan/workout";
+import { SPORTS, type Sport } from "@/lib/sport";
+import type {
+  TrainingPlan,
+  TrainingWeek,
+  Workout,
+  WorkoutSplit,
+} from "@/lib/types";
 
 /** All workouts as a flat array, sorted by date. */
 export function allWorkouts(plan: TrainingPlan): Workout[] {
@@ -21,8 +28,64 @@ export function effectivePace(w: Workout): string | undefined {
   return w.actualPace ?? (w.completed ? w.plannedPace : undefined);
 }
 
+/** Minutes actually spent, falling back to distance x pace when untimed. */
+export function durationOf(w: Workout): number {
+  if (w.durationMin != null) return w.durationMin;
+  const secs = paceToSeconds(effectivePace(w));
+  const km = distanceRun(w);
+  return secs != null && km > 0 ? (secs * km) / 60 : 0;
+}
+
+export interface SportStats {
+  sport: Sport;
+  totalKm: number;
+  totalTimeMin: number;
+  completedCount: number;
+}
+
+/**
+ * Per-sport totals for the sports this plan actually contains.
+ *
+ * **Time is the only honest cross-sport total.** Adding 40 km of cycling to
+ * 10 km of running gives 50 of nothing: the two cost wildly different effort per
+ * kilometer. Distance stays per-sport, and `totalTimeMin` is what can be summed
+ * across them. A load score (TSS and friends) would be the better answer still,
+ * but it needs per-sport thresholds this app deliberately doesn't collect.
+ */
+export function statsBySport(plan: TrainingPlan): SportStats[] {
+  const bySport = new Map<Sport, SportStats>();
+
+  for (const w of allWorkouts(plan)) {
+    const sport = workoutSport(w, plan);
+    const entry = bySport.get(sport) ?? {
+      sport,
+      totalKm: 0,
+      totalTimeMin: 0,
+      completedCount: 0,
+    };
+    const ran = distanceRun(w);
+    if (ran > 0) {
+      entry.totalKm += ran;
+      entry.totalTimeMin += durationOf(w);
+    }
+    if (w.completed) entry.completedCount += 1;
+    bySport.set(sport, entry);
+  }
+
+  return [...bySport.values()]
+    .map((e) => ({
+      ...e,
+      totalKm: round1(e.totalKm),
+      totalTimeMin: Math.round(e.totalTimeMin),
+    }))
+    // Stable order, so the cards don't reshuffle as sessions are logged.
+    .sort((a, b) => SPORTS.indexOf(a.sport) - SPORTS.indexOf(b.sport));
+}
+
 export interface OverallStats {
   totalKm: number;
+  /** Across every sport. The only total that means anything when they mix. */
+  totalTimeMin: number;
   longestRunKm: number;
   averagePace: string; // "mm:ss" or "—"
   completedCount: number;
@@ -37,6 +100,7 @@ export function overallStats(plan: TrainingPlan): OverallStats {
   let longestRunKm = 0;
   let completedCount = 0;
   let plannedTotalKm = 0;
+  let totalTimeMin = 0;
   const paceRuns: { distanceKm: number; pace?: string }[] = [];
 
   for (const w of workouts) {
@@ -47,11 +111,13 @@ export function overallStats(plan: TrainingPlan): OverallStats {
       totalKm += ran;
       longestRunKm = Math.max(longestRunKm, ran);
       paceRuns.push({ distanceKm: ran, pace: effectivePace(w) });
+      totalTimeMin += durationOf(w);
     }
   }
 
   return {
     totalKm: round1(totalKm),
+    totalTimeMin: Math.round(totalTimeMin),
     longestRunKm: round1(longestRunKm),
     averagePace: averagePace(paceRuns),
     completedCount,
@@ -62,6 +128,25 @@ export function overallStats(plan: TrainingPlan): OverallStats {
         : Math.round((completedCount / workouts.length) * 100),
     plannedTotalKm: round1(plannedTotalKm),
   };
+}
+
+/**
+ * The workouts that fall inside a week, selected **by date**.
+ *
+ * Not by `week.workoutIds`, which is bookkeeping that drifts: a workout logged
+ * on a date the plan's weeks don't cover is filed under no week at all
+ * (`addWorkout` only attaches when `weekIndexForDate` finds one), and one whose
+ * date is later edited into a different week is never re-filed. The dashboard
+ * has always counted by date (`mileageInRange`), so the two disagreed — a run
+ * could show up in "this week" and be missing from the weekly charts.
+ */
+export function workoutsInWeek(
+  plan: TrainingPlan,
+  week: Pick<TrainingWeek, "startDate" | "endDate">,
+): Workout[] {
+  return allWorkouts(plan).filter(
+    (w) => w.date >= week.startDate && w.date <= week.endDate,
+  );
 }
 
 export interface RangeMileage {
@@ -110,9 +195,7 @@ export function weeklyMileage(plan: TrainingPlan): WeeklyMileage[] {
   return plan.weeks.map((week) => {
     let plannedKm = 0;
     let actualKm = 0;
-    for (const wid of week.workoutIds) {
-      const w = plan.workouts[wid];
-      if (!w) continue;
+    for (const w of workoutsInWeek(plan, week)) {
       plannedKm += w.plannedDistanceKm;
       actualKm += distanceRun(w);
     }
@@ -129,18 +212,38 @@ export interface LongRunPoint {
   weekNumber: number;
   label: string;
   planned: number;
+  /** `null` only while the week is still ahead — see below. */
   actual: number | null;
 }
 
-/** Long-run progression, planned vs actual (for the progress chart). */
-export function longRunProgression(plan: TrainingPlan): LongRunPoint[] {
+/**
+ * Long-run progression, planned vs actual.
+ *
+ * "The long run" is **the longest session of the week**, not only a session
+ * someone remembered to type as `long`. Filtering on `type === "long"` meant a
+ * logged 10 km in a week with nothing planned charted as 0 and 0: the run was
+ * real, the chart just wasn't looking at it. Intensity labels are a hint about
+ * effort, not a reliable index of which run was longest.
+ *
+ * Two rules, pulling in opposite directions on purpose:
+ *
+ *  - **Planned is always a number, including 0.** A week with nothing planned
+ *    is real information (a cutback, a taper, race week), so the line drops to
+ *    the axis and the reader can see why.
+ *  - **Actual is 0 once the week is behind you, and null while it is ahead.**
+ *    A past week with nothing logged is a genuine zero and the line should keep
+ *    going through it; a future week has no answer yet, and drawing 0 there
+ *    would show every plan flatlining from today onward.
+ */
+export function longRunProgression(
+  plan: TrainingPlan,
+  today: string = todayISO(),
+): LongRunPoint[] {
   return plan.weeks.map((week) => {
     let planned = 0;
     let actual = 0;
     let hasActual = false;
-    for (const wid of week.workoutIds) {
-      const w = plan.workouts[wid];
-      if (!w || w.type !== "long") continue;
+    for (const w of workoutsInWeek(plan, week)) {
       planned = Math.max(planned, w.plannedDistanceKm);
       const ran = distanceRun(w);
       if (ran > 0) {
@@ -148,11 +251,13 @@ export function longRunProgression(plan: TrainingPlan): LongRunPoint[] {
         hasActual = true;
       }
     }
+    // The current week stays open: there is still time to do the long run.
+    const isPast = week.endDate < today;
     return {
       weekNumber: week.weekNumber,
       label: `W${week.weekNumber}`,
       planned: round1(planned),
-      actual: hasActual ? round1(actual) : null,
+      actual: hasActual ? round1(actual) : isPast ? 0 : null,
     };
   });
 }

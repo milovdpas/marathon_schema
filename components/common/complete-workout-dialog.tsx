@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useActivePlan } from "@/hooks/use-active-plan";
 import { useFormat } from "@/hooks/use-format";
+import { workoutSport } from "@/lib/plan/workout";
 import { formatClock, resolveLoggedRun } from "@/lib/pace";
 import type { Workout, WorkoutSplit } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -37,7 +39,11 @@ export function CompleteWorkoutDialog({
 }) {
   const { t } = useTranslation();
   const fmt = useFormat();
+  const plan = useActivePlan();
   const updateWorkout = useTrainingStore((s) => s.updateWorkout);
+  // Resolved from the workout, so a cross-training ride in a running plan is
+  // still logged in km/h.
+  const sport = workoutSport(workout ?? {}, plan);
 
   const [distance, setDistance] = useState("");
   const [duration, setDuration] = useState("");
@@ -54,7 +60,9 @@ export function CompleteWorkoutDialog({
     // logs a run at; metric users convert by identity and never round at all.
     const km = workout.actualDistanceKm ?? workout.plannedDistanceKm;
     setDistance(km == null ? "" : fmt.distanceValue(km, 2));
-    setPace(fmt.paceValue(workout.actualPace ?? workout.plannedPace) || "");
+    setPace(
+      fmt.paceValue(workout.actualPace ?? workout.plannedPace, sport) || "",
+    );
     setDuration(formatClock(workout.durationMin));
     setStartTime(workout.startTime ?? "");
     setSplits(workout.splits ?? []);
@@ -82,7 +90,8 @@ export function CompleteWorkoutDialog({
       actualDistanceKm:
         actualDistanceKm == null ? undefined : fmt.toStoredDistance(actualDistanceKm),
       durationMin,
-      actualPace: actualPace == null ? undefined : fmt.toStoredPace(actualPace),
+      actualPace:
+        actualPace == null ? undefined : fmt.toStoredPaceFor(actualPace, sport),
       startTime: start,
       splits: splits.length > 0 ? splits : undefined,
       completed: true,
@@ -104,7 +113,7 @@ export function CompleteWorkoutDialog({
             <p className="text-xs text-muted-foreground">
               {t("completeWorkout.planned", {
                 distance: fmt.distance(workout.plannedDistanceKm),
-                pace: fmt.pace(workout.plannedPace),
+                pace: fmt.pace(workout.plannedPace, sport),
               })}
             </p>
 
@@ -141,7 +150,9 @@ export function CompleteWorkoutDialog({
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs text-muted-foreground">
-                  {t("workoutForm.paceLabel", { unit: fmt.paceUnit })}
+                  {t("workoutForm.paceLabel", {
+                    unit: fmt.speedUnitFor(sport),
+                  })}
                 </Label>
                 <Input
                   placeholder="4:58"

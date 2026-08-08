@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PLAN_ID } from "@/lib/plan/defaults";
 import { buildGeneratedExample } from "@/lib/plan/example-specs";
+import { isMultiSport, planSports } from "@/lib/plan/workout";
+import { ATHLETE_TYPES } from "@/lib/types";
 import {
   athleteTypesWithoutExample,
   EXAMPLE_PLANS,
@@ -34,22 +36,35 @@ describe("the example catalogue", () => {
     ]);
   });
 
-  it("offers everything to someone who hasn't said what they do", () => {
-    expect(examplesFor(undefined)).toHaveLength(EXAMPLE_PLANS.length);
-    expect(examplesFor([])).toHaveLength(EXAMPLE_PLANS.length);
+  it("treats an unset profile as a runner, not as 'show everything'", () => {
+    // Offering a swimming plan to someone who has never swum is clutter, which
+    // is a different question from hiding a feature (see `capabilitiesFor`).
+    expect(examplesFor(undefined).map((e) => e.key)).toEqual(["marathon"]);
+    expect(examplesFor([]).map((e) => e.key)).toEqual(["marathon"]);
   });
 
-  it("returns nothing for a sport with no demo yet", () => {
-    // Empty is a real answer here, distinct from "no profile" — the card has to
-    // tell the user those plans don't exist rather than showing a stale list.
-    expect(examplesFor(["cyclist"])).toEqual([]);
-    expect(examplesFor(["swimmer", "triathlete"])).toEqual([]);
+  it("never offers another sport's plan to a runner", () => {
+    for (const types of [undefined, [], ["runner"], ["trail"], ["ultra"]] as const) {
+      const keys = examplesFor(types).map((e) => e.key);
+      expect(keys).not.toContain("cycling");
+      expect(keys).not.toContain("swimming");
+      expect(keys).not.toContain("triathlon");
+    }
   });
 
-  it("names the sports that have no demo yet", () => {
-    expect(athleteTypesWithoutExample(["runner", "cyclist"])).toEqual([
-      "cyclist",
-    ]);
+  it("offers cyclists and swimmers their own demos", () => {
+    expect(examplesFor(["cyclist"]).map((e) => e.key)).toEqual(["cycling"]);
+    expect(examplesFor(["swimmer"]).map((e) => e.key)).toEqual(["swimming"]);
+  });
+
+  it("offers a triathlete the triathlon demo", () => {
+    expect(examplesFor(["triathlete"]).map((e) => e.key)).toEqual(["triathlon"]);
+  });
+
+  it("names the athlete types that still have no demo", () => {
+    // Empty is a real answer, distinct from "no profile": the card has to say
+    // those plans don't exist rather than silently showing a stale list.
+    expect(athleteTypesWithoutExample(["runner", "cyclist"])).toEqual([]);
     expect(athleteTypesWithoutExample(["trail", "ultra"])).toEqual([]);
     expect(athleteTypesWithoutExample(undefined)).toEqual([]);
   });
@@ -60,19 +75,29 @@ describe("the example catalogue", () => {
     expect(defaultExampleFor(["trail"]).key).toBe("trail");
     expect(defaultExampleFor(["ultra"]).key).toBe("ultra");
     expect(defaultExampleFor(["runner"]).key).toBe("marathon");
-    expect(defaultExampleFor(["cyclist", "runner"]).key).toBe("marathon");
+    // Primary is the first pick, so a cyclist-who-also-runs gets cycling.
+    expect(defaultExampleFor(["cyclist", "runner"]).key).toBe("cycling");
+    expect(defaultExampleFor(["runner", "cyclist"]).key).toBe("marathon");
   });
 
-  it("falls back to the marathon demo for sports without one yet", () => {
-    // Cycling, swimming and triathlon demos are blocked on `Workout.sport`.
-    // Showing an empty app on first run would be worse than the wrong sport.
-    expect(defaultExampleFor(["cyclist"]).key).toBe("marathon");
-    expect(defaultExampleFor(["triathlete"]).key).toBe("marathon");
+  it("seeds a cyclist a cycling plan, and a swimmer a swimming one", () => {
+    expect(defaultExampleFor(["cyclist"]).key).toBe("cycling");
+    expect(defaultExampleFor(["swimmer"]).key).toBe("swimming");
+  });
+
+  it("seeds a triathlete the triathlon demo", () => {
+    expect(defaultExampleFor(["triathlete"]).key).toBe("triathlon");
+  });
+
+  it("covers every athlete type, so nothing falls back silently", () => {
+    for (const t of ATHLETE_TYPES) {
+      expect(athleteTypesWithoutExample([t])).toEqual([]);
+    }
   });
 });
 
 describe("generated example plans", () => {
-  it.each(["trail", "ultra", "backyard"] as const)(
+  it.each(["trail", "ultra", "backyard", "cycling", "swimming", "triathlon"] as const)(
     "builds %s with a future race and logged history",
     (key) => {
       const plan = buildGeneratedExample(key, NOW);
@@ -122,5 +147,72 @@ describe("generated example plans", () => {
         expect(w.date >= week.startDate && w.date <= week.endDate).toBe(true);
       }
     }
+  });
+});
+
+describe("multi-sport demos", () => {
+  it("stamps the plan's sport, not each workout's", () => {
+    // Workouts inherit it, which is exactly why an absent workout sport is
+    // never rewritten at import.
+    const bike = buildGeneratedExample("cycling", NOW);
+    expect(bike.sport).toBe("bike");
+    expect(Object.values(bike.workouts).every((w) => w.sport === undefined)).toBe(
+      true,
+    );
+    expect(buildGeneratedExample("swimming", NOW).sport).toBe("swim");
+  });
+
+  it("leaves running demos with no sport at all", () => {
+    // Absent means running, so stamping it would only add noise to the export.
+    expect(buildGeneratedExample("trail", NOW).sport).toBeUndefined();
+  });
+
+  it("keeps a race-week taper in every sport", () => {
+    // The taper rule used to be "drop anything over 12 km", which removed every
+    // session from a cycling week and none from a swimming one.
+    for (const key of ["cycling", "swimming", "trail"] as const) {
+      const plan = buildGeneratedExample(key, NOW);
+      const raceWeek = plan.weeks.at(-1)!;
+      expect(raceWeek.workoutIds.length).toBeGreaterThanOrEqual(2);
+      expect(raceWeek.workoutIds.length).toBeLessThanOrEqual(4);
+    }
+  });
+});
+
+describe("the triathlon demo", () => {
+  const tri = () => buildGeneratedExample("triathlon", NOW);
+
+  it("names a sport on every session, and none on the plan", () => {
+    // The one demo with no default sport: there is no sensible single answer.
+    const plan = tri();
+    expect(plan.sport).toBeUndefined();
+    expect(
+      Object.values(plan.workouts).every((w) => w.sport !== undefined),
+    ).toBe(true);
+  });
+
+  it("covers all three sports", () => {
+    expect(planSports(tri())).toEqual(["run", "bike", "swim"]);
+    expect(isMultiSport(tri())).toBe(true);
+  });
+
+  it("puts three legs on race day, in order, on one date", () => {
+    const plan = tri();
+    const legs = Object.values(plan.workouts)
+      .filter((w) => w.date === plan.raceDate)
+      .sort((a, b) => a.id.localeCompare(b.id));
+    expect(legs.map((l) => l.sport)).toEqual(["swim", "bike", "run"]);
+    expect(new Set(legs.map((l) => l.date)).size).toBe(1);
+  });
+
+  it("keeps a brick's two sessions distinct on the same day", () => {
+    // They share a date, so the id has to carry more than the weekday or one
+    // would silently overwrite the other.
+    const plan = tri();
+    const sunday = Object.values(plan.workouts).filter((w) =>
+      w.title.startsWith("Brick"),
+    );
+    expect(sunday.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(sunday.map((w) => w.id)).size).toBe(sunday.length);
   });
 });
